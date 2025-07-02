@@ -57,7 +57,7 @@ The inspiration for this tool comes from the Fluid programming language. Our imp
 
 ### 2.5 Project Limitations
 #ToDo 
-The main limitation is the constraint solver technology which enables us to only create "rectamgle based plot", i.e. plots where the data is visualized by rectangles.
+The main limitation is the constraint solver technology which enables us to only create "rectangle based plot", i.e. plots where the data is visualized by rectangles.
 
 ## 3. External interface
 #ToDo 
