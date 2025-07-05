@@ -117,7 +117,7 @@ The user inputs data they desire to visualize. Then they select the plot type th
 Available plot types: (grouped) bar chart, histogram, boxplot, candlestick chart.
 
 ### 4.3 Plot Editing
-The user can adjust plot elements by interacting with them (e.g. clicking and draging the side of bar in bar chart will adjust the width of all bars (or change any dimention of any type of plot elements), or using a cursor they can adjust the spacing of plot elements, or rescale axes).
+The user can adjust plot elements by interacting with them (e.g. clicking and draging the side of bar in bar chart will adjust the width of all bars (or change any dimention of any type of plot elements), or by using a cursor they can adjust the spacing of plot elements, or rescale axes).
 
 ### 4.4 Data Manipulation
 The user can switch to data manipulation mode where they can by manipulating certain plot elements (like bars or boxes) manipulate with input data. The user can see the change in data in real time.
