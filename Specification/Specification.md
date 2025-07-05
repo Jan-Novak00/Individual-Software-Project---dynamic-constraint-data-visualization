@@ -17,7 +17,7 @@ This project focuses on developing a dynamic data visualization and manipulation
 ## Table of Contents
 
 - [1. Project Overview](#1-project-overview)
-  - [1.1 Decription and Scope of the Software](#11-decription-and-scope-of-the-software)
+  - [1.1 Description and Scope of the Software](#11-decription-and-scope-of-the-software)
   - [1.2 Used Technologies](#12-used-technologies)
   - [1.3 External References](#13-external-references)
   - [1.4 Documentation Conventions](#14-documentation-conventions)
@@ -43,7 +43,7 @@ This project focuses on developing a dynamic data visualization and manipulation
 
 ## 1. Project Overview
 
-### 1.1 Decription and Scope of the Software
+### 1.1 Description and Scope of the Software
 
 This project aims to develop a dynamic data visualization tool using the Cassowary constraint solver to create interactive plots. Manipulation of the plots is designed to be intuitive, allowing users to adjust parameters such as scale or bar height in bar charts through direct interaction with plot elements. Users can modify the underlying data in real time simply by interacting with the plot components.
 
