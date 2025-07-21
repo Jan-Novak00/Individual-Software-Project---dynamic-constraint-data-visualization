@@ -121,10 +121,16 @@ The user can adjust plot elements by interacting with them (e.g. clicking and dr
 
 #### Edit example: bar chart
 By clicking and dragging the right edge of any bar changes the width of all bars.
-![Example](Specification/pictures/width-manipulation-example.jpg)
+![Example](./pictures/width-manipulation-example.jpg)
+
+By clicking and dragging the left edge of any bar changes spacing between all bars.
+![Example](./pictures/spacing-manipulation-example.jpg)
 
 ### 4.4 Data Manipulation
 The user can switch to data manipulation mode where they can by manipulating certain plot elements (like bars or boxes) manipulate with input data. The user can see the change in data in real time.
+
+#### Edit data example: bar chart
+![Example](./pictures/data-manipulation-example.jpg)
 
 ## 5. Screens
 #ToDo
@@ -138,5 +144,6 @@ Additionally, the system should allow for including the integration of new plot 
 
 | Date      | Milestone                         | Method of Presentation             |
 | --------- | --------------------------------- | ---------------------------------- |
-| 18.5.2025 | Bar chart prototype in kiwisolver | Online meeting, code in repository |
-| 17.6.2025 | Interactive barchart              | Online meeting, code in repository |
+| 18.6.2025 | Bar chart prototype in kiwisolver | Online meeting, code in repository |
+| 17.7.2025 | Interactive bar chart              | Online meeting, code in repository |
+| 1.8.2025 | More efficient use of constraints in interactive bar chart | Online meeting, code in repository |
