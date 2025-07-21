@@ -121,7 +121,7 @@ The user can adjust plot elements by interacting with them (e.g. clicking and dr
 
 #### Edit example: bar chart
 By clicking and dragging the right edge of any bar changes the width of all bars.
-![Example](Specification/pictures/width%20manipulation%20example.jpg)
+![Example](Specification/pictures/width-manipulation-example.jpg)
 
 ### 4.4 Data Manipulation
 The user can switch to data manipulation mode where they can by manipulating certain plot elements (like bars or boxes) manipulate with input data. The user can see the change in data in real time.
