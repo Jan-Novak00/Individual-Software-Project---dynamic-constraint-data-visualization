@@ -132,6 +132,9 @@ The user can switch to data manipulation mode where they can by manipulating cer
 #### Edit data example: bar chart
 ![Example](./pictures/data-manipulation-example.jpg)
 
+#### Edit data example: candlestick chart
+![Example](./pictures/candlestick_chart_data_edit.jpg)
+
 ## 5. Screens
 #ToDo
 
