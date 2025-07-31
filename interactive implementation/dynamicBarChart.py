@@ -162,30 +162,33 @@ class BarChartSolver:
 
         for rec in self.variableBarChart.rectangles:
             self.solver.addEditVariable(rec.height, "strong")
+        
+        self.Solve()
     
     def GetRectanglePositions(self):
-        if self.rectangleData == None:
-            self.solver.updateVariables()
-            self.rectangleData = self.variableBarChart.Value()
         return self.rectangleData
 
     def GetSpacing(self):
-        if self.rectangleData == None:
-            self.solver.updateVariables()
-            self.rectangleData = self.variableBarChart.Value()
         return self.variableBarChart.spacing.value()
     
     def ChangeWidth(self, newWidth: int):
-        self.rectangleData = None
         self.solver.suggestValue(self.variableBarChart.width, newWidth)
+        self.solver.updateVariables()
+        self.rectangleData = self.variableBarChart.Value()
     
     def ChangeHeight(self, rectangleIndex: int, newHeight: int):
-        self.rectangleData = None
         self.solver.suggestValue(self.variableBarChart.rectangles[rectangleIndex].height, newHeight)
+        self.solver.updateVariables()
+        self.rectangleData = self.variableBarChart.Value()
     
     def ChangeSpacing(self, newSpacing: int):
-        self.rectangleData = None
         self.solver.suggestValue(self.variableBarChart.spacing, newSpacing)
+        self.solver.updateVariables()
+        self.rectangleData = self.variableBarChart.Value()
+    
+    def Solve(self):
+        self.solver.updateVariables()
+        self.rectangleData = self.variableBarChart.Value()
 
 
 class BarChartCanvas:
@@ -219,7 +222,7 @@ class BarChartCanvas:
         Draws all rectangles on canvas.
         """
         self.canvas.delete("all")
-        for rec in self.barChart.GetRectanglePositions(): # constraint solving happens on this line (potentialy)
+        for rec in self.barChart.GetRectanglePositions(): 
             x1 = rec.leftBottom.X
             y1 = self.canvasHeight - rec.leftBottom.Y
             
@@ -277,7 +280,7 @@ class BarChartCanvas:
         self.dragIndex = rectangleIndex
         
         self.originalLeftX = rectangle.leftBottom.X
-        self.originalSpacing = self.barChart.GetSpacing() # constraint solving happens on this line (potentialy)
+        self.originalSpacing = self.barChart.GetSpacing()
     
     def _clickedOnTopEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle):
         self.dragEdge = "top"
@@ -287,7 +290,7 @@ class BarChartCanvas:
         self.originalCoordinates = ValuePoint2D(rectangle.rightTop.X, rightTopYNormalized)
     
     def on_mouse_down(self, event):
-        for recIndex, rec in enumerate(self.barChart.GetRectanglePositions()): # constraint solving happens on this line (potentialy)
+        for recIndex, rec in enumerate(self.barChart.GetRectanglePositions()): 
             if self._isNearLeftEdge(event, rec) and recIndex > 0: # change in spacing
                 self._clickedOnLeftEdge(event, recIndex, rec)
                 return
@@ -304,7 +307,7 @@ class BarChartCanvas:
         if self.dragEdge is None:
             return
         
-        rectangles = self.barChart.GetRectanglePositions() # constraint solving happens on this line (potentialy)
+        rectangles = self.barChart.GetRectanglePositions()
 
         if self.dragEdge == "right":
             newWidth = abs(event.x - self.originalLeftX)
