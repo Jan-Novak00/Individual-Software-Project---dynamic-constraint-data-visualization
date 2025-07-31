@@ -182,11 +182,158 @@ class BarChartSolver:
         self.solver.suggestValue(self.variableBarChart.spacing, newSpacing)
 
 
-heights = [10,20,30]
-barChartSolver = BarChartSolver(10,heights,20, 5,5)
+class BarChartCanvas:
+    def __init__(self, initialHeights: list[int], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int):
+        self.canvasHeight = canvasHeight
+        self.barChart = BarChartSolver(initialWidth, initialHeights, initialSpacing)
+        
+        self.root = tk.Tk()
+        self.canvas = tk.Canvas(self.root, width=canvasWidth, height=canvasHeight, bg="white")
+        self.canvas.pack()
 
-a = barChartSolver.GetRectanglePositions()
-print(barChartSolver.variableBarChart.width.value())
-for rec in a:
-    print(rec)
-barChartSolver.ChangeWidth(1000)
+        self.dragEdge = None
+        self.dragStart = ValuePoint2D(0,0)
+        self.dragIndex = None
+        self.originalRightCoordinates = None
+        self.originalLeftX = None
+
+
+        self._drawRectangles()
+
+        self.canvas.bind("<Button-1>", self.on_mouse_down)
+        self.canvas.bind("<B1-Motion>", self.on_mouse_move)
+        self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
+        #self.check_cursor()
+        self.root.mainloop()
+    
+    def _drawRectangles(self):
+        """
+        Draws all rectangles on canvas.
+        """
+        self.canvas.delete("all")
+        for rec in self.barChart.GetRectanglePositions(): # constraint solving happens on this line (potentialy)
+            x1 = rec.leftBottom.X
+            y1 = self.canvasHeight - rec.leftBottom.Y
+            
+            x2 = rec.rightTop.X
+            y2 = self.canvasHeight - rec.rightTop.Y
+
+            self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black")
+    
+    @staticmethod
+    def _isNear(val1, val2, tolerance=5):
+        """
+        Returns True, if two values are near to each other with given tolerance
+        """
+        return abs(val1 - val2) < tolerance
+    
+    def _isNearRightEdge(self, event, rectangle: ValueRectangle):
+        """
+        Returns True, if for given rectangle the event happened near to the right edge of the rectangle.
+        For more information, see _isNear method.
+        """
+        leftBottomYNormalized = self.canvasHeight - rectangle.leftBottom.Y # Canvas coordinates are flipped, "Normalized" values are real y values on the canvas.
+        rightTopYNormalized = self.canvasHeight - rectangle.rightTop.Y
+        return self._isNear(event.x, rectangle.rightTop.X) and rightTopYNormalized <= event.y <= leftBottomYNormalized
+    
+    def _isNearLeftEdge(self, event, rectangle: ValueRectangle):
+        """
+        Returns True, if for given rectangle the event happened near to the left edge of the rectangle.
+        For more information, see _isNear method.
+        """
+        leftBottomYNormalized = self.canvasHeight - rectangle.leftBottom.Y
+        rightTopYNormalized = self.canvasHeight - rectangle.rightTop.Y
+        return self._isNear(event.x, rectangle.leftBottom.X) and rightTopYNormalized <= event.y <= leftBottomYNormalized
+
+
+    def _isNearTopEdge(self, event, rectangle: ValueRectangle):
+        """
+        Returns True, if for given rectangle the event happened near to the top edge of the rectangle.
+        For more information, see _isNear method.
+        """
+        rightTopYNormalized = self.canvasHeight - rectangle.rightTop.Y
+        return self._isNear(event.y, rightTopYNormalized) and rectangle.leftBottom.X <= event.x <= rectangle.rightTop.X
+
+    def _clickedOnRightEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle):
+        self.dragEdge = 'right'
+        self.dragStart = ValuePoint2D(event.x, event.y)
+        self.dragIndex = rectangleIndex
+        
+        self.originalCoordinates = rectangle.rightTop
+        self.originalLeftX = rectangle.leftBottom.X
+    
+    def _clickedOnLeftEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle):
+        self.dragEdge = "left"
+        self.dragStart = ValuePoint2D(event.x, event.y)
+        self.dragIndex = rectangleIndex
+        
+        self.originalLeftX = rectangle.leftBottom.X
+        #zde zaznamenat soucasny spacing?
+    
+    def _clickedOnTopEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle):
+        self.dragEdge = "top"
+        self.dragStart = ValuePoint2D(event.x, event.y)
+        self.dragIndex = rectangleIndex
+        rightTopYNormalized = self.canvasHeight - rectangle.rightTop.Y
+        self.originalCoordinates = ValuePoint2D(rectangle.rightTop.X, rightTopYNormalized)
+    
+    def on_mouse_down(self, event):
+        for recIndex, rec in enumerate(self.barChart.GetRectanglePositions()): # constraint solving happens on this line (potentialy)
+            if self._isNearLeftEdge(event, rec) and recIndex > 0: # change in spacing
+                self._clickedOnLeftEdge(event, recIndex, rec)
+                return
+            elif self._isNearRightEdge(event, rec): # change in width
+                self._clickedOnRightEdge(event, recIndex, rec)
+                return
+            elif self._isNearTopEdge(event, rec): # change in height
+                self._clickedOnTopEdge(event, recIndex, rec)
+                return
+            else:
+                continue
+    
+    def on_mouse_move(self, event):
+        if self.dragEdge is None:
+            return
+        
+        rectangles = self.barChart.GetRectanglePositions() # constraint solving happens on this line (potentialy)
+
+        if self.dragEdge == "right":
+            newWidth = abs(event.x - self.originalLeftX)
+            if newWidth > 10:
+                self.barChart.ChangeWidth(newWidth)
+        elif self.dragEdge == "top":
+            rec = rectangles[self.dragIndex]
+            newRightTopYNormalized = self.canvasHeight - (self.originalCoordinates.Y + event.y - self.dragStart.Y)
+            newHeight = newRightTopYNormalized - rec.leftBottom.Y
+            if newHeight > 10:
+                self.barChart.ChangeHeight(self.dragIndex, newHeight)
+        elif self.dragEdge == "left" and self.dragIndex > 0:
+            oldSpacing = rectangles[self.dragIndex].leftBottom.X - rectangles[self.dragIndex-1].rightTop.X
+            dx = event.x - self.dragStart.X
+            newSpacing = oldSpacing + dx
+            if newSpacing > 0:
+                self.barChart.ChangeSpacing(newSpacing)
+        
+        self._drawRectangles()
+
+    def on_mouse_up(self, event):
+        self.dragEdge = None
+        self.dragStart = ValuePoint2D(0,0)
+        self.dragIndex = None
+        self.originalRightCoordinates = None
+        self.originalLeftX = None
+
+    
+
+if __name__ == "__main__":
+    #initial_heights = list(map(int, np.random.poisson(50, 200)))
+    initial_heights = [60, 20 ,70] 
+    initial_width = 20
+    initial_spacing = 10
+    canvas_width = 1000
+    canvas_height = 200
+
+    BarChartCanvas(initial_heights, initial_width, initial_spacing, canvas_width, canvas_height)
+
+
+
