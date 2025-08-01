@@ -122,8 +122,6 @@ class VariableBarChart:
     
     def ChangeWidth(self, width: int):
         self.widthValueConstraint = ((self.width == width) | "strong")
-        print("!!!!!!!!!!!!!")
-        print(self.widthValueConstraint)
     
     def ChangeSpacing(self, spacing: int):
         self.spacingValueConstraint = ((self.spacing == spacing) | "strong")
@@ -174,6 +172,7 @@ class BarChartSolver:
     def GetWidth(self):
         return self.variableBarChart.width.value()
     
+    
     def ChangeWidth(self, newWidth: int):
         self.solver.suggestValue(self.variableBarChart.width, newWidth)
         self.solver.updateVariables()
@@ -207,19 +206,22 @@ class BarChartCanvas:
         self.dragEdge = None
         self.dragStart = ValuePoint2D(0,0)
         self.dragIndex = None
-        self.originalRightCoordinates = None
         self.originalLeftX = None
         self.originalSpacing = None
         self.rightEdgeCursorOffset = None
+        self.originalHeight = None
 
 
         self._drawRectangles()
+        self._report()
 
         self.canvas.bind("<Button-1>", self.on_mouse_down)
         self.canvas.bind("<B1-Motion>", self.on_mouse_move)
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
         self.canvas.bind("<Motion>", self.check_cursor)
         self.root.mainloop()
+    def _report(self):
+        print(f"dragEdge: {self.dragEdge}, dragStart: {self.dragStart}, dragIndex: {self.dragIndex}, originalLeftX: {self.originalLeftX}, originalSpacing: {self.originalSpacing}, rightEdgeCursorOffset: {self.rightEdgeCursorOffset}")
     
     def _drawRectangles(self):
         """
@@ -300,8 +302,7 @@ class BarChartCanvas:
         self.dragEdge = "top"
         self.dragStart = ValuePoint2D(event.x, event.y)
         self.dragIndex = rectangleIndex
-        rightTopYNormalized = self.canvasHeight - rectangle.rightTop.Y
-        self.originalCoordinates = ValuePoint2D(rectangle.rightTop.X, rightTopYNormalized)
+        self.originalHeight = rectangle.rightTop.Y - rectangle.leftBottom.Y
     
     def on_mouse_down(self, event):
         for recIndex, rec in enumerate(self.barChart.GetRectanglePositions()): 
@@ -316,7 +317,7 @@ class BarChartCanvas:
                 return
             else:
                 continue
-    
+
     def on_mouse_move(self, event):
         if self.dragEdge is None:
             return
@@ -327,12 +328,15 @@ class BarChartCanvas:
             newWidth = abs(event.x - self.originalLeftX)
             if newWidth > 10 and rectangles[-1].leftBottom.X+newWidth < self.canvasWidth:
                 self.barChart.ChangeWidth(newWidth)
+
         elif self.dragEdge == "top":
-            rec = rectangles[self.dragIndex]
-            newRightTopYNormalized = self.canvasHeight - (self.originalCoordinates.Y + event.y - self.dragStart.Y)
-            newHeight = newRightTopYNormalized - rec.leftBottom.Y
+            dy = self.dragStart.Y - event.y  # rozdíl v y směru (pozor na orientaci)
+            newHeight = self.originalHeight + dy
             if newHeight > 10:
                 self.barChart.ChangeHeight(self.dragIndex, newHeight)
+                print(newHeight)
+            self._report()
+
         elif self.dragEdge == "left" and self.dragIndex > 0:
             dx = event.x - self.dragStart.X
             newSpacing = self.originalSpacing + dx
