@@ -195,7 +195,7 @@ class BarChartSolver:
 
 
 class BarChartCanvas:
-    def __init__(self, initialHeights: list[int], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int, xCoordinate: int = 0, yCoordinate: int = 20):
+    def __init__(self, initialHeights: list[int], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int, xCoordinate: int = 30, yCoordinate: int = 20):
         self.canvasHeight = canvasHeight
         self.canvasWidth = canvasWidth
         self.barChart = BarChartSolver(initialWidth, initialHeights, initialSpacing, xCoordinate, yCoordinate)
@@ -226,7 +226,8 @@ class BarChartCanvas:
         Draws all rectangles on canvas.
         """
         self.canvas.delete("all")
-        for rec in self.barChart.GetRectanglePositions(): 
+        rectangles = self.barChart.GetRectanglePositions()
+        for rec in rectangles: 
             x1 = rec.leftBottom.X
             y1 = self.canvasHeight - rec.leftBottom.Y
             
@@ -235,6 +236,14 @@ class BarChartCanvas:
 
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black")
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
+        
+        xAxisHeight = self.canvasHeight - rectangles[0].leftBottom.Y
+        self.canvas.create_line(20, xAxisHeight, rectangles[-1].rightTop.X+10, xAxisHeight, fill="black", width=1)
+
+        highestRectangleHeight = max([rec.rightTop.Y for rec in rectangles])
+        self.canvas.create_line(20, xAxisHeight, 20, self.canvasHeight - (highestRectangleHeight+10), fill="black", width=1)
+        self.canvas.create_text(10, self.canvasHeight - highestRectangleHeight,text=str(int(highestRectangleHeight)))
+
     
     @staticmethod
     def _isNear(val1, val2, tolerance=5):
