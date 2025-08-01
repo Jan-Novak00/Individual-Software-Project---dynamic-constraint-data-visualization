@@ -244,7 +244,7 @@ class BarChartCanvas:
 
         highestRectangleHeight = max([rec.rightTop.Y for rec in rectangles])
         self.canvas.create_line(20, xAxisHeight, 20, self.canvasHeight - (highestRectangleHeight+10), fill="black", width=1)
-        self.canvas.create_text(10, self.canvasHeight - highestRectangleHeight,text=str(int(highestRectangleHeight)))
+        self.canvas.create_text(10, self.canvasHeight - highestRectangleHeight,text=str(int(highestRectangleHeight-rectangles[0].leftBottom.Y)))
 
     
     @staticmethod
