@@ -171,6 +171,9 @@ class BarChartSolver:
     def GetSpacing(self):
         return self.variableBarChart.spacing.value()
     
+    def GetWidth(self):
+        return self.variableBarChart.width.value()
+    
     def ChangeWidth(self, newWidth: int):
         self.solver.suggestValue(self.variableBarChart.width, newWidth)
         self.solver.updateVariables()
@@ -194,6 +197,7 @@ class BarChartSolver:
 class BarChartCanvas:
     def __init__(self, initialHeights: list[int], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int):
         self.canvasHeight = canvasHeight
+        self.canvasWidth = canvasWidth
         self.barChart = BarChartSolver(initialWidth, initialHeights, initialSpacing)
         
         self.root = tk.Tk()
@@ -311,7 +315,7 @@ class BarChartCanvas:
 
         if self.dragEdge == "right":
             newWidth = abs(event.x - self.originalLeftX)
-            if newWidth > 10:
+            if newWidth > 10 and rectangles[-1].leftBottom.X+newWidth < self.canvasWidth:
                 self.barChart.ChangeWidth(newWidth)
         elif self.dragEdge == "top":
             rec = rectangles[self.dragIndex]
@@ -322,7 +326,8 @@ class BarChartCanvas:
         elif self.dragEdge == "left" and self.dragIndex > 0:
             dx = event.x - self.dragStart.X
             newSpacing = self.originalSpacing + dx
-            if newSpacing > 0:
+            totalNewWidth = len(rectangles)*self.barChart.GetWidth()+(len(rectangles)-1)*newSpacing
+            if newSpacing > 0 and totalNewWidth < self.canvasWidth:
                 self.barChart.ChangeSpacing(newSpacing)
         
         self._drawRectangles()
