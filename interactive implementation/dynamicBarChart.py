@@ -195,10 +195,10 @@ class BarChartSolver:
 
 
 class BarChartCanvas:
-    def __init__(self, initialHeights: list[int], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int):
+    def __init__(self, initialHeights: list[int], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int, xCoordinate: int = 0, yCoordinate: int = 20):
         self.canvasHeight = canvasHeight
         self.canvasWidth = canvasWidth
-        self.barChart = BarChartSolver(initialWidth, initialHeights, initialSpacing)
+        self.barChart = BarChartSolver(initialWidth, initialHeights, initialSpacing, xCoordinate, yCoordinate)
         
         self.root = tk.Tk()
         self.canvas = tk.Canvas(self.root, width=canvasWidth, height=canvasHeight, bg="white")
@@ -234,6 +234,7 @@ class BarChartCanvas:
             y2 = self.canvasHeight - rec.rightTop.Y
 
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black")
+            self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
     
     @staticmethod
     def _isNear(val1, val2, tolerance=5):
