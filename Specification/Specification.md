@@ -75,7 +75,7 @@ Main components:
 
 ### 2.2 Main Functions
 - creation of several types of plots from input data
-	- such as bar chart, boxplot or candlestick chart
+	- such as bar chart or candlestick chart
 - direct plot manipulation
 	- such as bar height, axis scale
 - direct data manipulation via created plot
@@ -114,7 +114,7 @@ The user can save both the plot and the data; the output will consist of a stand
 The user inputs data they desire to visualize. Then they select the plot type they want to use, axis units, and using a text dialog or by clicking on the screen to define the plot dimensions, the graph is automatically generated using constraint solver.
 
 ### 4.2 Plot Types
-Available plot types: (grouped) bar chart, histogram, boxplot, candlestick chart.
+Available plot types: (grouped) bar chart, histogram, candlestick chart.
 
 ### 4.3 Plot Editing
 The user can adjust plot elements by interacting with them (e.g. clicking and draging the side of bar in bar chart will adjust the width of all bars (or change any dimention of any type of plot elements), or by using a cursor they can adjust the spacing of plot elements, or rescale axes).
