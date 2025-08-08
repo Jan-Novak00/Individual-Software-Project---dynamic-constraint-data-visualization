@@ -30,6 +30,8 @@ class ValueRectangle:
     
     def __str__(self):
         return f"{self.name} LB: ({self.leftBottom.X}, {self.leftBottom.Y}), RT: ({self.rightTop.X}, {self.rightTop.Y})"
+    def GetHeight(self):
+        return self.rightTop.Y-self.leftBottom.Y
 
 class VariablePoint2D:
   """
@@ -98,7 +100,7 @@ class VariableRectangle:
     
     def GetAllConstraints(self):
         constraints = [constraint for constraint in self] + [(self.leftBottom.X >= 0) | "required", (self.leftBottom.Y >= 0) | "required", (self.rightTop.X >= 0) | "required", (self.rightTop.Y >= 0) | "required"]
-        print(constraints)
+        #print(constraints)
         return constraints
     
     def Value(self):
@@ -194,7 +196,18 @@ class BarChartSolver:
 
 
 class BarChartCanvas:
-    def __init__(self, initialHeights: list[int], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int, xCoordinate: int = 50, yCoordinate: int = 30):
+    def __init__(self, initialValues: list[float], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int, xCoordinate: int = 50, yCoordinate: int = 30):
+        #rescaling
+        self.realValues = initialValues
+        self.rescaleFactor = 1
+
+        if not (canvasHeight*0.3 <= max(self.realValues) <= canvasHeight*0.8):
+            self.rescaleFactor = canvasHeight*0.8/max(self.realValues)
+        #
+
+        initialHeights = [int(self.rescaleFactor*value) for value in self.realValues]
+      
+        
         self.canvasHeight = canvasHeight
         self.canvasWidth = canvasWidth
         self.barChart = BarChartSolver(initialWidth, initialHeights, initialSpacing, xCoordinate, yCoordinate)
@@ -213,7 +226,6 @@ class BarChartCanvas:
 
 
         self._drawRectangles()
-        self._report()
 
         self.canvas.bind("<Button-1>", self.on_mouse_down)
         self.canvas.bind("<B1-Motion>", self.on_mouse_move)
@@ -223,10 +235,10 @@ class BarChartCanvas:
     def _report(self):
         print(f"dragEdge: {self.dragEdge}, dragStart: {self.dragStart}, dragIndex: {self.dragIndex}, originalLeftX: {self.originalLeftX}, originalSpacing: {self.originalSpacing}, rightEdgeCursorOffset: {self.rightEdgeCursorOffset}")
     
-    
 
-        
-
+    @staticmethod
+    def _ceilToNearestTen(number: int):
+        return ((number // 10) + 1) * 10
 
     def _drawAxes(self, maximumValue: int, xAxisHeight: int, leftCornerXAxis: int):
         def _divideIntervalFromZeroTo(number: int, parts: int):
@@ -236,7 +248,7 @@ class BarChartCanvas:
         xAxisY = self.canvasHeight - xAxisHeight
 
 
-        topNumber = ((maximumValue) // 10) * 10  
+        topNumber = self._ceilToNearestTen(maximumValue) 
 
         marks = _divideIntervalFromZeroTo(topNumber, 5)
 
@@ -247,7 +259,7 @@ class BarChartCanvas:
         for mark in marks:
             y = xAxisY - mark
             self.canvas.create_line(35, y, 40, y, fill="black")  
-            self.canvas.create_text(30, y, text=str(mark), anchor="e")  
+            self.canvas.create_text(30, y, text=f"{(mark/self.rescaleFactor):.2g}", anchor="e")  
 
     
     def _drawRectangles(self):
@@ -364,9 +376,7 @@ class BarChartCanvas:
             newHeight = self.originalHeight + dy
             if newHeight > 10:
                 self.barChart.ChangeHeight(self.dragIndex, newHeight)
-                print(newHeight)
-            self._report()
-
+            print([rec.GetHeight()/self.rescaleFactor for rec in rectangles])
         elif self.dragEdge == "left" and self.dragIndex > 0:
             dx = event.x - self.dragStart.X
             newSpacing = self.originalSpacing + dx
@@ -401,7 +411,7 @@ class BarChartCanvas:
 
 if __name__ == "__main__":
     #initial_heights = list(map(int, np.random.poisson(50, 200)))
-    initial_heights = [60, 20 ,70] 
+    initial_heights = [0.017, 0.06, 0.09] 
     initial_width = 20
     initial_spacing = 10
     canvas_width = 1000
