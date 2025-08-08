@@ -213,8 +213,16 @@ class BarChartCanvas:
         self.barChart = BarChartSolver(initialWidth, initialHeights, initialSpacing, xCoordinate, yCoordinate)
         
         self.root = tk.Tk()
-        self.canvas = tk.Canvas(self.root, width=canvasWidth, height=canvasHeight, bg="white")
+        self.frame = tk.Frame(self.root)
+        self.frame.pack()
+
+        self.canvas = tk.Canvas(self.frame, width=canvasWidth, height=canvasHeight, bg="white")
         self.canvas.pack()
+
+        self.dataWindow = tk.Text(self.frame, height=5, width=40)
+        self.dataWindow.pack()
+
+        self._writeValues()
 
         self.dragEdge = None
         self.dragStart = ValuePoint2D(0,0)
@@ -287,6 +295,16 @@ class BarChartCanvas:
         #self.canvas.create_line(20, xAxisHeight, 20, self.canvasHeight - (highestRectangleHeight+10), fill="black", width=1)
         #self.canvas.create_text(10, self.canvasHeight - highestRectangleHeight,text=str(int(highestRectangleHeight-rectangles[0].leftBottom.Y)))
         self._drawAxes(highestRectangleHeight, rectangles[0].leftBottom.Y, rectangles[-1].rightTop.X)    
+
+    def _writeValues(self):
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+        text = ""
+        for rec in self.barChart.GetRectanglePositions():
+            text += f"{(rec.GetHeight()/self.rescaleFactor):.4g}\n"
+
+        self.dataWindow.insert("1.0", text)
+        self.dataWindow.config(state="disabled")
 
     
     @staticmethod
@@ -377,6 +395,7 @@ class BarChartCanvas:
             if newHeight > 10:
                 self.barChart.ChangeHeight(self.dragIndex, newHeight)
             print([rec.GetHeight()/self.rescaleFactor for rec in rectangles])
+            self._writeValues()
         elif self.dragEdge == "left" and self.dragIndex > 0:
             dx = event.x - self.dragStart.X
             newSpacing = self.originalSpacing + dx
