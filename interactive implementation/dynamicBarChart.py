@@ -194,7 +194,7 @@ class BarChartSolver:
 
 
 class BarChartCanvas:
-    def __init__(self, initialHeights: list[int], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int, xCoordinate: int = 30, yCoordinate: int = 20):
+    def __init__(self, initialHeights: list[int], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int, xCoordinate: int = 50, yCoordinate: int = 30):
         self.canvasHeight = canvasHeight
         self.canvasWidth = canvasWidth
         self.barChart = BarChartSolver(initialWidth, initialHeights, initialSpacing, xCoordinate, yCoordinate)
@@ -223,6 +223,33 @@ class BarChartCanvas:
     def _report(self):
         print(f"dragEdge: {self.dragEdge}, dragStart: {self.dragStart}, dragIndex: {self.dragIndex}, originalLeftX: {self.originalLeftX}, originalSpacing: {self.originalSpacing}, rightEdgeCursorOffset: {self.rightEdgeCursorOffset}")
     
+    
+
+        
+
+
+    def _drawAxes(self, maximumValue: int, xAxisHeight: int, leftCornerXAxis: int):
+        def _divideIntervalFromZeroTo(number: int, parts: int):
+            step = number // (parts - 1) 
+            return [i * step for i in range(parts)]
+        
+        xAxisY = self.canvasHeight - xAxisHeight
+
+
+        topNumber = ((maximumValue) // 10) * 10  
+
+        marks = _divideIntervalFromZeroTo(topNumber, 5)
+
+        self.canvas.create_line(40, xAxisY, leftCornerXAxis + 10, xAxisY, fill="black", width=1)  
+        self.canvas.create_line(40, xAxisY, 40, xAxisY - topNumber, fill="black", width=1)       
+
+
+        for mark in marks:
+            y = xAxisY - mark
+            self.canvas.create_line(35, y, 40, y, fill="black")  
+            self.canvas.create_text(30, y, text=str(mark), anchor="e")  
+
+    
     def _drawRectangles(self):
         """
         Draws all rectangles on canvas.
@@ -239,12 +266,15 @@ class BarChartCanvas:
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black")
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
         
-        xAxisHeight = self.canvasHeight - rectangles[0].leftBottom.Y
-        self.canvas.create_line(20, xAxisHeight, rectangles[-1].rightTop.X+10, xAxisHeight, fill="black", width=1)
+        
+
+        #xAxisHeight = self.canvasHeight - rectangles[0].leftBottom.Y
+        #self.canvas.create_line(20, xAxisHeight, rectangles[-1].rightTop.X+10, xAxisHeight, fill="black", width=1)
 
         highestRectangleHeight = max([rec.rightTop.Y for rec in rectangles])
-        self.canvas.create_line(20, xAxisHeight, 20, self.canvasHeight - (highestRectangleHeight+10), fill="black", width=1)
-        self.canvas.create_text(10, self.canvasHeight - highestRectangleHeight,text=str(int(highestRectangleHeight-rectangles[0].leftBottom.Y)))
+        #self.canvas.create_line(20, xAxisHeight, 20, self.canvasHeight - (highestRectangleHeight+10), fill="black", width=1)
+        #self.canvas.create_text(10, self.canvasHeight - highestRectangleHeight,text=str(int(highestRectangleHeight-rectangles[0].leftBottom.Y)))
+        self._drawAxes(highestRectangleHeight, rectangles[0].leftBottom.Y, rectangles[-1].rightTop.X)    
 
     
     @staticmethod
