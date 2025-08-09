@@ -133,7 +133,7 @@ class VariableBarChart:
     def _createRectangleSpacingConstraints(self):
         for index, rec in enumerate(self.rectangles):
             if index != 0:
-                rec.SetSpacingConstraint((self.rectangles[index-1].rightTop.X + self.spacing == rec.leftBottom.X) | "strong")
+                rec.SetSpacingConstraint((self.rectangles[index-1].rightTop.X + self.spacing == rec.leftBottom.X) | "weak")
     
     def ChangeHeight(self, rectangleIndex: int, newHeight: int):
         self.rectangles[rectangleIndex].ChangeHeight(newHeight)
@@ -164,6 +164,7 @@ class BarChartSolver:
 
         for rec in self.variableBarChart.rectangles:
             self.solver.addEditVariable(rec.height, "strong")
+            #self.solver.addEditVariable(rec.rightTop.X, "strong") #****
         
         self.Solve()
     
@@ -176,6 +177,10 @@ class BarChartSolver:
     def GetWidth(self):
         return self.variableBarChart.width.value()
     
+    def ChangeRightX(self, rectangleIndex: int, newX: int):
+        self.solver.suggestValue(self.variableBarChart.rectangles[rectangleIndex].rightTop.X, newX)
+        self.solver.updateVariables()
+        self.rectangleData = self.variableBarChart.Value()
     
     def ChangeWidth(self, newWidth: int):
         self.solver.suggestValue(self.variableBarChart.width, newWidth)
@@ -210,6 +215,8 @@ class BarChartCanvas:
 
 
         initialHeights = [int(self.rescaleFactor*value) for value in self.realValues] # rescaled heights
+
+        self.xCoordinate = xCoordinate
       
         # solver initialisation
         self.canvasHeight = canvasHeight
@@ -427,9 +434,10 @@ class BarChartCanvas:
         rectangles = self.barChart.GetRectanglePositions()
 
         if self.dragEdge == "right":
-            newWidth = abs(event.x - self.originalLeftX)
+            newWidth = (event.x - self.barChart.GetSpacing()*(self.dragIndex)-self.xCoordinate)//(self.dragIndex+1)    #abs(event.x - self.originalLeftX)
             if newWidth > 10:
                 self.barChart.ChangeWidth(newWidth)
+                #self.barChart.ChangeRightX(self.dragIndex,event.x)
 
         elif self.dragEdge == "top":
             dy = self.dragStart.Y - event.y  # rozdíl v y směru (pozor na orientaci)
