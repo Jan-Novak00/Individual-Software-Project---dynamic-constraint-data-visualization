@@ -447,8 +447,9 @@ class BarChartCanvas:
             print([rec.GetHeight()/self.rescaleFactor for rec in rectangles])
             self._writeValues()
         elif self.dragEdge == "left" and self.dragIndex > 0:
-            dx = event.x - self.dragStart.X
-            newSpacing = self.originalSpacing + dx
+            #dx = event.x - self.dragStart.X
+            #newSpacing = self.originalSpacing + dx
+            newSpacing = (event.x - (self.dragIndex)*self.barChart.GetWidth() - self.xCoordinate)//(self.dragIndex)
             if newSpacing > 0:
                 self.barChart.ChangeSpacing(newSpacing)
         
