@@ -5,7 +5,9 @@ from typing import Union
 import warnings
 import functools
 import tkinter as tk
+from tkinter import simpledialog
 import numpy as np
+from PIL import Image
 
 
 class ValuePoint2D:
@@ -196,22 +198,25 @@ class BarChartSolver:
 
 
 class BarChartCanvas:
-    def __init__(self, initialValues: list[float], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int, xCoordinate: int = 50, yCoordinate: int = 30):
-        #rescaling
+    def __init__(self, initialValues: list[float], initialWidth: int, initialSpacing: int, canvasWidth: int, canvasHeight: int, graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30):
+        
+        self.title = graphTitle
+        # rescaling of input data
         self.realValues = initialValues
         self.rescaleFactor = 1
 
         if not (canvasHeight*0.3 <= max(self.realValues) <= canvasHeight*0.8):
             self.rescaleFactor = canvasHeight*0.8/max(self.realValues)
-        #
 
-        initialHeights = [int(self.rescaleFactor*value) for value in self.realValues]
+
+        initialHeights = [int(self.rescaleFactor*value) for value in self.realValues] # rescaled heights
       
-        
+        # solver initialisation
         self.canvasHeight = canvasHeight
         self.canvasWidth = canvasWidth
         self.barChart = BarChartSolver(initialWidth, initialHeights, initialSpacing, xCoordinate, yCoordinate)
         
+        # UI features initialisation
         self.root = tk.Tk()
         self.frame = tk.Frame(self.root)
         self.frame.pack()
@@ -222,8 +227,10 @@ class BarChartCanvas:
         self.dataWindow = tk.Text(self.frame, height=5, width=40)
         self.dataWindow.pack()
 
-        self._writeValues()
-
+        self.saveButton = tk.Button(self.frame, text="Save", command=self.on_saveButton_click)
+        self.saveButton.pack(pady=5)
+        
+        # Fields for event register
         self.dragEdge = None
         self.dragStart = ValuePoint2D(0,0)
         self.dragIndex = None
@@ -233,8 +240,10 @@ class BarChartCanvas:
         self.originalHeight = None
 
 
-        self._drawRectangles()
+        self._drawPlot()
+        self._writeValues()
 
+        # binding methods to mouse events
         self.canvas.bind("<Button-1>", self.on_mouse_down)
         self.canvas.bind("<B1-Motion>", self.on_mouse_move)
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
@@ -249,6 +258,9 @@ class BarChartCanvas:
         return ((number // 10) + 1) * 10
 
     def _drawAxes(self, maximumValue: int, xAxisHeight: int, leftCornerXAxis: int):
+        """
+        Draws axes on the canvas
+        """
         def _divideIntervalFromZeroTo(number: int, parts: int):
             step = number // (parts - 1) 
             return [i * step for i in range(parts)]
@@ -267,14 +279,12 @@ class BarChartCanvas:
         for mark in marks:
             y = xAxisY - mark
             self.canvas.create_line(35, y, 40, y, fill="black")  
-            self.canvas.create_text(30, y, text=f"{(mark/self.rescaleFactor):.2g}", anchor="e")  
-
+            self.canvas.create_text(30, y, text=f"{(mark/self.rescaleFactor):.2g}", anchor="e") 
     
     def _drawRectangles(self):
         """
-        Draws all rectangles on canvas.
+        Draws rectangles on the plot and writes their names under them.
         """
-        self.canvas.delete("all")
         rectangles = self.barChart.GetRectanglePositions()
         for rec in rectangles: 
             x1 = rec.leftBottom.X
@@ -285,25 +295,41 @@ class BarChartCanvas:
 
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black")
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
-        
-        
 
-        #xAxisHeight = self.canvasHeight - rectangles[0].leftBottom.Y
-        #self.canvas.create_line(20, xAxisHeight, rectangles[-1].rightTop.X+10, xAxisHeight, fill="black", width=1)
+    def _writePlotTitle(self):
+        self.canvas.create_text(self.canvasWidth / 2, 20,text=self.title,font=("Arial", 16, "bold"))
 
-        highestRectangleHeight = max([rec.rightTop.Y for rec in rectangles])
-        #self.canvas.create_line(20, xAxisHeight, 20, self.canvasHeight - (highestRectangleHeight+10), fill="black", width=1)
-        #self.canvas.create_text(10, self.canvasHeight - highestRectangleHeight,text=str(int(highestRectangleHeight-rectangles[0].leftBottom.Y)))
+
+    def _drawPlot(self):
+        """
+        Draws rectangles and axes on the plot
+        """
+        self.canvas.delete("all")
+        self._writePlotTitle()
+        rectangles = self.barChart.GetRectanglePositions()
+
+        self._drawRectangles()
+        
+        highestRectangleHeight = max([rec.rightTop.Y for rec in self.barChart.GetRectanglePositions()])
         self._drawAxes(highestRectangleHeight, rectangles[0].leftBottom.Y, rectangles[-1].rightTop.X)    
 
     def _writeValues(self):
+        """
+        Displays all data for the user and highlights which data is being edited
+        """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
-        text = ""
-        for rec in self.barChart.GetRectanglePositions():
-            text += f"{(rec.GetHeight()/self.rescaleFactor):.4g}\n"
 
-        self.dataWindow.insert("1.0", text)
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        valueEdited = self.dragEdge == "top"
+        rectangles = self.barChart.GetRectanglePositions()
+
+        for i in range(len(rectangles)-1, -1, -1):
+            rec = rectangles[i]
+            if valueEdited and i == self.dragIndex:
+                self.dataWindow.insert("1.0",f"{rec.name} = {(rec.GetHeight()/self.rescaleFactor):.4g}\n", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"{rec.name} = {(rec.GetHeight()/self.rescaleFactor):.4g}\n")
         self.dataWindow.config(state="disabled")
 
     
@@ -342,6 +368,9 @@ class BarChartCanvas:
         return self._isNear(event.y, rightTopYNormalized) and rectangle.leftBottom.X <= event.x <= rectangle.rightTop.X
 
     def _clickedOnRightEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle):
+        """
+        Registers that the user clicked on a right edge of some rectangle
+        """
         self.dragEdge = 'right'
         self.dragStart = ValuePoint2D(event.x, event.y)
         self.dragIndex = rectangleIndex
@@ -351,6 +380,9 @@ class BarChartCanvas:
         self.originalLeftX = rectangle.leftBottom.X
     
     def _clickedOnLeftEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle):
+        """
+        Registers that the user clicked on a left edge of some rectangle
+        """
         self.dragEdge = "left"
         self.dragStart = ValuePoint2D(event.x, event.y)
         self.dragIndex = rectangleIndex
@@ -359,12 +391,19 @@ class BarChartCanvas:
         self.originalSpacing = self.barChart.GetSpacing()
     
     def _clickedOnTopEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle):
+        """
+        Registers that the user clicked on a top edge of some rectangle
+        """
         self.dragEdge = "top"
         self.dragStart = ValuePoint2D(event.x, event.y)
         self.dragIndex = rectangleIndex
         self.originalHeight = rectangle.rightTop.Y - rectangle.leftBottom.Y
     
     def on_mouse_down(self, event):
+        """
+        This method is triggered when the user clicks on canvas.
+        It identifies what the program should do next and registers the event
+        """
         for recIndex, rec in enumerate(self.barChart.GetRectanglePositions()): 
             if self._isNearLeftEdge(event, rec) and recIndex > 0: # change in spacing
                 self._clickedOnLeftEdge(event, recIndex, rec)
@@ -379,6 +418,9 @@ class BarChartCanvas:
                 continue
 
     def on_mouse_move(self, event):
+        """
+        If method on_mouse_down registered an event near to some edge of some rectangle, then this method mekes appropriate changes toi the graph if the user has moved with mouse.
+        """
         if self.dragEdge is None:
             return
         
@@ -386,7 +428,7 @@ class BarChartCanvas:
 
         if self.dragEdge == "right":
             newWidth = abs(event.x - self.originalLeftX)
-            if newWidth > 10 and rectangles[-1].leftBottom.X+newWidth < self.canvasWidth:
+            if newWidth > 10:
                 self.barChart.ChangeWidth(newWidth)
 
         elif self.dragEdge == "top":
@@ -399,13 +441,15 @@ class BarChartCanvas:
         elif self.dragEdge == "left" and self.dragIndex > 0:
             dx = event.x - self.dragStart.X
             newSpacing = self.originalSpacing + dx
-            totalNewWidth = len(rectangles)*self.barChart.GetWidth()+(len(rectangles)-1)*newSpacing
-            if newSpacing > 0 and totalNewWidth < self.canvasWidth:
+            if newSpacing > 0:
                 self.barChart.ChangeSpacing(newSpacing)
         
-        self._drawRectangles()
+        self._drawPlot()
 
     def on_mouse_up(self, event):
+        """
+        Unregisteres the click event
+        """
         self.dragEdge = None
         self.dragStart = ValuePoint2D(0,0)
         self.dragIndex = None
@@ -414,6 +458,9 @@ class BarChartCanvas:
         self.originalSpacing = None
     
     def check_cursor(self,event):
+        """
+        Changes cursor according to its position.
+        """
         for idx, rec in enumerate(self.barChart.GetRectanglePositions()):
             if self._isNearRightEdge(event, rec):
                 self.canvas.config(cursor="sb_h_double_arrow")
@@ -425,18 +472,19 @@ class BarChartCanvas:
                 self.canvas.config(cursor="hand2")
                 return
         self.canvas.config(cursor="arrow")
+    def on_saveButton_click(self):
+        print("Click")
 
     
 
 if __name__ == "__main__":
-    #initial_heights = list(map(int, np.random.poisson(50, 200)))
-    initial_heights = [0.017, 0.06, 0.09] 
+    initial_heights = [1,2,3,4] 
     initial_width = 20
     initial_spacing = 10
     canvas_width = 1000
-    canvas_height = 200
+    canvas_height = 500
 
-    BarChartCanvas(initial_heights, initial_width, initial_spacing, canvas_width, canvas_height)
+    BarChartCanvas(initial_heights, initial_width, initial_spacing, canvas_width, canvas_height, "Test values")
 
 
 
