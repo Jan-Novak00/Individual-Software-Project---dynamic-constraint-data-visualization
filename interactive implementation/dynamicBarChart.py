@@ -101,7 +101,7 @@ class VariableRectangle:
         self.spacingConstraint = spacingConstraint
     
     def GetAllConstraints(self):
-        constraints = [constraint for constraint in self] + [(self.leftBottom.X >= 0) | "required", (self.leftBottom.Y >= 0) | "required", (self.rightTop.X >= 0) | "required", (self.rightTop.Y >= 0) | "required"]
+        constraints = [constraint for constraint in self] + [(self.height >= 0)|"required",(self.leftBottom.X >= 0) | "required", (self.leftBottom.Y >= 0) | "required", (self.rightTop.X >= 0) | "required", (self.rightTop.Y >= 0) | "required"]
         #print(constraints)
         return constraints
     
@@ -122,7 +122,13 @@ class VariableBarChart:
         self.rectangles = [VariableRectangle(self.width, initialHeights[i], f"rectangle_no_{i}") for i in range(len(initialHeights))]
         self._createRectangleSpacingConstraints()
 
-        self.rectangles[0].FixBottomLeftCorner(xCoordinate, yCoordinate)
+        self.origin: VariablePoint2D = VariablePoint2D("origin")
+
+        self.originXCoordinateConstraint : Constraint = (self.origin.X == xCoordinate) | "strong"
+        self.originYCoordinateConstraint : Constraint = (self.origin.Y == yCoordinate) | "strong"
+        self.leftRectangleXCoordinateConstraint : Constraint = (self.rectangles[0].leftBottom.X == self.origin.X + self.spacing) | "required"
+        self.leftRectangleYCoordinateConstraint : Constraint = (self.rectangles[0].leftBottom.Y == self.origin.Y) | "required"
+        #self.rectangles[0].FixBottomLeftCorner(xCoordinate, yCoordinate)
     
     def ChangeWidth(self, width: int):
         self.widthValueConstraint = ((self.width == width) | "strong")
@@ -133,7 +139,7 @@ class VariableBarChart:
     def _createRectangleSpacingConstraints(self):
         for index, rec in enumerate(self.rectangles):
             if index != 0:
-                rec.SetSpacingConstraint((self.rectangles[index-1].rightTop.X + self.spacing == rec.leftBottom.X) | "weak")
+                rec.SetSpacingConstraint((self.rectangles[index-1].rightTop.X + self.spacing == rec.leftBottom.X) | "strong")
     
     def ChangeHeight(self, rectangleIndex: int, newHeight: int):
         self.rectangles[rectangleIndex].ChangeHeight(newHeight)
@@ -146,25 +152,33 @@ class VariableBarChart:
         result = []
         for rec in self.rectangles:
             result.extend(rec.GetAllConstraints())
-        return result + [(self.width >= 0) | "required"] \
+        return result + [(self.width >= 10) | "required"] \
                     + [self.rectangles[i].leftBottom.Y == self.rectangles[i-1].leftBottom.Y for i in range(1,len(self.rectangles))] \
-                    + [self.widthValueConstraint, self.spacingValueConstraint]
+                    + [self.widthValueConstraint, self.spacingValueConstraint] \
+                    + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
     
 class BarChartSolver:
     def __init__(self, width: int, initialHeights: list[int], spacing: int, xCoordinate: int = 0, yCoordinate: int = 0):
+        
         self.solver = Solver()
         self.variableBarChart = VariableBarChart(width, initialHeights, spacing, xCoordinate, yCoordinate)
         self.rectangleData = None
 
-        for constraint in self.variableBarChart.GetAllConstraints():
-            self.solver.addConstraint(constraint)
+        barChartConstraints = set(self.variableBarChart.GetAllConstraints())
         
-        self.solver.addEditVariable(self.variableBarChart.width, "strong")
-        self.solver.addEditVariable(self.variableBarChart.spacing, "strong")
+        
+        for constraint in barChartConstraints:
+            self.solver.addConstraint(constraint)
+
+        self.solver.addEditVariable(self.variableBarChart.width, 1e+07)
+        self.solver.addEditVariable(self.variableBarChart.spacing, 1e+07)
+
 
         for rec in self.variableBarChart.rectangles:
             self.solver.addEditVariable(rec.height, "strong")
-            #self.solver.addEditVariable(rec.rightTop.X, "strong") #****
+        
+        self.solver.addEditVariable(self.variableBarChart.origin.X, "strong")
+        self.solver.addEditVariable(self.variableBarChart.origin.Y, "strong")
         
         self.Solve()
     
@@ -176,6 +190,9 @@ class BarChartSolver:
     
     def GetWidth(self):
         return self.variableBarChart.width.value()
+    
+    def GetOrigin(self):
+        return ValuePoint2D(self.variableBarChart.origin.X.value(),self.variableBarChart.origin.Y.value())
     
     def ChangeRightX(self, rectangleIndex: int, newX: int):
         self.solver.suggestValue(self.variableBarChart.rectangles[rectangleIndex].rightTop.X, newX)
@@ -194,6 +211,12 @@ class BarChartSolver:
     
     def ChangeSpacing(self, newSpacing: int):
         self.solver.suggestValue(self.variableBarChart.spacing, newSpacing)
+        self.solver.updateVariables()
+        self.rectangleData = self.variableBarChart.Value()
+    
+    def ChangeOrigin(self, newX: int, newY: int):
+        self.solver.suggestValue(self.variableBarChart.origin.X, newX)
+        self.solver.suggestValue(self.variableBarChart.origin.Y, newY)
         self.solver.updateVariables()
         self.rectangleData = self.variableBarChart.Value()
     
@@ -246,7 +269,6 @@ class BarChartCanvas:
         self.rightEdgeCursorOffset = None
         self.originalHeight = None
 
-
         self._drawPlot()
         self._writeValues()
 
@@ -278,10 +300,10 @@ class BarChartCanvas:
         topNumber = self._ceilToNearestTen(maximumValue) 
 
         marks = _divideIntervalFromZeroTo(topNumber, 5)
-
-        self.canvas.create_line(40, xAxisY, leftCornerXAxis + 10, xAxisY, fill="black", width=1)  
-        self.canvas.create_line(40, xAxisY, 40, xAxisY - topNumber, fill="black", width=1)       
-
+        origin = self.barChart.GetOrigin()
+      
+        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y, fill="black", width=1)
+        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, origin.X, self.canvasHeight - origin.Y - topNumber, fill="black", width=1)
 
         for mark in marks:
             y = xAxisY - mark
@@ -314,6 +336,8 @@ class BarChartCanvas:
         self.canvas.delete("all")
         self._writePlotTitle()
         rectangles = self.barChart.GetRectanglePositions()
+        for rec in rectangles:
+            print(rec)
 
         self._drawRectangles()
         
@@ -354,7 +378,7 @@ class BarChartCanvas:
         """
         leftBottomYNormalized = self.canvasHeight - rectangle.leftBottom.Y # Canvas coordinates are flipped, "Normalized" values are real y values on the canvas.
         rightTopYNormalized = self.canvasHeight - rectangle.rightTop.Y
-        return self._isNear(event.x, rectangle.rightTop.X) and rightTopYNormalized <= event.y <= leftBottomYNormalized
+        return self._isNear(event.x, rectangle.rightTop.X,3) and rightTopYNormalized <= event.y <= leftBottomYNormalized
     
     def _isNearLeftEdge(self, event, rectangle: ValueRectangle):
         """
@@ -363,7 +387,7 @@ class BarChartCanvas:
         """
         leftBottomYNormalized = self.canvasHeight - rectangle.leftBottom.Y
         rightTopYNormalized = self.canvasHeight - rectangle.rightTop.Y
-        return self._isNear(event.x, rectangle.leftBottom.X) and rightTopYNormalized <= event.y <= leftBottomYNormalized
+        return self._isNear(event.x, rectangle.leftBottom.X, 10) and rightTopYNormalized <= event.y <= leftBottomYNormalized
 
 
     def _isNearTopEdge(self, event, rectangle: ValueRectangle):
@@ -434,22 +458,19 @@ class BarChartCanvas:
         rectangles = self.barChart.GetRectanglePositions()
 
         if self.dragEdge == "right":
-            newWidth = (event.x - self.barChart.GetSpacing()*(self.dragIndex)-self.xCoordinate)//(self.dragIndex+1)    #abs(event.x - self.originalLeftX)
+            newWidth = (event.x - self.barChart.GetSpacing()*(self.dragIndex+1)-self.xCoordinate)//(self.dragIndex+1) 
             if newWidth > 10:
                 self.barChart.ChangeWidth(newWidth)
-                #self.barChart.ChangeRightX(self.dragIndex,event.x)
 
         elif self.dragEdge == "top":
             dy = self.dragStart.Y - event.y  # rozdíl v y směru (pozor na orientaci)
             newHeight = self.originalHeight + dy
-            if newHeight > 10:
+            if newHeight > 0:
                 self.barChart.ChangeHeight(self.dragIndex, newHeight)
             print([rec.GetHeight()/self.rescaleFactor for rec in rectangles])
             self._writeValues()
         elif self.dragEdge == "left" and self.dragIndex > 0:
-            #dx = event.x - self.dragStart.X
-            #newSpacing = self.originalSpacing + dx
-            newSpacing = (event.x - (self.dragIndex)*self.barChart.GetWidth() - self.xCoordinate)//(self.dragIndex)
+            newSpacing = (event.x - (self.dragIndex)*self.barChart.GetWidth() - self.xCoordinate)//(self.dragIndex+1)
             if newSpacing > 0:
                 self.barChart.ChangeSpacing(newSpacing)
         
@@ -471,14 +492,14 @@ class BarChartCanvas:
         Changes cursor according to its position.
         """
         for idx, rec in enumerate(self.barChart.GetRectanglePositions()):
-            if self._isNearRightEdge(event, rec):
+            if idx > 0 and self._isNearLeftEdge(event, rec):
+                self.canvas.config(cursor="hand2")
+                return
+            elif self._isNearRightEdge(event, rec):
                 self.canvas.config(cursor="sb_h_double_arrow")
                 return
             elif self._isNearTopEdge(event, rec):
                 self.canvas.config(cursor="sb_v_double_arrow")
-                return
-            elif idx > 0 and self._isNearLeftEdge(event, rec):
-                self.canvas.config(cursor="hand2")
                 return
         self.canvas.config(cursor="arrow")
     def on_saveButton_click(self):
@@ -487,11 +508,12 @@ class BarChartCanvas:
     
 
 if __name__ == "__main__":
-    initial_heights = [1,2,3,4] 
+    initial_heights = [50,60,70]
     initial_width = 20
     initial_spacing = 10
     canvas_width = 1000
     canvas_height = 500
+    print("alive 0")
 
     BarChartCanvas(initial_heights, initial_width, initial_spacing, canvas_width, canvas_height, "Test values")
 
