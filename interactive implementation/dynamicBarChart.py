@@ -293,9 +293,6 @@ class BarChartCanvas:
         def _divideIntervalFromZeroTo(number: int, parts: int):
             step = number // (parts - 1) 
             return [i * step for i in range(parts)]
-        
-        xAxisY = self.canvasHeight - xAxisHeight
-
 
         topNumber = self._ceilToNearestTen(maximumValue) 
 
@@ -306,9 +303,9 @@ class BarChartCanvas:
         self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, origin.X, self.canvasHeight - origin.Y - topNumber, fill="black", width=1)
 
         for mark in marks:
-            y = xAxisY - mark
-            self.canvas.create_line(35, y, 40, y, fill="black")  
-            self.canvas.create_text(30, y, text=f"{(mark/self.rescaleFactor):.2g}", anchor="e") 
+            y = self.canvasHeight - origin.Y - mark
+            self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")  
+            self.canvas.create_text(origin.X - 10, y, text=f"{(mark/self.rescaleFactor):.2g}", anchor="e") 
     
     def _drawRectangles(self):
         """
@@ -340,8 +337,10 @@ class BarChartCanvas:
             print(rec)
 
         self._drawRectangles()
+
+        originY = self.barChart.GetOrigin().Y
         
-        highestRectangleHeight = max([rec.rightTop.Y for rec in self.barChart.GetRectanglePositions()])
+        highestRectangleHeight = max([rec.rightTop.Y - originY for rec in self.barChart.GetRectanglePositions()])
         self._drawAxes(highestRectangleHeight, rectangles[0].leftBottom.Y, rectangles[-1].rightTop.X)    
 
     def _writeValues(self):
@@ -397,6 +396,15 @@ class BarChartCanvas:
         """
         rightTopYNormalized = self.canvasHeight - rectangle.rightTop.Y
         return self._isNear(event.y, rightTopYNormalized) and rectangle.leftBottom.X <= event.x <= rectangle.rightTop.X
+    
+    def _isNearOrigin(self, event):
+        origin = self.barChart.GetOrigin()
+        return self._isNear(event.x, origin.X) and self._isNear(event.y, self.canvasHeight - origin.Y)
+    
+    def _clickedOnOrigin(self, event):
+        
+        self.dragEdge = "origin"
+        
 
     def _clickedOnRightEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle):
         """
@@ -445,6 +453,8 @@ class BarChartCanvas:
             elif self._isNearTopEdge(event, rec): # change in height
                 self._clickedOnTopEdge(event, recIndex, rec)
                 return
+            elif self._isNearOrigin(event):
+                self._clickedOnOrigin(event)
             else:
                 continue
 
@@ -456,9 +466,10 @@ class BarChartCanvas:
             return
         
         rectangles = self.barChart.GetRectanglePositions()
+        origin = self.barChart.GetOrigin()
 
         if self.dragEdge == "right":
-            newWidth = (event.x - self.barChart.GetSpacing()*(self.dragIndex+1)-self.xCoordinate)//(self.dragIndex+1) 
+            newWidth = (event.x - self.barChart.GetSpacing()*(self.dragIndex+1)-origin.X)//(self.dragIndex+1) 
             if newWidth > 10:
                 self.barChart.ChangeWidth(newWidth)
 
@@ -470,9 +481,11 @@ class BarChartCanvas:
             print([rec.GetHeight()/self.rescaleFactor for rec in rectangles])
             self._writeValues()
         elif self.dragEdge == "left" and self.dragIndex > 0:
-            newSpacing = (event.x - (self.dragIndex)*self.barChart.GetWidth() - self.xCoordinate)//(self.dragIndex+1)
+            newSpacing = (event.x - (self.dragIndex)*self.barChart.GetWidth() - origin.X)//(self.dragIndex+1)
             if newSpacing > 0:
                 self.barChart.ChangeSpacing(newSpacing)
+        elif self.dragEdge == "origin":
+            self.barChart.ChangeOrigin(event.x, self.canvasHeight - event.y)
         
         self._drawPlot()
 
@@ -500,6 +513,9 @@ class BarChartCanvas:
                 return
             elif self._isNearTopEdge(event, rec):
                 self.canvas.config(cursor="sb_v_double_arrow")
+                return
+            elif self._isNearOrigin(event):
+                self.canvas.config(cursor="fleur")
                 return
         self.canvas.config(cursor="arrow")
     def on_saveButton_click(self):
