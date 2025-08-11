@@ -72,7 +72,6 @@ class VariableRectangle:
         constraints = [self.heightConstraint]
         if self.spacingConstraint is not None:
             constraints.append(self.spacingConstraint)
-            print("added",self.spacingConstraint)
         if self.bottomLeftXPositionConstraint is not None:
             constraints.append(self.bottomLeftXPositionConstraint)
         if self.bottomLeftYPositionConstraint is not None:
@@ -121,10 +120,11 @@ class VariableRectangleGroup:
     def GetAllConstraints(self):
         result = []
         for rec in self.rectangles:
-            result.extend(rec.GetAllConstraints())
+            constraints = rec.GetAllConstraints()
+            result += constraints
         return result \
                     + [self.rectangles[i-1].leftBottom.Y == self.rectangles[i].leftBottom.Y for i in range(1,len(self.rectangles))] \
-                    + [] if self.spacingConstraint == None else [self.spacingConstraint]
+                    + ([] if self.spacingConstraint == None else [self.spacingConstraint])
     
     def Value(self):
         return tuple([rec.Value() for rec in self.rectangles])
@@ -145,7 +145,6 @@ class VariableBarChart:
 
         self.spacing = Variable("global_spacing")
         self.spacingValueConstraint : Constraint = ((self.spacing == spacing) | "strong")
-        print("!!!!!!!!!!!!!!!!!!!!!", self.spacingValueConstraint)
         
 
         self.groups = [VariableRectangleGroup(self.width,heights,self.innerSpacing,f"group_{i}") for i, heights in enumerate(initialHeights)]
@@ -171,10 +170,10 @@ class VariableBarChart:
 
     def GetAllConstraints(self):
         result = []
-        for rec in self.groups:
-            result.extend(rec.GetAllConstraints())
+        for group in self.groups:
+            result.extend(group.GetAllConstraints())
         return result + [(self.width >= 10) | "required"] \
-                    + [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "strong" for i in range(1,len(self.groups))] \
+                    + [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))] \
                     + [self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint] \
                     + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
     
@@ -245,7 +244,7 @@ class BarChartSolver:
     def Solve(self):
         self.solver.updateVariables()
         self.rectangleData = self.variableBarChart.Value()
-        print(self.solver.dumps())
+        #print(self.solver.dumps())
 
 
 class BarChartCanvas:
@@ -553,16 +552,12 @@ if __name__ == "__main__":
     innerSpacing = 5
     canvas_width = 1000
     canvas_height = 500
-    solver = BarChartSolver(initial_width, initial_heights, initial_spacing, innerSpacing)
+    solver = BarChartSolver(initial_width, initial_heights, initial_spacing, innerSpacing,10,10)
     rectangleData = solver.GetRectangleData()
     for data in rectangleData:
         for d in data:
             print(d)
-    solver.ChangeInnerSpacing(10)
-    rectangleData = solver.GetRectangleData()
-    for data in rectangleData:
-        for d in data:
-            print(d)
+
 
     #BarChartCanvas(initial_heights, initial_width, initial_spacing, canvas_width, canvas_height, "Test values")
 
