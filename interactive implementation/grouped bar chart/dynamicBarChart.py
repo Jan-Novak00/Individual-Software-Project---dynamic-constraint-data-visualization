@@ -179,7 +179,7 @@ class VariableBarChart:
         result = []
         for group in self.groups:
             result.extend(group.GetAllConstraints())
-        return result + [(self.width >= 10) | "required"] \
+        return result + [(self.width >= 10) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required"] \
                     + [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))] \
                     + [self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint] \
                     + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
@@ -233,9 +233,6 @@ class BarChartSolver:
     def GetInnerSpacing(self):
         return self.variableBarChart.innerSpacing.value()
     
-    def ChangeRightX(self, rectangleIndex: int, newX: int):
-        self.solver.suggestValue(self.variableBarChart.groups[rectangleIndex].rightTop.X, newX)
-        self.Solve()
     
     def ChangeWidth(self, newWidth: int):
         self.solver.suggestValue(self.variableBarChart.width, newWidth)
@@ -327,7 +324,7 @@ class BarChartCanvas:
 
 
         self._drawPlot()
-        #self._writeValues() #NOT DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self._writeValues() 
 
         # binding methods to mouse events
         self.canvas.bind("<Button-1>", self.on_mouse_down)
@@ -356,7 +353,7 @@ class BarChartCanvas:
     def _ceilToNearestTen(number: int):
         return ((number // 10) + 1) * 10
 
-    def _drawAxes(self, maximumValue: int, leftCornerXAxis: int):  #done **********************
+    def _drawAxes(self, maximumValue: int, leftCornerXAxis: int):  
         """
         Draws axes on the canvas
         """
@@ -374,10 +371,14 @@ class BarChartCanvas:
 
         for mark in marks:
             y = self.canvasHeight - origin.Y - mark
-            self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")  
-            self.canvas.create_text(origin.X - 10, y, text=f"{(mark/self.rescaleFactor):.2g}", anchor="e") 
+            self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")
+
+            trueValue = mark/self.rescaleFactor
+            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{trueValue}"
+
+            self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e") 
     
-    def _drawRectangles(self): #done **********************
+    def _drawRectangles(self): 
         """
         Draws rectangles on the plot and writes their names under them.
         """
@@ -392,11 +393,11 @@ class BarChartCanvas:
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black")
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
 
-    def _writePlotTitle(self):  #done **********************
+    def _writePlotTitle(self):  
         self.canvas.create_text(self.canvasWidth / 2, 20,text=self.title,font=("Arial", 16, "bold"))
 
 
-    def _drawPlot(self): #done **********************
+    def _drawPlot(self):
         """
         Draws rectangles and axes on the plot
         """
@@ -413,7 +414,7 @@ class BarChartCanvas:
         highestRectangleHeight = max([rec.rightTop.Y - originY for rec in rectangles])
         self._drawAxes(highestRectangleHeight, rectangles[-1].rightTop.X)    
 
-    def _writeValues(self): #NOT DONE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    def _writeValues(self):
         """
         Displays all data for the user and highlights which data is being edited
         """
@@ -422,14 +423,22 @@ class BarChartCanvas:
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
         valueEdited = self.dragEdge == "top"
-        rectangles = self.barChart.GetRectangleData()
+        rectangles = self.barChart.GetRectangleDataAsList()
 
         for i in range(len(rectangles)-1, -1, -1):
             rec = rectangles[i]
-            if valueEdited and i == self.dragIndex:
-                self.dataWindow.insert("1.0",f"{rec.name} = {(rec.GetHeight()/self.rescaleFactor):.4g}\n", "changing_Value")
+            trueValue = rec.GetHeight()/self.rescaleFactor
+            valueString = ""
+            if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
+                valueString = f"{trueValue:.4g}"
             else:
-                self.dataWindow.insert("1.0",f"{rec.name} = {(rec.GetHeight()/self.rescaleFactor):.4g}\n")
+                valueString = str(trueValue)
+
+
+            if valueEdited and i == self.dragIndex:
+                self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n")
         self.dataWindow.config(state="disabled")
 
     
@@ -485,7 +494,7 @@ class BarChartCanvas:
         self.rightEdgeCursorOffset = event.x - rectangle.rightTop.X
         self.originalLeftX = rectangle.leftBottom.X
     
-    def _clickedOnLeftEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle): #done ******************************************
+    def _clickedOnLeftEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle): 
         """
         Registers that the user clicked on a left edge of some rectangle
         """
@@ -513,7 +522,7 @@ class BarChartCanvas:
         It identifies what the program should do next and registers the event
         """
         for recIndex, rec in enumerate(self.barChart.GetRectangleDataAsList()):
-            if self._isNearLeftEdge(event, rec) and recIndex > 0: # change in spacing
+            if self._isNearLeftEdge(event, rec): # change in spacing
                 self._clickedOnLeftEdge(event, recIndex, rec)
                 return
             elif self._isNearRightEdge(event, rec): # change in width
@@ -538,14 +547,13 @@ class BarChartCanvas:
         groups = self.barChart.GetRectangleData()
         origin = self.barChart.GetOrigin()
 
-        groupDragIndex = self._indexToGroupIndex(self.dragIndex)
-        groupIndex, rectangleInGroupIndex = groupDragIndex[0], groupDragIndex[1]
+        if self.dragIndex != None:
+            groupDragIndex = self._indexToGroupIndex(self.dragIndex)
+            groupIndex, rectangleInGroupIndex = groupDragIndex[0], groupDragIndex[1]
 
         if self.dragEdge == "right":
             print("attempt to change width")
-            newWidth = (event.x - self.barChart.GetSpacing()*(groupIndex+1) - rectangleInGroupIndex*self.barChart.GetInnerSpacing() - sum([self.barChart.GetInnerSpacing()*(len(groups[i])-1) for i in range(0,groupIndex)]) - origin.X)//(self.dragIndex+1)  #(event.x - self.barChart.GetSpacing()*(self.dragIndex+1)-origin.X)//(self.dragIndex+1) #recalculate
-            if newWidth > 10:
-                self.barChart.ChangeWidth(newWidth)
+            newWidth = (event.x - self.barChart.GetSpacing()*(groupIndex+1) - rectangleInGroupIndex*self.barChart.GetInnerSpacing() - sum([self.barChart.GetInnerSpacing()*(len(groups[i])-1) for i in range(0,groupIndex)]) - origin.X)//(self.dragIndex+1)
 
         elif self.dragEdge == "top":
             print("attempt to change height")
@@ -553,18 +561,20 @@ class BarChartCanvas:
             newHeight = self.originalHeight + dy
             if newHeight > 0:
                 self.barChart.ChangeHeight(groupIndex, rectangleInGroupIndex, newHeight)
-            #print([rec.GetHeight()/self.rescaleFactor for rec in rectangles])
-            #self._writeValues()
+            self._writeValues()
 
-        elif self.dragEdge == "leftMost" and self.dragIndex > 0:
+        elif self.dragEdge == "leftMost":
             print("attempt to change outer spacing")
-            newSpacing = (event.x - sum([groups[i][-1].rightTop.X - groups[i][0].leftBottom.X for i in range(0,groupIndex)]) - origin.X) // (1+groupIndex)  #(event.x - (self.dragIndex)*self.barChart.GetWidth() - origin.X)//(self.dragIndex+1)
+            if self.dragIndex == 0:
+                newSpacing = event.x - origin.X
+            else:
+                newSpacing = (event.x - sum([groups[i][-1].rightTop.X - groups[i][0].leftBottom.X for i in range(0,groupIndex)]) - origin.X) // (1+groupIndex)  
             if newSpacing > 0:
                 self.barChart.ChangeSpacing(newSpacing)
         
         elif self.dragEdge == "leftMiddle" and rectangleInGroupIndex > 0:
             print("attempt to change inner spacing")
-            newInnerSpacing = (event.x - self.dragIndex*self.barChart.GetWidth() - (1+groupIndex)*self.barChart.GetInnerSpacing() - origin.X) // (sum([(len(groups[k])-1) for k in range(0,groupIndex)])+rectangleInGroupIndex)
+            newInnerSpacing = (event.x - self.dragIndex*self.barChart.GetWidth() - (1+groupIndex)*self.barChart.GetSpacing() - origin.X) // (sum([(len(groups[k])-1) for k in range(0,groupIndex)])+rectangleInGroupIndex)
             if newInnerSpacing > 0:
                 self.barChart.ChangeInnerSpacing(newInnerSpacing)
 
@@ -589,7 +599,7 @@ class BarChartCanvas:
         Changes cursor according to its position.
         """
         for idx, rec in enumerate(self.barChart.GetRectangleDataAsList()):
-            if idx > 0 and self._isNearLeftEdge(event, rec):
+            if self._isNearLeftEdge(event, rec):
                 self.canvas.config(cursor="hand2")
                 return
             elif self._isNearRightEdge(event, rec):
@@ -613,7 +623,7 @@ if __name__ == "__main__":
     initial_spacing = 100
     innerSpacing = 5
     canvas_width = 1000
-    canvas_height = 500
+    canvas_height = 200
     
 
     BarChartCanvas(initial_heights, initial_width, initial_spacing, innerSpacing, canvas_width, canvas_height, "Test values")
