@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import simpledialog
 import numpy as np
 from PIL import Image
-
+from tkinter import colorchooser
 
 class ValuePoint2D:
     """
@@ -164,6 +164,8 @@ class VariableBarChart:
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
 
+    def ChangeColor(self, groupIndex: int, rectangleIndex: int, color: str):
+        self.groups[groupIndex].rectangles[rectangleIndex].color = color
     
     
     def _createGroupSpacingConstraints(self):
@@ -255,6 +257,10 @@ class BarChartSolver:
         self.solver.suggestValue(self.variableBarChart.origin.Y, newY)
         self.Solve()
     
+    def ChangeColor(self, groupIndex: int, rectangleIndex: int, newColor: str):
+        self.variableBarChart.ChangeColor(groupIndex,rectangleIndex, newColor)
+        self.rectangleData = self.variableBarChart.Value()
+    
     def Solve(self):
         self.solver.updateVariables()
         self.rectangleData = self.variableBarChart.Value()
@@ -331,6 +337,7 @@ class BarChartCanvas:
         self.canvas.bind("<B1-Motion>", self.on_mouse_move)
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
         self.canvas.bind("<Motion>", self.check_cursor)
+        self.canvas.bind("<Double-Button-1>", self.on_double_click)
         self.root.mainloop()
     
     def _report(self):
@@ -389,7 +396,7 @@ class BarChartCanvas:
             
             x2 = rec.rightTop.X
             y2 = self.canvasHeight - rec.rightTop.Y
-
+            print(rec.color)
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black")
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
 
@@ -478,7 +485,14 @@ class BarChartCanvas:
     def _isNearOrigin(self, event):
         origin = self.barChart.GetOrigin()
         return self._isNear(event.x, origin.X) and self._isNear(event.y, self.canvasHeight - origin.Y)
-    
+
+    def _isInsideOfRectangle(self,event, rectangle: ValueRectangle):
+        rightTopYNormalized = self.canvasHeight - rectangle.rightTop.Y
+        leftBottomYNormalized = self.canvasHeight - rectangle.leftBottom.Y
+        return (rectangle.leftBottom.X <= event.x <= rectangle.rightTop.X) \
+                and (rightTopYNormalized <= event.y <= leftBottomYNormalized)
+
+
     def _clickedOnOrigin(self, event):
         self.dragEdge = "origin"
         
@@ -515,6 +529,27 @@ class BarChartCanvas:
         self.dragStart = ValuePoint2D(event.x, event.y)
         self.dragIndex = rectangleIndex
         self.originalHeight = rectangle.rightTop.Y - rectangle.leftBottom.Y
+    
+    def _doubleClickedOnRectangle(self, rectangleIndex: int):
+        groupIndex = self._indexToGroupIndex(rectangleIndex)
+        color = colorchooser.askcolor(title="Choose different color")
+        if color[1] == None:
+            return
+        print("Chosen color:", color[1])
+        self.barChart.ChangeColor(groupIndex[0],groupIndex[1],color[1])
+
+    def on_double_click(self, event):
+        changeOcured = False
+        for index, rec in enumerate(self.barChart.GetRectangleDataAsList()):
+            if self._isInsideOfRectangle(event, rec):
+                self._doubleClickedOnRectangle(index)
+                changeOcured = True
+                break
+        if changeOcured:
+             self._drawPlot()
+
+
+
     
     def on_mouse_down(self, event):
         """
@@ -554,6 +589,10 @@ class BarChartCanvas:
         if self.dragEdge == "right":
             print("attempt to change width")
             newWidth = (event.x - self.barChart.GetSpacing()*(groupIndex+1) - rectangleInGroupIndex*self.barChart.GetInnerSpacing() - sum([self.barChart.GetInnerSpacing()*(len(groups[i])-1) for i in range(0,groupIndex)]) - origin.X)//(self.dragIndex+1)
+            if newWidth > 10:
+                self.barChart.ChangeWidth(newWidth)
+
+
 
         elif self.dragEdge == "top":
             print("attempt to change height")
