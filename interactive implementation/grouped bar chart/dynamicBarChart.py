@@ -167,6 +167,9 @@ class VariableBarChart:
     def ChangeColor(self, groupIndex: int, rectangleIndex: int, color: str):
         self.groups[groupIndex].rectangles[rectangleIndex].color = color
     
+    def ChangeName(self, groupIndex: int, rectangleIndex: int, name: str):
+        self.groups[groupIndex].rectangles[rectangleIndex].name = name
+    
     
     def _createGroupSpacingConstraints(self):
         for index in range(1,len(self.groups)):
@@ -235,6 +238,9 @@ class BarChartSolver:
     def GetInnerSpacing(self):
         return self.variableBarChart.innerSpacing.value()
     
+    def GetName(self, groupIndex: int, rectangleIndex: int):
+        return self.variableBarChart.groups[groupIndex].rectangles[rectangleIndex].name
+    
     
     def ChangeWidth(self, newWidth: int):
         self.solver.suggestValue(self.variableBarChart.width, newWidth)
@@ -261,10 +267,14 @@ class BarChartSolver:
         self.variableBarChart.ChangeColor(groupIndex,rectangleIndex, newColor)
         self.rectangleData = self.variableBarChart.Value()
     
+    def ChangeName(self,groupIndex: int, rectangleIndex: int, newColor: str):
+        self.variableBarChart.ChangeName(groupIndex,rectangleIndex, newColor)
+        self.rectangleData = self.variableBarChart.Value()
+    
     def Solve(self):
         self.solver.updateVariables()
         self.rectangleData = self.variableBarChart.Value()
-        #print(self.solver.dumps())
+        
 
 
 class BarChartCanvas:
@@ -272,10 +282,11 @@ class BarChartCanvas:
         
         self.realValues = None
 
-        if all(isinstance(value,float) for value in initialValues):
-            self.realValues = [[value] for value in initialValues]
+        if all(isinstance(value,(float,int)) for value in initialValues):
+            self.realValues = [[value,] for value in initialValues]
         else: 
             self.realValues = initialValues
+
 
         self._createTranslationTable(self.realValues)
 
@@ -318,8 +329,13 @@ class BarChartCanvas:
 
         self.saveButton = tk.Button(self.frame, text="Save", command=self.on_saveButton_click)
         self.saveButton.pack(pady=5)
+
+        self.menu = tk.Menu(self.frame, tearoff=0)
+        self.menu.add_command(label="Change color", command=self._changeColor)
+        self.menu.add_command(label="Change name", command=self._changeName)
         
         # Fields for event register
+        #left button
         self.dragEdge = None
         self.dragStart = ValuePoint2D(0,0)
         self.dragIndex = None
@@ -328,16 +344,18 @@ class BarChartCanvas:
         self.rightEdgeCursorOffset = None
         self.originalHeight = None
 
+        #right button
+        self.rectangleIndexToChange = None
 
         self._drawPlot()
         self._writeValues() 
 
         # binding methods to mouse events
-        self.canvas.bind("<Button-1>", self.on_mouse_down)
+        self.canvas.bind("<Button-1>", self.on_left_down)
         self.canvas.bind("<B1-Motion>", self.on_mouse_move)
-        self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
+        self.canvas.bind("<ButtonRelease-1>", self.on_left_up)
         self.canvas.bind("<Motion>", self.check_cursor)
-        self.canvas.bind("<Double-Button-1>", self.on_double_click)
+        self.canvas.bind("<Button-3>", self.on_right_down)
         self.root.mainloop()
     
     def _report(self):
@@ -381,7 +399,7 @@ class BarChartCanvas:
             self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")
 
             trueValue = mark/self.rescaleFactor
-            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{trueValue}"
+            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
 
             self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e") 
     
@@ -396,7 +414,6 @@ class BarChartCanvas:
             
             x2 = rec.rightTop.X
             y2 = self.canvasHeight - rec.rightTop.Y
-            print(rec.color)
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black")
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
 
@@ -411,9 +428,6 @@ class BarChartCanvas:
         self.canvas.delete("all")
         self._writePlotTitle()
         rectangles = self.barChart.GetRectangleDataAsList()
-        for rec in rectangles:
-            print(rec)
-
         self._drawRectangles()
 
         originY = self.barChart.GetOrigin().Y
@@ -529,29 +543,39 @@ class BarChartCanvas:
         self.dragStart = ValuePoint2D(event.x, event.y)
         self.dragIndex = rectangleIndex
         self.originalHeight = rectangle.rightTop.Y - rectangle.leftBottom.Y
+
+
     
-    def _doubleClickedOnRectangle(self, rectangleIndex: int):
-        groupIndex = self._indexToGroupIndex(rectangleIndex)
+    def _changeColor(self):
+        groupIndex = self._indexToGroupIndex(self.rectangleIndexToChange)
         color = colorchooser.askcolor(title="Choose different color")
         if color[1] == None:
             return
-        print("Chosen color:", color[1])
         self.barChart.ChangeColor(groupIndex[0],groupIndex[1],color[1])
+        self._drawPlot()
+    
+    def _changeName(self):
+        groupIndex = self._indexToGroupIndex(self.rectangleIndexToChange)
+        currentName = self.barChart.GetName(groupIndex[0],groupIndex[1])
+        newName = simpledialog.askstring("Change name", "New name:", initialvalue=currentName)
+        if newName == None:
+            return
+        self.barChart.ChangeName(groupIndex[0], groupIndex[1], newName)
+        self._drawPlot()
+        self._writeValues()
+        pass
 
-    def on_double_click(self, event):
-        changeOcured = False
+    def on_right_down(self, event):
         for index, rec in enumerate(self.barChart.GetRectangleDataAsList()):
             if self._isInsideOfRectangle(event, rec):
-                self._doubleClickedOnRectangle(index)
-                changeOcured = True
+                self.rectangleIndexToChange = index
+                self.menu.post(event.x_root, event.y_root)
                 break
-        if changeOcured:
-             self._drawPlot()
-
+        
 
 
     
-    def on_mouse_down(self, event):
+    def on_left_down(self, event):
         """
         This method is triggered when the user clicks on canvas.
         It identifies what the program should do next and registers the event
@@ -578,7 +602,6 @@ class BarChartCanvas:
         if self.dragEdge is None:
             return
         
-        rectangles = self.barChart.GetRectangleDataAsList()
         groups = self.barChart.GetRectangleData()
         origin = self.barChart.GetOrigin()
 
@@ -587,7 +610,6 @@ class BarChartCanvas:
             groupIndex, rectangleInGroupIndex = groupDragIndex[0], groupDragIndex[1]
 
         if self.dragEdge == "right":
-            print("attempt to change width")
             newWidth = (event.x - self.barChart.GetSpacing()*(groupIndex+1) - rectangleInGroupIndex*self.barChart.GetInnerSpacing() - sum([self.barChart.GetInnerSpacing()*(len(groups[i])-1) for i in range(0,groupIndex)]) - origin.X)//(self.dragIndex+1)
             if newWidth > 10:
                 self.barChart.ChangeWidth(newWidth)
@@ -595,7 +617,6 @@ class BarChartCanvas:
 
 
         elif self.dragEdge == "top":
-            print("attempt to change height")
             dy = self.dragStart.Y - event.y  
             newHeight = self.originalHeight + dy
             if newHeight > 0:
@@ -603,7 +624,6 @@ class BarChartCanvas:
             self._writeValues()
 
         elif self.dragEdge == "leftMost":
-            print("attempt to change outer spacing")
             if self.dragIndex == 0:
                 newSpacing = event.x - origin.X
             else:
@@ -612,7 +632,6 @@ class BarChartCanvas:
                 self.barChart.ChangeSpacing(newSpacing)
         
         elif self.dragEdge == "leftMiddle" and rectangleInGroupIndex > 0:
-            print("attempt to change inner spacing")
             newInnerSpacing = (event.x - self.dragIndex*self.barChart.GetWidth() - (1+groupIndex)*self.barChart.GetSpacing() - origin.X) // (sum([(len(groups[k])-1) for k in range(0,groupIndex)])+rectangleInGroupIndex)
             if newInnerSpacing > 0:
                 self.barChart.ChangeInnerSpacing(newInnerSpacing)
@@ -622,7 +641,7 @@ class BarChartCanvas:
         
         self._drawPlot()
 
-    def on_mouse_up(self, event):
+    def on_left_up(self, event):
         """
         Unregisteres the click event
         """
@@ -657,7 +676,7 @@ class BarChartCanvas:
     
 
 if __name__ == "__main__":
-    initial_heights = [(30,20),(50,70,80),(10,)]
+    initial_heights = [4,8,9,7,3,6]
     initial_width = 20
     initial_spacing = 100
     innerSpacing = 5
