@@ -52,7 +52,7 @@ The inspiration for this tool comes from the Fluid programming language. Our imp
 ### 1.2 Used Technologies
 - Python
 - kiwisolver (implementation of the Cassowary constraint solver)
-- #ToDo (visualisation libraries)
+- tkinter (UI)
 
 ### 1.3 External References
 - kiwisolver documentation
