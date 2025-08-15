@@ -7,8 +7,9 @@ import functools
 import tkinter as tk
 from tkinter import simpledialog
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from tkinter import colorchooser
+import os
 
 class ValuePoint2D:
     """
@@ -277,9 +278,13 @@ class BarChartSolver:
         
 
 
+
 class BarChartCanvas:
     def __init__(self, initialValues:  Union[list[float], list[list[float]]], initialWidth: int, initialSpacing: int, initialInnerSpacing: int, canvasWidth: int, canvasHeight: int, graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30):
         
+        self.picturePathBuffer = None
+        self.dataPathBuffer = None
+
         self.realValues = None
 
         if all(isinstance(value,(float,int)) for value in initialValues):
@@ -293,7 +298,7 @@ class BarChartCanvas:
         self.title = graphTitle
 
         # rescaling of input data
-        self.rescaleFactor = 1
+        self.scaleFactor = 1
 
         maxValue = float("-inf")
         for group in self.realValues:
@@ -302,12 +307,12 @@ class BarChartCanvas:
                 maxValue = maximum
 
         if not (canvasHeight*0.3 <= maxValue <= canvasHeight*0.8):
-            self.rescaleFactor = canvasHeight*0.8/maxValue
+            self.scaleFactor = canvasHeight*0.8/maxValue
 
 
         initialHeights = [] # rescaled heights
         for group in self.realValues:
-            initialHeights.append([int(value*self.rescaleFactor) for value in group])
+            initialHeights.append([int(value*self.scaleFactor) for value in group])
 
         self.xCoordinate = xCoordinate
       
@@ -324,11 +329,14 @@ class BarChartCanvas:
         self.canvas = tk.Canvas(self.frame, width=canvasWidth, height=canvasHeight, bg="white")
         self.canvas.pack()
 
+        self.savePictureButton = tk.Button(self.frame, text="Save as png", command=self.on_savePictureButton_click)
+        self.savePictureButton.pack(pady=5)
+
         self.dataWindow = tk.Text(self.frame, height=5, width=40)
         self.dataWindow.pack()
 
-        self.saveButton = tk.Button(self.frame, text="Save", command=self.on_saveButton_click)
-        self.saveButton.pack(pady=5)
+        self.saveDataButton = tk.Button(self.frame, text="Save data as csv", command=self.on_saveDataButton_click)
+        self.saveDataButton.pack(pady=5)
 
         self.menu = tk.Menu(self.frame, tearoff=0)
         self.menu.add_command(label="Change color", command=self._changeColor)
@@ -378,17 +386,19 @@ class BarChartCanvas:
     def _ceilToNearestTen(number: int):
         return ((number // 10) + 1) * 10
 
+    @staticmethod
+    def _divideIntervalFromZeroTo(number: int, parts: int):
+            step = number // (parts - 1) 
+            return [i * step for i in range(parts)]
+
     def _drawAxes(self, maximumValue: int, leftCornerXAxis: int):  
         """
         Draws axes on the canvas
         """
-        def _divideIntervalFromZeroTo(number: int, parts: int):
-            step = number // (parts - 1) 
-            return [i * step for i in range(parts)]
 
         topNumber = self._ceilToNearestTen(maximumValue) 
 
-        marks = _divideIntervalFromZeroTo(topNumber, 5)
+        marks = self._divideIntervalFromZeroTo(topNumber, 5)
         origin = self.barChart.GetOrigin()
       
         self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y, fill="black", width=1)
@@ -398,7 +408,7 @@ class BarChartCanvas:
             y = self.canvasHeight - origin.Y - mark
             self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")
 
-            trueValue = mark/self.rescaleFactor
+            trueValue = mark/self.scaleFactor
             valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
 
             self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e") 
@@ -448,7 +458,7 @@ class BarChartCanvas:
 
         for i in range(len(rectangles)-1, -1, -1):
             rec = rectangles[i]
-            trueValue = rec.GetHeight()/self.rescaleFactor
+            trueValue = rec.GetHeight()/self.scaleFactor
             valueString = ""
             if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
                 valueString = f"{trueValue:.4g}"
@@ -670,18 +680,132 @@ class BarChartCanvas:
                 self.canvas.config(cursor="fleur")
                 return
         self.canvas.config(cursor="arrow")
-    def on_saveButton_click(self):
-        print("Click")
+
+
+    
+    def _drawRectanglesPNG(self, draw: ImageDraw):
+        rectangles = self.barChart.GetRectangleDataAsList()
+        for rec in rectangles:
+            x1 = rec.leftBottom.X
+            y1 = self.canvasHeight - rec.leftBottom.Y
+            
+            x2 = rec.rightTop.X
+            y2 = self.canvasHeight - rec.rightTop.Y
+            draw.rectangle((x1,y2,x2,y1), fill=rec.color, outline="black")
+            font = ImageFont.load_default()
+            text = rec.name
+
+            # get text size
+            bbox = font.getbbox(text)
+            text_width = bbox[2] - bbox[0]
+
+            # text position
+            x_center = (x1 + x2) / 2
+            y_text = (y1 + 10)
+
+            draw.text(
+                (x_center - text_width / 2, y_text),
+                text,
+                fill="black",
+                font=font)
+
+    
+    def _drawAxesPNG(self, draw: ImageDraw, maximumValue: int, leftCornerXAxis: int):  
+        """
+        Draws axes on the PNG output
+        """
+        topNumber = self._ceilToNearestTen(maximumValue) 
+
+        marks = self._divideIntervalFromZeroTo(topNumber, 5)
+        origin = self.barChart.GetOrigin()
+      
+        draw.line((origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y), fill=(0,0,0), width=1)
+        draw.line((origin.X, self.canvasHeight - origin.Y, origin.X, self.canvasHeight - origin.Y - topNumber), fill=(0,0,0), width=1)
+
+        for mark in marks:
+            y = self.canvasHeight - origin.Y - mark
+            draw.line((origin.X - 5, y, origin.X, y), fill=(0,0,0))
+
+            trueValue = mark/self.scaleFactor
+            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
+            font = ImageFont.load_default()
+
+            # get text size
+            bbox = font.getbbox(valueString)
+            textWidth = bbox[2] - bbox[0]
+
+            draw.text((origin.X - 10 - textWidth, y), text=f"{valueString}", fill = (0,0,0))
+    
+    def _writePlotTitlePNG(self, draw: ImageDraw):
+        font = ImageFont.truetype("arialbd.ttf", 16)
+        text = self.title
+        bbox = font.getbbox(text)
+        textWidth = bbox[2] - bbox[0]
+        draw.text((self.canvasWidth / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
+
+    def _makePNG(self, name: str):
+        rectangles = self.barChart.GetRectangleDataAsList()
+        highestRectangleHeight = max([rec.rightTop.Y - self.barChart.GetOrigin().Y for rec in rectangles])
+        img = Image.new("RGB", (self.canvasWidth, self.canvasHeight), color="white")
+        draw = ImageDraw.Draw(img)
+        self._drawRectanglesPNG(draw)
+        self._drawAxesPNG(draw, highestRectangleHeight, rectangles[-1].rightTop.X)
+        self._writePlotTitlePNG(draw)
+        img.save(f"{name}.png")
+
+
+
+    def on_savePictureButton_click(self):
+        self.frame.update()
+        self.canvas.update()
+
+        if self.picturePathBuffer == None:
+            self.picturePathBuffer = os.path.join(os.getcwd(), self.title)
+
+        pictureName = simpledialog.askstring("Save plot", "Image name (without extension): ", initialvalue=self.picturePathBuffer)
+
+        if pictureName == None:
+            return
+        else:
+            self.picturePathBuffer = pictureName 
+        
+        print("saving canvas to", pictureName + ".png")
+        self._makePNG(pictureName)
+
+    def _saveDataAsCSV(self, file: str):
+        with open(file,"w") as output:
+            groups = self.barChart.GetRectangleData()
+            for group in groups:
+                for i in range(len(group)):
+                    rec = group[i]
+                    if i != 0:
+                        output.write(",")
+                    height = rec.GetHeight()
+                    value = height/self.scaleFactor
+                    output.write(f"{rec.name},{value}")
+                output.write("\n")
+
+    
+    def on_saveDataButton_click(self):
+        if self.dataPathBuffer == None:
+            self.picturePathBuffer = os.path.join(os.getcwd(), self.title)
+        fileName = simpledialog.askstring("Save data", "File name (without extension): ", initialvalue=self.picturePathBuffer) + ".csv"
+        if fileName == None:
+            return
+        else:
+            self._saveDataAsCSV(fileName)
+
+        pass
 
     
 
 if __name__ == "__main__":
-    initial_heights = [4,8,9,7,3,6]
+    initial_heights = [(4,8,9),(7,3),(6,)]
     initial_width = 20
     initial_spacing = 100
     innerSpacing = 5
     canvas_width = 1000
-    canvas_height = 200
+    canvas_height = 500
     
 
     BarChartCanvas(initial_heights, initial_width, initial_spacing, innerSpacing, canvas_width, canvas_height, "Test values")
