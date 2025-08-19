@@ -50,7 +50,6 @@ class VariablePoint2D:
   def Value(self):
         return ValuePoint2D(self.X.value(), self.Y.value(), self.name, self.secondaryName)
 
-
 class VariableRectangle:
     """
     Creates constraints for a given rectangle.
@@ -85,8 +84,6 @@ class VariableRectangle:
         constraints.append(self.verticalPositionConstraint)
         return iter(constraints)
    
-        self.bottomLeftXPositionConstraint = ((self.leftBottom.X == X) | "weak")
-        self.bottomLeftYPositionConstraint = ((self.leftBottom.Y == Y) | "weak")
     
     def SetSpacingConstraint(self, spacingConstraint : Constraint):
         self.spacingConstraint = spacingConstraint
@@ -137,33 +134,37 @@ class VariableRectangleGroup:
 
     def NumberOfRectangles(self):
         return len(self.rectangles)
-    
-        
 
-class VariableBarChart:
-    def __init__(self, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0):
-        
-        if all(isinstance(item, int) for item in initialHeights):
-            initialHeights = [(value,) for value in initialHeights]
-        
-        
+
+class VariableChart:
+    def __init__(self, width : int, spacing : int, xCoordinate : int, yCoordinate : int):
         self.width = Variable("global_width")
         self.widthValueConstraint : Constraint = ((self.width == width) | "strong")
 
-        self.innerSpacing = Variable("global_inner_spacing")
-        self.innerSpacingValueConstraint : Constraint = (self.innerSpacing == innerSpacing) | "strong"
-
         self.spacing = Variable("global_spacing")
         self.spacingValueConstraint : Constraint = ((self.spacing == spacing) | "strong")
-        
-
-        self.groups = [VariableRectangleGroup(self.width,heights,self.innerSpacing,f"group_{i}") for i, heights in enumerate(initialHeights)]
-        self._createGroupSpacingConstraints()
 
         self.origin: VariablePoint2D = VariablePoint2D("origin")
 
         self.originXCoordinateConstraint : Constraint = (self.origin.X == xCoordinate) | "strong"
         self.originYCoordinateConstraint : Constraint = (self.origin.Y == yCoordinate) | "strong"
+
+
+class VariableBarChart(VariableChart):
+    def __init__(self, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0):
+        
+        super().__init__(width, spacing, xCoordinate, yCoordinate)
+
+        if all(isinstance(item, int) for item in initialHeights):
+            initialHeights = [(value,) for value in initialHeights]
+        
+
+        self.innerSpacing = Variable("global_inner_spacing")
+        self.innerSpacingValueConstraint : Constraint = (self.innerSpacing == innerSpacing) | "strong"
+        
+        self.groups = [VariableRectangleGroup(self.width,heights,self.innerSpacing,f"group_{i}") for i, heights in enumerate(initialHeights)]
+        self._createGroupSpacingConstraints()
+
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
     
@@ -178,13 +179,10 @@ class VariableBarChart:
     
     def ChangeName(self, groupIndex: int, rectangleIndex: int, name: str):
         self.groups[groupIndex].rectangles[rectangleIndex].name = name
-    
-    
+     
     def _createGroupSpacingConstraints(self):
         for index in range(1,len(self.groups)):
-            if index != 0:
-                self.groups[index].SetSpacingConstraint((self.groups[index-1].rightMostX + self.spacing == self.groups[index].leftMostX) | "required")
-    
+            self.groups[index].SetSpacingConstraint((self.groups[index-1].rightMostX + self.spacing == self.groups[index].leftMostX) | "required")
     
     def Value(self):
         return [group.Value() for group in self.groups]
@@ -197,7 +195,7 @@ class VariableBarChart:
                     + [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))] \
                     + [self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint] \
                     + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
-    
+
 class BarChartSolver:
     def __init__(self, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0):
         
@@ -290,7 +288,6 @@ class BarChartSolver:
     def Update(self):
         self.rectangleData = self.variableBarChart.Value()
         
-
 class BarChartCanvas:
     def __init__(self, initialValues:  Union[list[float], list[list[float]]], initialWidth: int, initialSpacing: int, initialInnerSpacing: int, canvasWidth: int, canvasHeight: int, graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30):
         
@@ -980,6 +977,7 @@ class VariableCandle(VariableRectangle):
         
         super().__init__(width, height, name, positiveColor if height >= 0 else negativeColor)
 
+
         self.openingCorner : VariablePoint2D = self.leftBottom
         self.closingCorner : VariablePoint2D = self.rightTop
 
@@ -990,18 +988,16 @@ class VariableCandle(VariableRectangle):
         self.straightWickConstraint : Constraint = ((self.wickBottom.X == self.wickTop.X) | "required")
         
         #change when min or max changes
-        self.wickBottomConstraint : Constraint = ((self.wickBottom.Y == minPosition) | "strong")
-        self.wickTopConstraint : Constraint = ((self.wickTop.Y == maxPosition) | "strong")
+        self.wickBottomConstraint : Constraint = ((self.wickBottom.Y == minPosition) | "weak")
+        self.wickTopConstraint : Constraint = ((self.wickTop.Y == maxPosition) | "weak")
 
         self.wickBottomTrueMinimumConstraints : list[Constraint] = [((self.wickBottom.Y <= self.closingCorner.Y) | "required"), ((self.wickBottom.Y <= self.openingCorner.Y) | "required")]
-        self.wickTopTrueMaximumConstraints : list[Constraint] = [((self.wickTop.Y >= self.closingCorner.Y) | "required"), ((self.wickTop.Y >= self.openingCorner.Y + self.height) | "required")]
+        self.wickTopTrueMaximumConstraints : list[Constraint] = [((self.wickTop.Y >= self.closingCorner.Y) | "required"), ((self.wickTop.Y >= self.openingCorner.Y) | "required")]
 
-        self.openingCornerConstraint : Constraint = ((self.openingCorner.Y == openingPosition) | "strong")
+        self.openingCornerConstraint : Constraint = ((self.openingCorner.Y == openingPosition) | "weak")
 
-        self.positive = height >= 0
         self.positiveColor = positiveColor
         self.negativeColor = negativeColor
-
 
     def __iter__(self):
         result = list(super().__iter__())
@@ -1010,7 +1006,6 @@ class VariableCandle(VariableRectangle):
         result.append(self.openingCornerConstraint)
         return iter(result)
         
-
     def GetAllConstraints(self):
         return [constraint for constraint in self] + [(self.closingCorner.X >= 0) | "required", (self.openingCorner.X >= 0) | "required", (self.wickBottom.X >= 0) | "required", (self.wickTop.X >= 0) | "required"] \
                 +self.wickBottomTrueMinimumConstraints+self.wickTopTrueMaximumConstraints
@@ -1018,33 +1013,117 @@ class VariableCandle(VariableRectangle):
     def Value(self):
         return ValueCandle(self.openingCorner.Value(), self.closingCorner.Value(), self.wickBottom.Value(), self.wickTop.Value(), self.positiveColor if self.height.value() >= 0 else self.negativeColor, self.name)
         
+    def ChangePositiveColor(self, color: str):
+        self.positiveColor = color
+    def ChangeNegativeColor(self, color: str):
+        self.negativeColor = color
 
-opening = 40
-closing = 80
-minimum = 10
-maximum = 100
+class VariableCandlesticChart(VariableChart):
+    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, xCoordinate : int = 0, yCoordinate : int = 0):
+        super().__init__(width, spacing, xCoordinate, yCoordinate)
 
-width = Variable("width")
+        self.candles = [VariableCandle(self.width, initialClosing[i] - initialOpening[i], initialOpening[i], initialMinimum[i], initialMaximum[i]) for i in range(len(initialOpening))]
+        
+        self.leftMostCandleConstriant : Constraint = (self.candles[0].openingCorner.X >= self.origin.X) | "required"
 
-candle = VariableCandle(width, closing-opening, opening, minimum, maximum)
+        self._createCandleSpacingConstraints()
 
-solver = Solver()
-for const in  candle.GetAllConstraints():
-    solver.addConstraint(const)
+    def _createCandleSpacingConstraints(self):
+        for index in range(1, len(self.candles)):
+            self.candles[index].SetSpacingConstraint((self.candles[index-1].closingCorner.X + self.spacing == self.candles[index].openingCorner.X) | "required")
+    
+    def Value(self):
+        return [candle.Value() for candle in self.candles]
 
-solver.addEditVariable(width, "strong")
-solver.suggestValue(width, 10)
+    def GetAllConstraints(self):
+        result = []
+        for candle in self.candles:
+            result.extend(candle.GetAllConstraints())
+        return result + [(self.width >= 10) | "required", (self.spacing >= 0) | "required"] \
+                      + [self.widthValueConstraint, self.spacingValueConstraint] \
+                      + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftMostCandleConstriant]
 
-solver.updateVariables()
+class CandlestickChatSolver:
+    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, xCoordinate : int = 0, yCoordinate : int = 0):
+        self.solver : Solver = Solver()
+        self.variableCandlestickChart : VariableCandlesticChart = VariableCandlesticChart(width,initialOpening,initialClosing,initialMinimum,initialMaximum,spacing,xCoordinate,yCoordinate)
+        self.candleData = None
 
-print(candle.Value())
+        for constraint in self.variableCandlestickChart.GetAllConstraints():
+            self.solver.addConstraint(constraint)
 
-solver.addEditVariable(candle.height, 1e07)
-solver.suggestValue(candle.height, 110)
+        self.solver.addEditVariable(self.variableCandlestickChart.width, "strong")
+        self.solver.addEditVariable(self.variableCandlestickChart.spacing, "strong")
+        self.solver.addEditVariable(self.variableCandlestickChart.origin.X, "strong")
+        self.solver.addEditVariable(self.variableCandlestickChart.origin.Y, "strong")
 
-solver.updateVariables()
-print(candle.Value())
+        for index, candle in enumerate(self.variableCandlestickChart.candles):
+            self.solver.addEditVariable(candle.height, "strong")
+            self.solver.addEditVariable(candle.wickBottom.Y, "strong")
+            self.solver.addEditVariable(candle.wickTop.Y, "strong")
+            self.solver.addEditVariable(candle.openingCorner.Y, "strong")
 
+            self.solver.suggestValue(candle.wickBottom.Y, initialMinimum[index])
+            self.solver.suggestValue(candle.wickTop.Y, initialMaximum[index])
+            self.solver.suggestValue(candle.openingCorner.Y, initialOpening[index])
+
+        
+        
+        self.Solve()
+    
+    def ChangeWidth(self, width : int):
+        self.solver.suggestValue(self.variableCandlestickChart.width, width)
+        self.Solve()
+    
+    def ChangeSpacing(self, spacing : int):
+        self.solver.suggestValue(self.variableCandlestickChart.spacing, spacing)
+        self.Solve()
+    
+    def ChangeHeight(self, candleIndex : int, height : int):
+        self.solver.suggestValue(self.variableCandlestickChart.candles[candleIndex].height, height)
+        self.Solve()
+    
+    def ChangeMaximum(self, candleIndex : int, yValue : int):
+        topOfCandle = max(self.variableCandlestickChart.candles[candleIndex].openingCorner.Y.value(), self.variableCandlestickChart.candles[candleIndex].closingCorner.Y.value())
+        self.solver.suggestValue(self.variableCandlestickChart.candles[candleIndex].wickTop.Y, yValue if (yValue >= topOfCandle) else topOfCandle)
+        self.Solve()
+
+    def ChangeMinimum(self, candleIndex : int, yValue : int):
+        self.solver.suggestValue(self.variableCandlestickChart.candles[candleIndex].wickBottom.Y, yValue)
+        self.Solve()
+
+    def ChangeOpening(self, candleIndex: int, yValue : int):
+        self.solver.suggestValue(self.variableCandlestickChart.candles[candleIndex].openingCorner.Y, yValue)
+        self.Solve()
+
+    def Solve(self):
+        self.solver.updateVariables()
+        self.Update()
+
+    def Update(self):
+        self.candleData = self.variableCandlestickChart.Value()
+        pass
+    
+    def GetCandleData(self):
+        return self.candleData
+
+
+opening = [10,20,15]
+closing = [20,15,45]
+maximum = [30,40,60]
+minimum = [5,10,2]
+width = 10
+spacing = 3
+
+solver = CandlestickChatSolver(width, opening, closing, minimum, maximum, spacing)
+
+print("default")
+for candle in solver.GetCandleData():
+    print(candle)
+print("changed opning")
+solver.ChangeOpening(0,0)
+for candle in solver.GetCandleData():
+    print(candle)
 
 
 
