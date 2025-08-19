@@ -150,3 +150,5 @@ Additionally, the system should allow for including the integration of new plot 
 | 18.6.2025 | Bar chart prototype in kiwisolver | Online meeting, code in repository |
 | 17.7.2025 | Interactive bar chart              | Online meeting, code in repository |
 | 1.8.2025 | More efficient use of constraints in interactive bar chart | Online meeting, code in repository |
+| 14.8.2025 | Improve constraint solving and continue on other plot types | Online meeting, code in repository |
+| 20.8.2025 | Continunue working on histogram and candlestick chart | Online meeting, code in repository |
