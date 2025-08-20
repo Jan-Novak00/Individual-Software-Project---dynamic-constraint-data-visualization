@@ -368,7 +368,6 @@ class BarChartCanvas:
         self.saveDataButton.pack(pady=5)
 
         self._setRightClickMenu(self.frame)
-        
 
         self._drawPlot()
         self._writeValues() 
@@ -1043,7 +1042,7 @@ class VariableCandlesticChart(VariableChart):
                       + [self.widthValueConstraint, self.spacingValueConstraint] \
                       + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftMostCandleConstriant]
 
-class CandlestickChatSolver:
+class CandlestickChartSolver:
     def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, xCoordinate : int = 0, yCoordinate : int = 0):
         self.solver : Solver = Solver()
         self.variableCandlestickChart : VariableCandlesticChart = VariableCandlesticChart(width,initialOpening,initialClosing,initialMinimum,initialMaximum,spacing,xCoordinate,yCoordinate)
@@ -1106,24 +1105,299 @@ class CandlestickChatSolver:
     
     def GetCandleData(self):
         return self.candleData
+    
+    def GetOrigin(self):
+        return ValuePoint2D(self.variableCandlestickChart.origin.X.value(),self.variableCandlestickChart.origin.Y.value())
+
+    def GetSpacing(self):
+        return self.variableCandlestickChart.spacing.value()
+    
+    def GetWidth(self):
+        return self.variableCandlestickChart.width.value()
+
+class CandlestickChartCanvas:
+    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, canvasWidth: int, canvasHeight: int, graphTitle: str = "", xCoordinate : int = 0, yCoordinate : int = 0):
+        
+        self.plotSolver : CandlestickChartSolver = CandlestickChartSolver(width,initialOpening,initialClosing,initialMinimum,initialMaximum,spacing,xCoordinate,yCoordinate)
+
+        self.title = graphTitle
+
+        self.canvasWidth : int = canvasWidth
+        self.canvasHeight : int = canvasHeight
+
+        self.root = tk.Tk()
+        self.frame = tk.Frame(self.root)
+        self.frame.pack()
+
+        self.canvas = tk.Canvas(self.frame, width=self.canvasWidth, height=self.canvasHeight, bg="white")
+        self.canvas.pack()
+
+        self.dragEdge = None
+        self.dragStart = ValuePoint2D(0,0)
+        self.dragIndex = None
+        self.originalLeftX = None
+        self.originalSpacing = None
+        self.rightEdgeCursorOffset = None
+        self.originalHeight = None
+
+        self._drawPlot()
+
+        self.canvas.bind("<Button-1>", self.on_left_down)
+        self.canvas.bind("<B1-Motion>", self.on_mouse_move)
+        self.canvas.bind("<ButtonRelease-1>", self.on_left_up)
+        self.canvas.bind("<Motion>", self.check_cursor)
+        self.root.mainloop()
+
+
+    def _drawCandles(self): 
+        
+        origin = self.plotSolver.GetOrigin()
+        candles = self.plotSolver.GetCandleData()
+        for candle in candles:
+            leftBottomX, leftBottomY = None, None
+            rightTopX, rightTopY = None, None
+
+            if candle.closingCorner.Y - candle.openingCorner.Y >= 0:
+                leftBottomX, leftBottomY = candle.openingCorner.X, candle.openingCorner.Y
+                rightTopX, rightTopY = candle.closingCorner.X, candle.closingCorner.Y
+            else:
+                leftBottomX, leftBottomY = candle.openingCorner.X, candle.closingCorner.Y
+                rightTopX, rightTopY = candle.closingCorner.X, candle.openingCorner.Y
+
+
+            x1 = leftBottomX
+            y1 = self.canvasHeight - (leftBottomY + origin.Y)
+            
+            x2 = rightTopX
+            y2 = self.canvasHeight - (rightTopY + origin.Y)
+
+            minX = candle.wickBottom.X
+            minY = self.canvasHeight - (candle.wickBottom.Y + origin.Y)
+
+            maxX = candle.wickTop.X
+            maxY = self.canvasHeight - (candle.wickTop.Y + origin.Y)
+
+            self.canvas.create_rectangle(x1,y2,x2,y1, fill=candle.color, outline="black")
+            self.canvas.create_line(minX, minY, maxX, maxY, fill=candle.color)
+            #self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
+
+    def _writePlotTitle(self):  
+        self.canvas.create_text(self.canvasWidth / 2, 20,text=self.title,font=("Arial", 16, "bold"))
+
+    def _drawPlot(self):
+        """
+        Draws rectangles and axes on the plot
+        """
+        self.canvas.delete("all")
+        self._writePlotTitle()
+        self._drawCandles()
+
+        #originY = self.plotSolver.GetOrigin().Y
+        
+        #highestRectangleHeight = max([rec.rightTop.Y - originY for rec in rectangles])
+        #self._drawAxes(highestRectangleHeight, rectangles[-1].rightTop.X) 
+        
+    @staticmethod
+    def _isNear(val1, val2, tolerance=5):
+        """
+        Returns True, if two values are near to each other with given tolerance
+        """
+        return abs(val1 - val2) < tolerance
+    
+    def _isNearClosingEdge(self, event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        closingY = self.canvasHeight - (candle.closingCorner.Y + origin.Y)
+        return self._isNear(closingY, event.y) and candle.openingCorner.X <= event.x <= candle.closingCorner.X
+
+    def _isNearOpeningEdge(self, event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        openingY = self.canvasHeight - (candle.openingCorner.Y + origin.Y)
+        return self._isNear(openingY, event.y) and candle.openingCorner.X <= event.x <= candle.closingCorner.X
+        pass
+
+    def _isNearLeftEdge(self, event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        candleBottomY, candleTopY = self.canvasHeight - (min(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y), self.canvasHeight - (max(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y)
+        return self._isNear(event.x, candle.openingCorner.X) and candleTopY <= event.y <= candleBottomY
+        pass
+
+    def _isNearRightEdge(self, event, candle : ValueCandle):
+        #print(f"right edge {candle.closingCorner.X}")
+        origin = self.plotSolver.GetOrigin()
+        candleBottomY, candleTopY = self.canvasHeight - (min(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y), self.canvasHeight - (max(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y)
+        #print("right edge boundries (", candleBottomY, ",", candleTopY, ")")
+        return self._isNear(event.x, candle.closingCorner.X) and candleTopY <= event.y <= candleBottomY
+        pass
+
+    def _isNearMaximum(self, event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        maxY = self.canvasHeight - (candle.wickTop.Y + origin.Y)
+        return self._isNear(maxY, event.y) and self._isNear(candle.wickTop.X, event.x)
+        
+
+    def _isNearMinimum(self, event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        minY = self.canvasHeight - (candle.wickBottom.Y + origin.Y)
+        return self._isNear(minY, event.y) and self._isNear(candle.wickBottom.X, event.x)
+    
+    def _clickedOnRightEdge(self, event, candleIndex: int, candle: ValueCandle):
+        """
+        Registers that the user clicked on a right edge of some rectangle
+        """
+        self.dragEdge = 'right'
+        self.dragStart = ValuePoint2D(event.x, event.y)
+        self.dragIndex = candleIndex
+        
+        self.originalCoordinates = candle.rightTop
+        self.rightEdgeCursorOffset = event.x - candle.rightTop.X
+        self.originalLeftX = candle.leftBottom.X
+    
+    def _clickedOnLeftEdge(self, event, candleIndex: int, candle: ValueCandle): 
+        """
+        Registers that the user clicked on a left edge of some rectangle
+        """
+
+        self.dragEdge = "left"
+        self.dragStart = ValuePoint2D(event.x, event.y)
+        self.dragIndex = candleIndex
+        
+        self.originalLeftX = candle.leftBottom.X
+        self.originalSpacing = self.plotSolver.GetSpacing()
+    
+    def _clickedOnClosingEdge(self, event, candleIndex: int, candle: ValueCandle):
+        """
+        Registers that the user clicked on a top edge of some rectangle
+        """
+        self.dragEdge = "closing"
+        self.dragStart = ValuePoint2D(event.x, event.y)
+        self.dragIndex = candleIndex
+        self.originalHeight = candle.closingCorner.Y - candle.openingCorner.Y
+    
+    def _clickedOnOpeningEdge(self, event, candleIndex : int, candle : ValueCandle):
+        self.dragEdge = "opening"
+        self.dragIndex = candleIndex 
+    
+    def _clickedOnMaximum(self, event, candleIndex : int, candle : ValueCandle):
+        self.dragEdge = "maximum"
+        self.dragIndex = candleIndex
+
+    def _clickedOnMinimum(self, event, candleIndex : int, candle : ValueCandle):
+        self.dragEdge = "minimum"
+        self.dragIndex = candleIndex
+
+    def on_left_down(self, event):
+        #print(f"click {event.x}, {event.y}")
+        for index, candle in enumerate(self.plotSolver.GetCandleData()):
+            #print("index", index)
+            if self._isNearMaximum(event, candle):
+                print(f"maximum {index}")
+                self._clickedOnMaximum(event, index, candle)
+                break
+            elif self._isNearMinimum(event, candle):
+                print(f"minimum {index}")
+                self._clickedOnMinimum(event, index, candle)
+                break       
+            elif self._isNearOpeningEdge(event, candle):
+                print(f"opening edge {index}")
+                self._clickedOnOpeningEdge(event, index, candle)
+                break
+            elif self._isNearClosingEdge(event, candle):
+                print(f"closing edge {index}")
+                self._clickedOnClosingEdge(event, index, candle)
+                break
+            elif self._isNearLeftEdge(event, candle):
+                print(f"left edge {index}")
+                self._clickedOnLeftEdge(event,index, candle)
+                break
+            elif self._isNearRightEdge(event, candle):
+                print(f"right edge {index}")
+                self._clickedOnRightEdge(event,index, candle)
+                break
+
+
+
+    def on_mouse_move(self, event):
+        if self.dragEdge is None:
+            return
+        
+        origin = self.plotSolver.GetOrigin()
+        candles = self.plotSolver.GetCandleData()
+
+        if self.dragEdge == "right":
+            newWidth = (event.x - self.dragIndex*self.plotSolver.GetSpacing() - origin.X)/(self.dragIndex+1)
+            if newWidth >= 5:
+                self.plotSolver.ChangeWidth(newWidth)
+            pass
+        
+        elif self.dragEdge == "left" and self.dragIndex != 0:
+            newSpacing = (event.x - self.dragIndex*self.plotSolver.GetWidth() - origin.X)/(self.dragIndex)
+            if newSpacing >=0:
+                self.plotSolver.ChangeSpacing(newSpacing)
+            pass
+
+        elif self.dragEdge == "closing":
+            dy = self.dragStart.Y - event.y  
+            newHeight = self.originalHeight + dy
+            self.plotSolver.ChangeHeight(self.dragIndex, newHeight)
+        
+        elif self.dragEdge == "opening":
+            self.plotSolver.ChangeOpening(self.dragIndex, self.canvasHeight - event.y - origin.Y)
+        
+        elif self.dragEdge == "minimum":
+            self.plotSolver.ChangeMinimum(self.dragIndex, self.canvasHeight - event.y - origin.Y)
+        
+        elif self.dragEdge == "maximum":
+            self.plotSolver.ChangeMaximum(self.dragIndex, self.canvasHeight - event.y - origin.Y)
+
+
+        self._drawPlot()
+
+
+    def on_left_up(self, event):
+        self.dragEdge = None
+        self.dragStart = ValuePoint2D(0,0)
+        self.dragIndex = None
+        self.originalRightCoordinates = None
+        self.originalLeftX = None
+        self.originalSpacing = None
+
+    def check_cursor(self,event):
+        """
+        Changes cursor according to its position.
+        """
+        for idx, candle in enumerate(self.plotSolver.GetCandleData()):
+            if self._isNearMaximum(event,candle):
+                self.canvas.config(cursor="cross")
+                return
+            elif self._isNearMinimum(event,candle):
+                self.canvas.config(cursor="cross")
+                return
+            elif self._isNearLeftEdge(event, candle):
+                self.canvas.config(cursor="hand2")
+                return
+            elif self._isNearRightEdge(event, candle):
+                self.canvas.config(cursor="sb_h_double_arrow")
+                return
+            elif self._isNearClosingEdge(event, candle):
+                self.canvas.config(cursor="sb_v_double_arrow")
+                return
+            elif self._isNearOpeningEdge(event, candle):
+                self.canvas.config(cursor="sb_v_double_arrow")
+                return
+            
+        self.canvas.config(cursor="arrow")
+
+
 
 
 opening = [10,20,15]
 closing = [20,15,45]
-maximum = [30,40,60]
-minimum = [5,10,2]
-width = 10
+maximum = [60,70,120]
+minimum = [-5,-10,-5]
+width = 40
 spacing = 3
 
-solver = CandlestickChatSolver(width, opening, closing, minimum, maximum, spacing)
-
-print("default")
-for candle in solver.GetCandleData():
-    print(candle)
-print("changed opning")
-solver.ChangeOpening(0,0)
-for candle in solver.GetCandleData():
-    print(candle)
+candleChart = CandlestickChartCanvas(width, opening, closing, minimum, maximum, spacing, 1000, 500, "Test1", 200,100)
 
 
 
