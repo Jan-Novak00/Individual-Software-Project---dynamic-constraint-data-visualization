@@ -288,35 +288,20 @@ class BarChartSolver:
     def Update(self):
         self.rectangleData = self.variableBarChart.Value()
         
-class BarChartCanvas:
-    def __init__(self, initialValues:  Union[list[float], list[list[float]]], initialWidth: int, initialSpacing: int, initialInnerSpacing: int, canvasWidth: int, canvasHeight: int, graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30):
-        
+
+
+
+class PlotCanvas:
+    def __init__(self,canvasWidth : int, canvasHeight : int, title : str):
+        self.canvasWidth : int = canvasWidth
+        self.canvasHeight : int = canvasHeight
+        self.title = title
         self.picturePathBuffer = None
         self.dataPathBuffer = None
-        self.realValues = None
-        self.title = graphTitle
+        self._setEventRegistersLeftButton()
+        self._setEventRegistersRightButton()    
 
-        # rescaling of input data
-        self.scaleFactor = 1
-        self.canvasHeight = canvasHeight
-        self.canvasWidth = canvasWidth
-        self.xCoordinate = xCoordinate
-
-        if all(isinstance(value,(float,int)) for value in initialValues):
-            self.realValues = [[value,] for value in initialValues]
-        else: 
-            self.realValues = initialValues
-
-
-        self._createTranslationTable(self.realValues)
-
-        self._setScaleFactor()
-
-        # solver initialisation
-        self.plotSolver = self._createSolver(initialWidth, initialSpacing, initialInnerSpacing, xCoordinate, yCoordinate)
-
-        # Fields for event register
-        #left button
+    def _setEventRegistersLeftButton(self):
         self.dragEdge = None
         self.dragStart = ValuePoint2D(0,0)
         self.dragIndex = None
@@ -324,11 +309,219 @@ class BarChartCanvas:
         self.originalSpacing = None
         self.rightEdgeCursorOffset = None
         self.originalHeight = None
-
-        #right button
+    
+    def _setEventRegistersRightButton(self):
         self.rectangleIndexToChange = None
+
+    def _setScaleFactor(self):
+        self.scaleFactor = 1
+
+    def View(self):
+        self.root = tk.Tk()
+        self.frame = tk.Frame(self.root)
+        self.frame.pack()
+
+        self.canvas = tk.Canvas(self.frame, width=self.canvasWidth, height=self.canvasHeight, bg="white")
+        self.canvas.pack()
+
+        self.savePictureButton = tk.Button(self.frame, text="Save as png", command=self.on_savePictureButton_click)
+        self.savePictureButton.pack(pady=5)
+
+        self.dataWindow = tk.Text(self.frame, height=5, width=40)
+        self.dataWindow.pack()
+
+        self.saveDataButton = tk.Button(self.frame, text="Save data as csv", command=self.on_saveDataButton_click)
+        self.saveDataButton.pack(pady=5)
+
+        self.defaultMenu = tk.Menu(self.frame,tearoff=0)
+        self.defaultMenu.add_command(label = "Change title", command=self.ChangeTitle)
+        
+    
+    def ChangeTitle(self):
+        newTitle = simpledialog.askstring("Enter new title","New title: ")
+        if newTitle is None:
+            return
+        else:
+            self.title = newTitle
+            self._drawPlot()
+
+    def _UIRun(self):
+        self.canvas.bind("<Button-1>", self.on_left_down)
+        self.canvas.bind("<B1-Motion>", self.on_mouse_move)
+        self.canvas.bind("<ButtonRelease-1>", self.on_left_up)
+        self.canvas.bind("<Motion>", self.check_cursor)
+        self.canvas.bind("<Button-3>", self.on_right_down)
+        self.root.mainloop()
+    
+    def on_left_down(self,event):
+        raise NotImplementedError("Method on_left_down must be declared in subclass")
+
+    def on_right_down(self, event):
+        self.defaultMenu.post(event.x_root, event.y_root)
+    
+    def on_mouse_move(self, event):
+        raise NotImplementedError("Method on_mouse_move must be declared in subclass")
+    
+    def on_left_up(self, event):
+        """
+        Unregisteres the click event
+        """
+        self.dragEdge = None
+        self.dragStart = ValuePoint2D(0,0)
+        self.dragIndex = None
+        self.originalRightCoordinates = None
+        self.originalLeftX = None
+        self.originalSpacing = None
+    
+    @staticmethod
+    def _ceilToNearestTen(number: int):
+        return ((number // 10) + 1) * 10
+
+    def _writePlotTitle(self):  
+        self.canvas.create_text(self.canvasWidth / 2, 20,text=self.title,font=("Arial", 16, "bold"))
+    
+    @staticmethod
+    def _floorToNearestTen(number: int):
+        return ((number // 10) - 1) * 10
+
+    @staticmethod
+    def _divideInterval(low: int, high: int, parts: int):
+        if parts < 2:
+            return [low, high]
+
+        step = (high - low) // (parts - 1)
+        return [low + i * step for i in range(parts)]
+
+
+
+    def _drawAxes(self, maximumValue: int, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0):  
+        """
+        Draws axes on the canvas
+        """
+        topNumber = self._ceilToNearestTen(maximumValue) 
+
+        marks = self._divideInterval(minimumValue, topNumber, 5)
+      
+        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y, fill="black", width=1)
+        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y - minimumValue, origin.X, self.canvasHeight - origin.Y - topNumber, fill="black", width=1)
+
+        for mark in marks:
+            y = self.canvasHeight - origin.Y - mark
+            self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")
+
+            trueValue = mark/self.scaleFactor
+            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
+
+            self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e")
+    
+    def _drawAxesPNG(self, draw: ImageDraw, maximumValue: int, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0):  
+        """
+        Draws axes on the PNG output
+        """
+        topNumber = self._ceilToNearestTen(maximumValue) 
+
+        marks = self._divideInterval(minimumValue,topNumber, 5)
+      
+        draw.line((origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y), fill=(0,0,0), width=1)
+        draw.line((origin.X, self.canvasHeight - origin.Y - minimumValue, origin.X, self.canvasHeight - origin.Y - topNumber), fill=(0,0,0), width=1)
+
+        for mark in marks:
+            y = self.canvasHeight - origin.Y - mark
+            draw.line((origin.X - 5, y, origin.X, y), fill=(0,0,0))
+
+            trueValue = mark/self.scaleFactor
+            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
+            font = ImageFont.load_default()
+
+            # get text size
+            bbox = font.getbbox(valueString)
+            textWidth = bbox[2] - bbox[0]
+            textHeight = bbox[3] - bbox[1]
+
+            draw.text((origin.X - 10 - textWidth, y - textHeight/2), text=f"{valueString}", fill = (0,0,0))
+
+    def _writePlotTitle(self):  
+        self.canvas.create_text(self.canvasWidth / 2, 20,text=self.title,font=("Arial", 16, "bold"))
+    
+    def _drawPlot(self):
+        raise NotImplementedError("Method _drawPlot must be declared in subclass")
+    def _writeValues(self):
+        raise NotImplementedError("Method _writeValues must be declared in subclass")
+
+    @staticmethod
+    def _isNear(val1, val2, tolerance=5):
+        """
+        Returns True, if two values are near to each other with given tolerance
+        """
+        return abs(val1 - val2) < tolerance
+
+    def check_cursor(self,event):
+        self.canvas.config(cursor="arrow")
+    
+    def _writePlotTitlePNG(self, draw: ImageDraw):
+        font = ImageFont.truetype("arialbd.ttf", 16)
+        text = self.title
+        bbox = font.getbbox(text)
+        textWidth = bbox[2] - bbox[0]
+        draw.text((self.canvasWidth / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
+    
+    def _makePNG(self, name : str):
+        raise NotImplementedError("Method _makePNG must be declared in subclass")
+
+    def on_savePictureButton_click(self):
+        self.frame.update()
+        self.canvas.update()
+
+        if self.picturePathBuffer == None:
+            self.picturePathBuffer = os.path.join(os.getcwd(), self.title)
+
+        pictureName = simpledialog.askstring("Save plot", "Image name (without extension): ", initialvalue=self.picturePathBuffer)
+
+        if pictureName == None:
+            return
+        else:
+            self.picturePathBuffer = pictureName 
+        
+        print("saving canvas to", pictureName + ".png")
+        self._makePNG(pictureName)
+    
+    def _saveDataAsCSV(self, file : str):
+        raise NotImplementedError("Method _saveDataAsCSV must be declared in subclass")
+    
+    def on_saveDataButton_click(self):
+        if self.dataPathBuffer == None:
+            self.picturePathBuffer = os.path.join(os.getcwd(), self.title)
+        fileName = simpledialog.askstring("Save data", "File name (without extension): ", initialvalue=self.picturePathBuffer)
+        if fileName == None:
+            return
+        else:
+            self._saveDataAsCSV(fileName + ".csv")
+
+
+
+
+
+class BarChartCanvas(PlotCanvas):
+    def __init__(self, initialValues:  Union[list[float], list[list[float]]], initialWidth: int, initialSpacing: int, initialInnerSpacing: int, canvasWidth: int, canvasHeight: int, graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30):
+        
+        super().__init__(canvasWidth,canvasHeight,graphTitle)
+
+        self.realValues = None
+
+        if all(isinstance(value,(float,int)) for value in initialValues):
+            self.realValues = [[value,] for value in initialValues]
+        else: 
+            self.realValues = initialValues
+
+        self._createTranslationTable(self.realValues)
+
+        # solver initialisation
+        self._setScaleFactor()
+        self.plotSolver = self._createSolver(initialWidth, initialSpacing, initialInnerSpacing, xCoordinate, yCoordinate)
+
     
     def _setScaleFactor(self):
+        super()._setScaleFactor()
         maxValue = float("-inf")
         for group in self.realValues:
             maximum = max(group)
@@ -351,21 +544,7 @@ class BarChartCanvas:
 
     def View(self):        
         # UI features initialisation
-        self.root = tk.Tk()
-        self.frame = tk.Frame(self.root)
-        self.frame.pack()
-
-        self.canvas = tk.Canvas(self.frame, width=self.canvasWidth, height=self.canvasHeight, bg="white")
-        self.canvas.pack()
-
-        self.savePictureButton = tk.Button(self.frame, text="Save as png", command=self.on_savePictureButton_click)
-        self.savePictureButton.pack(pady=5)
-
-        self.dataWindow = tk.Text(self.frame, height=5, width=40)
-        self.dataWindow.pack()
-
-        self.saveDataButton = tk.Button(self.frame, text="Save data as csv", command=self.on_saveDataButton_click)
-        self.saveDataButton.pack(pady=5)
+        super().View()
 
         self._setRightClickMenu(self.frame)
 
@@ -373,14 +552,8 @@ class BarChartCanvas:
         self._writeValues() 
 
         # binding methods to mouse events
-        self.canvas.bind("<Button-1>", self.on_left_down)
-        self.canvas.bind("<B1-Motion>", self.on_mouse_move)
-        self.canvas.bind("<ButtonRelease-1>", self.on_left_up)
-        self.canvas.bind("<Motion>", self.check_cursor)
-        self.canvas.bind("<Button-3>", self.on_right_down)
-        self.root.mainloop()
+        super()._UIRun()
     
-
     def _createTranslationTable(self, heights: Union[list[float], list[tuple[float, ...]]]):
         self.translationTable = []
         for groupIndex, group in enumerate(heights):
@@ -392,38 +565,6 @@ class BarChartCanvas:
             raise Exception(f"Index {index} is too large to translate into group coordinates. There are only {len(self.translationTable)} rectangles.")
         return self.translationTable[index]
 
-
-    @staticmethod
-    def _ceilToNearestTen(number: int):
-        return ((number // 10) + 1) * 10
-
-    @staticmethod
-    def _divideIntervalFromZeroTo(number: int, parts: int):
-            step = number // (parts - 1) 
-            return [i * step for i in range(parts)]
-
-    def _drawAxes(self, maximumValue: int, leftCornerXAxis: int):  
-        """
-        Draws axes on the canvas
-        """
-
-        topNumber = self._ceilToNearestTen(maximumValue) 
-
-        marks = self._divideIntervalFromZeroTo(topNumber, 5)
-        origin = self.plotSolver.GetOrigin()
-      
-        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y, fill="black", width=1)
-        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, origin.X, self.canvasHeight - origin.Y - topNumber, fill="black", width=1)
-
-        for mark in marks:
-            y = self.canvasHeight - origin.Y - mark
-            self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")
-
-            trueValue = mark/self.scaleFactor
-            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
-
-            self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e") 
-    
     def _drawRectangles(self): 
         """
         Draws rectangles on the plot and writes their names under them.
@@ -438,9 +579,6 @@ class BarChartCanvas:
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black")
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
 
-    def _writePlotTitle(self):  
-        self.canvas.create_text(self.canvasWidth / 2, 20,text=self.title,font=("Arial", 16, "bold"))
-
     def _drawPlot(self):
         """
         Draws rectangles and axes on the plot
@@ -450,10 +588,11 @@ class BarChartCanvas:
         rectangles = self.plotSolver.GetRectangleDataAsList()
         self._drawRectangles()
 
-        originY = self.plotSolver.GetOrigin().Y
+        origin = self.plotSolver.GetOrigin()
         
-        highestRectangleHeight = max([rec.rightTop.Y - originY for rec in rectangles])
-        self._drawAxes(highestRectangleHeight, rectangles[-1].rightTop.X)    
+        highestRectangleHeight = max([rec.rightTop.Y - origin.Y for rec in rectangles])
+        self._drawAxes(highestRectangleHeight, rectangles[-1].rightTop.X, origin)
+
 
     def _writeValues(self):
         """
@@ -482,12 +621,6 @@ class BarChartCanvas:
                 self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n")
         self.dataWindow.config(state="disabled")
     
-    @staticmethod
-    def _isNear(val1, val2, tolerance=5):
-        """
-        Returns True, if two values are near to each other with given tolerance
-        """
-        return abs(val1 - val2) < tolerance
     
     def _isNearRightEdge(self, event, rectangle: ValueRectangle):
         """
@@ -586,7 +719,8 @@ class BarChartCanvas:
             if self._isInsideOfRectangle(event, rec):
                 self.rectangleIndexToChange = index
                 self.menu.post(event.x_root, event.y_root)
-                break
+                return
+        super().on_right_down(event) 
     
     def on_left_down(self, event):
         """
@@ -607,7 +741,6 @@ class BarChartCanvas:
                 self._clickedOnOrigin(event)
             else:
                 continue
-
     
     def _getNewWidth(self,event,groupIndex: int, rectangleInGroupIndex: int, groups: list[list[ValueRectangle]], origin: ValuePoint2D):
         return (event.x - self.plotSolver.GetSpacing()*(groupIndex+1) - rectangleInGroupIndex*self.plotSolver.GetInnerSpacing() - sum([self.plotSolver.GetInnerSpacing()*(len(groups[i])-1) for i in range(0,groupIndex)]) - origin.X)//(self.dragIndex+1)
@@ -658,17 +791,6 @@ class BarChartCanvas:
         
         self._drawPlot()
 
-    def on_left_up(self, event):
-        """
-        Unregisteres the click event
-        """
-        self.dragEdge = None
-        self.dragStart = ValuePoint2D(0,0)
-        self.dragIndex = None
-        self.originalRightCoordinates = None
-        self.originalLeftX = None
-        self.originalSpacing = None
-    
     def check_cursor(self,event):
         """
         Changes cursor according to its position.
@@ -686,10 +808,11 @@ class BarChartCanvas:
             elif self._isNearOrigin(event):
                 self.canvas.config(cursor="fleur")
                 return
-        self.canvas.config(cursor="arrow")
+        super().check_cursor(event)
 
     def _drawRectanglesPNG(self, draw: ImageDraw):
         rectangles = self.plotSolver.GetRectangleDataAsList()
+        origin = self.plotSolver.GetOrigin()
         for rec in rectangles:
             x1 = rec.leftBottom.X
             y1 = self.canvasHeight - rec.leftBottom.Y
@@ -715,39 +838,6 @@ class BarChartCanvas:
                 fill="black",
                 font=font)
 
-    def _drawAxesPNG(self, draw: ImageDraw, maximumValue: int, leftCornerXAxis: int):  
-        """
-        Draws axes on the PNG output
-        """
-        topNumber = self._ceilToNearestTen(maximumValue) 
-
-        marks = self._divideIntervalFromZeroTo(topNumber, 5)
-        origin = self.plotSolver.GetOrigin()
-      
-        draw.line((origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y), fill=(0,0,0), width=1)
-        draw.line((origin.X, self.canvasHeight - origin.Y, origin.X, self.canvasHeight - origin.Y - topNumber), fill=(0,0,0), width=1)
-
-        for mark in marks:
-            y = self.canvasHeight - origin.Y - mark
-            draw.line((origin.X - 5, y, origin.X, y), fill=(0,0,0))
-
-            trueValue = mark/self.scaleFactor
-            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
-            font = ImageFont.load_default()
-
-            # get text size
-            bbox = font.getbbox(valueString)
-            textWidth = bbox[2] - bbox[0]
-            textHeight = bbox[3] - bbox[1]
-
-            draw.text((origin.X - 10 - textWidth, y - textHeight/2), text=f"{valueString}", fill = (0,0,0))
-    
-    def _writePlotTitlePNG(self, draw: ImageDraw):
-        font = ImageFont.truetype("arialbd.ttf", 16)
-        text = self.title
-        bbox = font.getbbox(text)
-        textWidth = bbox[2] - bbox[0]
-        draw.text((self.canvasWidth / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
 
     def _makePNG(self, name: str):
         rectangles = self.plotSolver.GetRectangleDataAsList()
@@ -755,26 +845,10 @@ class BarChartCanvas:
         img = Image.new("RGB", (self.canvasWidth, self.canvasHeight), color="white")
         draw = ImageDraw.Draw(img)
         self._drawRectanglesPNG(draw)
-        self._drawAxesPNG(draw, highestRectangleHeight, rectangles[-1].rightTop.X)
+        self._drawAxesPNG(draw, highestRectangleHeight, rectangles[-1].rightTop.X, self.plotSolver.GetOrigin())
         self._writePlotTitlePNG(draw)
         img.save(f"{name}.png")
 
-    def on_savePictureButton_click(self):
-        self.frame.update()
-        self.canvas.update()
-
-        if self.picturePathBuffer == None:
-            self.picturePathBuffer = os.path.join(os.getcwd(), self.title)
-
-        pictureName = simpledialog.askstring("Save plot", "Image name (without extension): ", initialvalue=self.picturePathBuffer)
-
-        if pictureName == None:
-            return
-        else:
-            self.picturePathBuffer = pictureName 
-        
-        print("saving canvas to", pictureName + ".png")
-        self._makePNG(pictureName)
 
     def _saveDataAsCSV(self, file: str):
         with open(file,"w") as output:
@@ -789,29 +863,16 @@ class BarChartCanvas:
                     output.write(f"{rec.name},{value}")
                 output.write("\n")
 
-    def on_saveDataButton_click(self):
-        if self.dataPathBuffer == None:
-            self.picturePathBuffer = os.path.join(os.getcwd(), self.title)
-        fileName = simpledialog.askstring("Save data", "File name (without extension): ", initialvalue=self.picturePathBuffer) + ".csv"
-        if fileName == None:
-            return
-        else:
-            self._saveDataAsCSV(fileName)
-
-        pass
 
 class HistogramCanvas(BarChartCanvas):
     def __init__(self, initialValues: list[list[float,float,float]], initialWidth: int, initialPadding: int, canvasWidth: int, canvasHeight: int, graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30):
-        self.picturePathBuffer = None
-        self.dataPathBuffer = None
+        
+        PlotCanvas.__init__(self,canvasWidth,canvasHeight,graphTitle)
+
         self.realValues = []
-        self.title = graphTitle
         
         # rescaling of input data
         self.scaleFactor = 1
-        self.canvasHeight = canvasHeight
-        self.canvasWidth = canvasWidth
-        self.xCoordinate = xCoordinate
 
         self.intervals : list[list[float]]= []
         histogramGroup : list[float] = []
@@ -831,17 +892,8 @@ class HistogramCanvas(BarChartCanvas):
         self.plotSolver.Update()
 
         # Fields for event register
-        #left button
-        self.dragEdge = None
-        self.dragStart = ValuePoint2D(0,0)
-        self.dragIndex = None
-        self.originalLeftX = None
-        self.originalSpacing = None
-        self.rightEdgeCursorOffset = None
-        self.originalHeight = None
-
-        #right button
-        self.rectangleIndexToChange = None
+        PlotCanvas._setEventRegistersLeftButton(self)
+        PlotCanvas._setEventRegistersRightButton(self)
 
     def _createIntervalScales(self,intervals : list[list[float]]):
         intervalLengths : list[float] = [interval[1]-interval[0] for interval in intervals]
@@ -1045,6 +1097,7 @@ class VariableCandlesticChart(VariableChart):
         self._createCandleSpacingConstraints()
 
     def _createCandleSpacingConstraints(self):
+        self.candles[0].SetSpacingConstraint((self.candles[0].openingCorner.X - self.spacing == self.origin.X) | "required")
         for index in range(1, len(self.candles)):
             self.candles[index].SetSpacingConstraint((self.candles[index-1].closingCorner.X + self.spacing == self.candles[index].openingCorner.X) | "required")
     
@@ -1137,16 +1190,10 @@ class CandlestickChartSolver:
     def GetWidth(self):
         return self.variableCandlestickChart.width.value()
 
-class CandlestickChartCanvas:
+class CandlestickChartCanvas(PlotCanvas):
     def __init__(self, width : int, initialOpening : list[float], initialClosing : list[float], initialMinimum : list[float], initialMaximum : list[float], spacing : int, canvasWidth: int, canvasHeight: int, graphTitle: str = "", xCoordinate : int = 0, yCoordinate : int = 0):
         
-
-        self.title = graphTitle
-
-        self.canvasWidth : int = canvasWidth
-        self.canvasHeight : int = canvasHeight
-
-        self.scaleFactor = 1
+        super().__init__(canvasWidth, canvasHeight, graphTitle)
 
         self.realOpeningValues = initialOpening
         self.realClosingValues = initialClosing
@@ -1157,35 +1204,26 @@ class CandlestickChartCanvas:
 
         self.plotSolver : CandlestickChartSolver = CandlestickChartSolver(width,[value*self.scaleFactor for value in initialOpening], [value*self.scaleFactor for value in initialClosing],[value*self.scaleFactor for value in initialMinimum],[value*self.scaleFactor for value in initialMaximum],spacing,xCoordinate,yCoordinate)
 
-        self.root = tk.Tk()
-        self.frame = tk.Frame(self.root)
-        self.frame.pack()
-
-        self.canvas = tk.Canvas(self.frame, width=self.canvasWidth, height=self.canvasHeight, bg="white")
-        self.canvas.pack()
-
-        self.dragEdge = None
-        self.dragStart = ValuePoint2D(0,0)
-        self.dragIndex = None
-        self.originalLeftX = None
-        self.originalSpacing = None
-        self.rightEdgeCursorOffset = None
-        self.originalHeight = None
-
-        self._drawPlot()
-
-        self.canvas.bind("<Button-1>", self.on_left_down)
-        self.canvas.bind("<B1-Motion>", self.on_mouse_move)
-        self.canvas.bind("<ButtonRelease-1>", self.on_left_up)
-        self.canvas.bind("<Motion>", self.check_cursor)
-        self.root.mainloop()
-
     def _setScaleFactor(self):
         realValues = np.abs(self.realMinimumValues) + np.abs(self.realMaximumValues) + np.abs(self.realClosingValues) + np.abs(self.realOpeningValues)
         maxValue = max(realValues,default=1) 
         if not (self.canvasHeight*0.3 <= maxValue <= self.canvasHeight*0.8):
             self.scaleFactor = self.canvasHeight*0.8/maxValue
 
+    def View(self):        
+        # UI features initialisation
+        super().View()
+
+        #self._setRightClickMenu(self.frame)
+
+        self._drawPlot()
+        self._writeValues() 
+
+        # binding methods to mouse events
+        super()._UIRun()
+
+    def _writeValues(self):
+        return
 
     def _drawCandles(self): 
         
@@ -1234,30 +1272,6 @@ class CandlestickChartCanvas:
         step = (high - low) // (parts - 1)
         return [low + i * step for i in range(parts)]
 
-
-
-    def _drawAxes(self, maximumValue: int, leftCornerXAxis: int, minimumValue : int = 0):  
-        """
-        Draws axes on the canvas
-        """
-
-        topNumber = self._ceilToNearestTen(maximumValue) 
-
-        marks = self._divideInterval(minimumValue, topNumber, 5)
-        origin = self.plotSolver.GetOrigin()
-      
-        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y, fill="black", width=1)
-        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y - minimumValue, origin.X, self.canvasHeight - origin.Y - topNumber, fill="black", width=1)
-
-        for mark in marks:
-            y = self.canvasHeight - origin.Y - mark
-            self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")
-
-            trueValue = mark/self.scaleFactor
-            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
-
-            self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e") 
-
     
     def _drawPlot(self):
         """
@@ -1267,20 +1281,14 @@ class CandlestickChartCanvas:
         self._writePlotTitle()
         self._drawCandles()
 
-        originY = self.plotSolver.GetOrigin().Y
+        origin = self.plotSolver.GetOrigin()
 
         candles = self.plotSolver.GetCandleData()
         
         highestWickHeight = max([candle.wickTop.Y for candle in candles])
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
-        self._drawAxes(highestWickHeight, candles[-1].rightTop.X, min(0, lowestWickHeight)) 
+        self._drawAxes(highestWickHeight, candles[-1].rightTop.X, origin, min(0, lowestWickHeight)) 
         
-    @staticmethod
-    def _isNear(val1, val2, tolerance=5):
-        """
-        Returns True, if two values are near to each other with given tolerance
-        """
-        return abs(val1 - val2) < tolerance
     
     def _isNearClosingEdge(self, event, candle : ValueCandle):
         origin = self.plotSolver.GetOrigin()
@@ -1302,7 +1310,7 @@ class CandlestickChartCanvas:
         origin = self.plotSolver.GetOrigin()
         candleBottomY, candleTopY = self.canvasHeight - (min(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y), self.canvasHeight - (max(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y)
         return self._isNear(event.x, candle.closingCorner.X) and candleTopY <= event.y <= candleBottomY
-        pass
+      
 
     def _isNearMaximum(self, event, candle : ValueCandle):
         origin = self.plotSolver.GetOrigin()
@@ -1375,14 +1383,14 @@ class CandlestickChartCanvas:
             elif self._isNearMinimum(event, candle):
                 print(f"minimum {index}")
                 self._clickedOnMinimum(event, index, candle)
-                break       
-            elif self._isNearOpeningEdge(event, candle):
-                print(f"opening edge {index}")
-                self._clickedOnOpeningEdge(event, index, candle)
                 break
             elif self._isNearClosingEdge(event, candle):
                 print(f"closing edge {index}")
                 self._clickedOnClosingEdge(event, index, candle)
+                break      
+            elif self._isNearOpeningEdge(event, candle):
+                print(f"opening edge {index}")
+                self._clickedOnOpeningEdge(event, index, candle)
                 break
             elif self._isNearLeftEdge(event, candle):
                 print(f"left edge {index}")
@@ -1402,7 +1410,6 @@ class CandlestickChartCanvas:
             return
         
         origin = self.plotSolver.GetOrigin()
-        candles = self.plotSolver.GetCandleData()
 
         if self.dragEdge == "right":
             newWidth = (event.x - self.dragIndex*self.plotSolver.GetSpacing() - origin.X)/(self.dragIndex+1)
@@ -1410,8 +1417,8 @@ class CandlestickChartCanvas:
                 self.plotSolver.ChangeWidth(newWidth)
             pass
         
-        elif self.dragEdge == "left" and self.dragIndex != 0:
-            newSpacing = (event.x - self.dragIndex*self.plotSolver.GetWidth() - origin.X)/(self.dragIndex)
+        elif self.dragEdge == "left":
+            newSpacing = (event.x - self.dragIndex*self.plotSolver.GetWidth() - origin.X)/(self.dragIndex+1)
             if newSpacing >=0:
                 self.plotSolver.ChangeSpacing(newSpacing)
             pass
@@ -1474,6 +1481,63 @@ class CandlestickChartCanvas:
             
         self.canvas.config(cursor="arrow")
 
+    def _drawCandlesPNG(self, draw : ImageDraw):
+        candles = self.plotSolver.GetCandleData()
+        origin = self.plotSolver.GetOrigin()
+        for candle in candles:
+            leftBottomX, leftBottomY = None, None
+            rightTopX, rightTopY = None, None
+
+            if candle.closingCorner.Y - candle.openingCorner.Y >= 0:
+                leftBottomX, leftBottomY = candle.openingCorner.X, candle.openingCorner.Y
+                rightTopX, rightTopY = candle.closingCorner.X, candle.closingCorner.Y
+            else:
+                leftBottomX, leftBottomY = candle.openingCorner.X, candle.closingCorner.Y
+                rightTopX, rightTopY = candle.closingCorner.X, candle.openingCorner.Y
+
+
+            x1 = leftBottomX
+            y1 = self.canvasHeight - leftBottomY - origin.Y
+            
+            x2 = rightTopX
+            y2 = self.canvasHeight - rightTopY - origin.Y
+
+            draw.rectangle((x1,y2,x2,y1), fill=candle.color, outline="black")
+
+            xMax, yMax = candle.wickTop.X, self.canvasHeight - candle.wickTop.Y - origin.Y
+            xMin, yMin = candle.wickBottom.X, self.canvasHeight - candle.wickBottom.Y - origin.Y
+            draw.line((xMax,yMax,xMin,yMin), fill=candle.color, width=1) 
+
+
+            font = ImageFont.load_default()
+            text = candle.name
+
+            # get text size
+            bbox = font.getbbox(text)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+
+            # text position
+            x_center = (x1 + x2) / 2
+            y_text = self.canvasHeight - origin.Y + 10
+
+            draw.text(
+                (x_center - text_width / 2, y_text - text_height/2),
+                text,
+                fill="black",
+                font=font)
+
+    def _makePNG(self, name: str):
+        candles = self.plotSolver.GetCandleData()
+        highestRectangleHeight = max([candle.wickTop.Y for candle in candles])
+        lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
+        img = Image.new("RGB", (self.canvasWidth, self.canvasHeight), color="white")
+        draw = ImageDraw.Draw(img)
+        self._drawCandlesPNG(draw)
+        self._drawAxesPNG(draw, highestRectangleHeight, candles[-1].rightTop.X, self.plotSolver.GetOrigin(), min(0, lowestWickHeight))
+        self._writePlotTitlePNG(draw)
+        img.save(f"{name}.png")
+
 
 
 
@@ -1491,6 +1555,7 @@ if __name__ == "__main__" and not isOn:
     spacing = 3
 
     candleChart = CandlestickChartCanvas(width, opening, closing, minimum, maximum, spacing, 1000, 500, "Test1", 200,100)
+    candleChart.View()
 
 
 
