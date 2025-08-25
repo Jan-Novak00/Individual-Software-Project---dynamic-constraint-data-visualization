@@ -134,14 +134,30 @@ The user can switch to data manipulation mode where they can by manipulating cer
 ![Example](./pictures/candlestick_chart_data_edit.jpg)
 
 ## 5. Screens
-#ToDo
+### 5.1 Main menu
+![Example](./pictures/uvod.png)
+
+- Data input: user can input data by pasting them into the text window
+- Input data as CSV: user can input data through CSV file
+- Plot type: user chooses available plot type. Every plot type has its own CSV format
+- Plot dimentions: user chooses the size of the plot
+- Generate: takes user to the plot view screen, where the plot is generated and where the user can interact with it
+
+### 5.2 Plot view
+![Example](./pictures/plotView.png)
+
+- plot: interactive window where the user can directly interact with the plot (in the picture we can see example with bar chart)
+- data view: under the plot we can see current data and how it changes
+- Save as PNG: button which saves the plot as PNG
+- Save as CSV: button which saves the data as CSV (in the given format)
+
 
 ## 6. Non-Functional Requirements
 The system must provide an intuitive and accessible user interface that enables users to create and modify plots and data without the need for detailed instructions. 
 Additionally, the system should allow for including the integration of new plot types.
 
 ## 7. Time-line & Milestones
-#ToDo 
+
 
 | Date      | Milestone                         | Method of Presentation             |
 | --------- | --------------------------------- | ---------------------------------- |
