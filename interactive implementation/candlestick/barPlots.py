@@ -146,6 +146,7 @@ class VariableChart:
         self.spacingValueConstraint : Constraint = ((self.spacing == spacing) | "strong")
 
         self.origin: VariablePoint2D = VariablePoint2D("origin")
+        self.yAxisHeight: Variable = Variable("axisTop")
 
         self.originXCoordinateConstraint : Constraint = (self.origin.X == xCoordinate) | "strong"
         self.originYCoordinateConstraint : Constraint = (self.origin.Y == yCoordinate) | "strong"
@@ -194,7 +195,7 @@ class VariableBarChart(VariableChart):
         return result + [(self.width >= 10) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required"] \
                     + [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))] \
                     + [self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint] \
-                    + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
+                    + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint] \
 
 class BarChartSolver:
     def __init__(self, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
@@ -220,6 +221,9 @@ class BarChartSolver:
         
         self.solver.addEditVariable(self.variableBarChart.origin.X, "strong")
         self.solver.addEditVariable(self.variableBarChart.origin.Y, "strong")
+
+        self.solver.addEditVariable(self.variableBarChart.yAxisHeight, "strong")
+        self.solver.suggestValue(self.variableBarChart.yAxisHeight, max(max(group) for group in initialHeights)+10)
         
         self.Solve()
     
@@ -251,6 +255,12 @@ class BarChartSolver:
     def GetName(self, groupIndex: int, rectangleIndex: int):
         return self.variableBarChart.groups[groupIndex].rectangles[rectangleIndex].name
     
+    def GetAxisHeight(self):
+        return self.variableBarChart.yAxisHeight.value()
+    
+    def ChangeAxisHeight(self, newY : float):
+        self.solver.suggestValue(self.variableBarChart.yAxisHeight,newY)
+        self.Solve()
     
     def ChangeWidth(self, newWidth: int):
         self.solver.suggestValue(self.variableBarChart.width, newWidth)
@@ -298,6 +308,7 @@ class PlotCanvas:
         self.title = title
         self.picturePathBuffer = None
         self.dataPathBuffer = None
+        self.xAxisValue = 0
         self._setEventRegistersLeftButton()
         self._setEventRegistersRightButton()    
 
@@ -327,7 +338,7 @@ class PlotCanvas:
         self.savePictureButton = tk.Button(self.frame, text="Save as png", command=self.on_savePictureButton_click)
         self.savePictureButton.pack(pady=5)
 
-        self.dataWindow = tk.Text(self.frame, height=5, width=40)
+        self.dataWindow = tk.Text(self.frame, height=20, width=40)
         self.dataWindow.pack()
 
         self.saveDataButton = tk.Button(self.frame, text="Save data as csv", command=self.on_saveDataButton_click)
@@ -409,7 +420,7 @@ class PlotCanvas:
             y = self.canvasHeight - origin.Y - mark
             self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")
 
-            trueValue = mark/self.scaleFactor
+            trueValue = mark/self.scaleFactor + self.xAxisValue
             valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
 
             self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e")
@@ -429,7 +440,7 @@ class PlotCanvas:
             y = self.canvasHeight - origin.Y - mark
             draw.line((origin.X - 5, y, origin.X, y), fill=(0,0,0))
 
-            trueValue = mark/self.scaleFactor
+            trueValue = mark/self.scaleFactor + self.xAxisValue
             valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
             font = ImageFont.load_default()
 
@@ -496,8 +507,6 @@ class PlotCanvas:
             return
         else:
             self._saveDataAsCSV(fileName + ".csv")
-
-
 
 
 
@@ -590,8 +599,10 @@ class BarChartCanvas(PlotCanvas):
 
         origin = self.plotSolver.GetOrigin()
         
-        highestRectangleHeight = max([rec.rightTop.Y - origin.Y for rec in rectangles])
-        self._drawAxes(highestRectangleHeight, rectangles[-1].rightTop.X, origin)
+        #highestRectangleHeight = max([rec.rightTop.Y - origin.Y for rec in rectangles])
+        y = self.plotSolver.GetAxisHeight()
+
+        self._drawAxes(self.plotSolver.GetAxisHeight(), rectangles[-1].rightTop.X, origin)
 
 
     def _writeValues(self):
@@ -657,6 +668,10 @@ class BarChartCanvas(PlotCanvas):
         leftBottomYNormalized = self.canvasHeight - rectangle.leftBottom.Y
         return (rectangle.leftBottom.X <= event.x <= rectangle.rightTop.X) \
                 and (rightTopYNormalized <= event.y <= leftBottomYNormalized)
+    
+    def _isNearTopOfYAxis(self,event):
+        topNormalized = self.canvasHeight - self.plotSolver.GetAxisHeight() - self.plotSolver.GetOrigin().Y
+        return self._isNear(event.y, topNormalized, 10) and self._isNear(event.x, self.plotSolver.GetOrigin().X, 10)
 
     def _clickedOnOrigin(self, event):
         self.dragEdge = "origin"
@@ -694,6 +709,9 @@ class BarChartCanvas(PlotCanvas):
         self.dragStart = ValuePoint2D(event.x, event.y)
         self.dragIndex = rectangleIndex
         self.originalHeight = rectangle.rightTop.Y - rectangle.leftBottom.Y
+    
+    def _clickedOnTopOfAxis(self, event):
+        self.dragEdge = "axisTop"
 
     def _changeColor(self):
         groupIndex = self._indexToGroupIndex(self.rectangleIndexToChange)
@@ -734,6 +752,8 @@ class BarChartCanvas(PlotCanvas):
             elif self._isNearRightEdge(event, rec): # change in width
                 self._clickedOnRightEdge(event, recIndex, rec)
                 return
+            elif self._isNearTopOfYAxis(event):
+                self._clickedOnTopOfAxis(event)
             elif self._isNearTopEdge(event, rec): # change in height
                 self._clickedOnTopEdge(event, recIndex, rec)
                 return
@@ -764,11 +784,15 @@ class BarChartCanvas(PlotCanvas):
             if newWidth > 10:
                 self.plotSolver.ChangeWidth(newWidth)
 
+        elif self.dragEdge == "axisTop":  
+            newHeight = self.canvasHeight - event.y - origin.Y
+            if newHeight > 10:
+                self.plotSolver.ChangeAxisHeight(newHeight)
 
 
         elif self.dragEdge == "top":
-            dy = self.dragStart.Y - event.y  
-            newHeight = self.originalHeight + dy
+  
+            newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 0:
                 self.plotSolver.ChangeHeight(groupIndex, rectangleInGroupIndex, newHeight)
             self._writeValues()
@@ -808,6 +832,9 @@ class BarChartCanvas(PlotCanvas):
             elif self._isNearOrigin(event):
                 self.canvas.config(cursor="fleur")
                 return
+            elif self._isNearTopOfYAxis(event):
+                self.canvas.config(cursor="sb_v_double_arrow")
+                return
         super().check_cursor(event)
 
     def _drawRectanglesPNG(self, draw: ImageDraw):
@@ -841,11 +868,10 @@ class BarChartCanvas(PlotCanvas):
 
     def _makePNG(self, name: str):
         rectangles = self.plotSolver.GetRectangleDataAsList()
-        highestRectangleHeight = max([rec.rightTop.Y - self.plotSolver.GetOrigin().Y for rec in rectangles])
         img = Image.new("RGB", (self.canvasWidth, self.canvasHeight), color="white")
         draw = ImageDraw.Draw(img)
         self._drawRectanglesPNG(draw)
-        self._drawAxesPNG(draw, highestRectangleHeight, rectangles[-1].rightTop.X, self.plotSolver.GetOrigin())
+        self._drawAxesPNG(draw, self.plotSolver.GetAxisHeight(), rectangles[-1].rightTop.X, self.plotSolver.GetOrigin())
         self._writePlotTitlePNG(draw)
         img.save(f"{name}.png")
 
@@ -984,6 +1010,9 @@ class HistogramCanvas(BarChartCanvas):
             elif self._isNearOrigin(event):
                 self.canvas.config(cursor="fleur")
                 return
+            elif self._isNearTopOfYAxis(event):
+                self.canvas.config(cursor="sb_v_double_arrow")
+                return
         self.canvas.config(cursor="arrow")
 
     def _drawRectanglesPNG(self, draw: ImageDraw):
@@ -1111,6 +1140,14 @@ class VariableCandlesticChart(VariableChart):
         return result + [(self.width >= 10) | "required", (self.spacing >= 0) | "required"] \
                       + [self.widthValueConstraint, self.spacingValueConstraint] \
                       + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftMostCandleConstriant]
+    
+    def ChangePositiveColor(self, color : Union[str,int]):
+        for candle in self.candles:
+            candle.positiveColor = color
+    
+    def ChangeNegativeColor(self, color : Union[str,int]):
+        for candle in self.candles:
+            candle.negativeColor = color
 
 class CandlestickChartSolver:
     def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, xCoordinate : int = 0, yCoordinate : int = 0):
@@ -1136,6 +1173,8 @@ class CandlestickChartSolver:
             self.solver.suggestValue(candle.wickTop.Y, initialMaximum[index])
             self.solver.suggestValue(candle.openingCorner.Y, initialOpening[index])
 
+        self.solver.addEditVariable(self.variableCandlestickChart.yAxisHeight, "strong")
+        self.solver.suggestValue(self.variableCandlestickChart.yAxisHeight, max(initialMaximum))
         
         
         self.Solve()
@@ -1169,6 +1208,10 @@ class CandlestickChartSolver:
         self.solver.suggestValue(self.variableCandlestickChart.origin.X, newX)
         self.solver.suggestValue(self.variableCandlestickChart.origin.Y, newY)
         self.Solve()
+    
+    def ChangeAxisHeight(self, newHeight : int):
+        self.solver.suggestValue(self.variableCandlestickChart.yAxisHeight, newHeight)
+        self.Solve()
 
     def Solve(self):
         self.solver.updateVariables()
@@ -1178,6 +1221,18 @@ class CandlestickChartSolver:
         self.candleData = self.variableCandlestickChart.Value()
         pass
     
+    def ChangePositiveColor(self, color : Union[str, int]):
+        self.variableCandlestickChart.ChangePositiveColor(color)
+        self.Update()
+
+    def ChangeNegativeColor(self, color : Union[str, int]):
+        self.variableCandlestickChart.ChangeNegativeColor(color)
+        self.Update()
+    
+    def ChangeName(self, candleIndex : int, name : str):
+        self.variableCandlestickChart.candles[candleIndex].name = name
+        self.Update()
+
     def GetCandleData(self):
         return self.candleData
     
@@ -1189,9 +1244,15 @@ class CandlestickChartSolver:
     
     def GetWidth(self):
         return self.variableCandlestickChart.width.value()
+    
+    def GetAxisHeight(self):
+        return self.variableCandlestickChart.yAxisHeight.value()
+    
+    def GetName(self, candleIndex : int):
+        return self.variableCandlestickChart.candles[candleIndex].name
 
 class CandlestickChartCanvas(PlotCanvas):
-    def __init__(self, width : int, initialOpening : list[float], initialClosing : list[float], initialMinimum : list[float], initialMaximum : list[float], spacing : int, canvasWidth: int, canvasHeight: int, graphTitle: str = "", xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialOpening : list[float], initialClosing : list[float], initialMinimum : list[float], initialMaximum : list[float], spacing : int, canvasWidth: int, canvasHeight: int, xAxisValue : float = 0, graphTitle: str = "", xCoordinate : int = 0, yCoordinate : int = 0):
         
         super().__init__(canvasWidth, canvasHeight, graphTitle)
 
@@ -1199,22 +1260,30 @@ class CandlestickChartCanvas(PlotCanvas):
         self.realClosingValues = initialClosing
         self.realMaximumValues = initialMaximum
         self.realMinimumValues = initialMinimum
+        self.xAxisValue : float = xAxisValue
 
         self._setScaleFactor()
 
-        self.plotSolver : CandlestickChartSolver = CandlestickChartSolver(width,[value*self.scaleFactor for value in initialOpening], [value*self.scaleFactor for value in initialClosing],[value*self.scaleFactor for value in initialMinimum],[value*self.scaleFactor for value in initialMaximum],spacing,xCoordinate,yCoordinate)
+        scaledXAxis = self.xAxisValue*self.scaleFactor
+        self.plotSolver : CandlestickChartSolver = CandlestickChartSolver(width,[value*self.scaleFactor-scaledXAxis  for value in initialOpening], [value*self.scaleFactor-scaledXAxis for value in initialClosing],[value*self.scaleFactor-scaledXAxis for value in initialMinimum],[value*self.scaleFactor-scaledXAxis for value in initialMaximum],spacing,xCoordinate,yCoordinate)
 
     def _setScaleFactor(self):
         realValues = np.abs(self.realMinimumValues) + np.abs(self.realMaximumValues) + np.abs(self.realClosingValues) + np.abs(self.realOpeningValues)
         maxValue = max(realValues,default=1) 
         if not (self.canvasHeight*0.3 <= maxValue <= self.canvasHeight*0.8):
             self.scaleFactor = self.canvasHeight*0.8/maxValue
+    
+    def _setRightClickMenu(self, frame: tk.Frame):
+        self.menu = tk.Menu(frame, tearoff=0)
+        self.menu.add_command(label="Change positive color", command=self._changePositiveColor)
+        self.menu.add_command(label="Change negative color", command=self._changeNegativeColor)
+        self.menu.add_command(label="Change name", command=self._changeName)
 
     def View(self):        
         # UI features initialisation
         super().View()
 
-        #self._setRightClickMenu(self.frame)
+        self._setRightClickMenu(self.frame)
 
         self._drawPlot()
         self._writeValues() 
@@ -1285,9 +1354,33 @@ class CandlestickChartCanvas(PlotCanvas):
 
         candles = self.plotSolver.GetCandleData()
         
-        highestWickHeight = max([candle.wickTop.Y for candle in candles])
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
-        self._drawAxes(highestWickHeight, candles[-1].rightTop.X, origin, min(0, lowestWickHeight)) 
+        self._drawAxes(self.plotSolver.GetAxisHeight(), candles[-1].rightTop.X, origin, min(0, lowestWickHeight)) 
+    
+    def _writeValues(self):
+        """
+        Displays all data for the user and highlights which data is being edited
+        """
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        valueEdited = self.dragEdge in ["opening", "closing", "maximum", "minimum"]
+        candles = self.plotSolver.GetCandleData()
+
+        for i in range(len(candles)-1, -1, -1):
+            candle = candles[i]
+            openingValue = candle.openingCorner.Y/self.scaleFactor + self.xAxisValue
+            closingValue = candle.closingCorner.Y/self.scaleFactor + self.xAxisValue
+            maximumValue = candle.wickTop.Y/self.scaleFactor + self.xAxisValue
+            minimumValue = candle.wickBottom.Y/self.scaleFactor + self.xAxisValue
+            
+            string = f"{candle.name}:\n\topening = {openingValue:.4f},\n\tclosing = {closingValue:.4f},\n\tmin = {minimumValue:.4f},\n\tmax = {maximumValue:.4f}\n\n"
+            if valueEdited and i == self.dragIndex:
+                self.dataWindow.insert("1.0",f"{string}\n", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"{string}\n")
+        self.dataWindow.config(state="disabled")
         
     
     def _isNearClosingEdge(self, event, candle : ValueCandle):
@@ -1326,6 +1419,21 @@ class CandlestickChartCanvas(PlotCanvas):
     def _isNearOrigin(self, event):
         origin = self.plotSolver.GetOrigin()
         return self._isNear(event.x, origin.X) and self._isNear(event.y, self.canvasHeight - origin.Y)
+    
+    def _isNearTopOfYAxis(self,event):
+        topNormalized = self.canvasHeight - self.plotSolver.GetAxisHeight() - self.plotSolver.GetOrigin().Y
+        return self._isNear(event.y, topNormalized, 10) and self._isNear(event.x, self.plotSolver.GetOrigin().X, 10)
+    
+    def _isInsideOfCandle(self,event, candle : ValueCandle):
+        originY = self.plotSolver.GetOrigin().Y
+        xCoordinateOK = candle.leftBottom.X <= event.x <= candle.rightTop.X
+        bottomY = candle.openingCorner.Y if candle.openingCorner.Y <= candle.closingCorner.Y else candle.closingCorner.Y
+        topY = candle.closingCorner.Y if candle.openingCorner.Y <= candle.closingCorner.Y else candle.openingCorner.Y
+        topY, bottomY = self.canvasHeight - bottomY - originY, self.canvasHeight - topY - originY
+        yCoordinateOK = bottomY <= event.y <= topY
+        return yCoordinateOK and xCoordinateOK
+
+
     
     def _clickedOnRightEdge(self, event, candleIndex: int, candle: ValueCandle):
         """
@@ -1373,6 +1481,44 @@ class CandlestickChartCanvas(PlotCanvas):
     
     def _clickedOnOrigin(self, event):
         self.dragEdge = "origin"
+    
+    def _clickedOnTopOfAxis(self, event):
+        self.dragEdge = "axisTop"
+    
+
+    def _changePositiveColor(self):
+        color = colorchooser.askcolor(title="Choose different color")
+        if color[1] == None:
+            return
+        self.plotSolver.ChangePositiveColor(color[1])
+        self._drawPlot()
+    
+    def _changeNegativeColor(self):
+        color = colorchooser.askcolor(title="Choose different color")
+        if color[1] == None:
+            return
+        self.plotSolver.ChangeNegativeColor(color[1])
+        self._drawPlot()
+
+    def _changeName(self):
+        currentName = self.plotSolver.GetName(self.rectangleIndexToChange)
+        newName = simpledialog.askstring("Change name", "New name:", initialvalue=currentName)
+        if newName == None:
+            return
+        self.plotSolver.ChangeName(self.rectangleIndexToChange, newName)
+        self._drawPlot()
+        self._writeValues()
+        pass
+
+    def on_right_down(self, event):
+            for index, candle in enumerate(self.plotSolver.GetCandleData()):
+                if self._isInsideOfCandle(event, candle):
+                    self.rectangleIndexToChange = index
+                    self.menu.post(event.x_root, event.y_root)
+                    return
+            super().on_right_down(event)
+    
+
 
     def on_left_down(self, event):
         for index, candle in enumerate(self.plotSolver.GetCandleData()):
@@ -1384,6 +1530,11 @@ class CandlestickChartCanvas(PlotCanvas):
                 print(f"minimum {index}")
                 self._clickedOnMinimum(event, index, candle)
                 break
+            
+            elif self._isNearTopOfYAxis(event):
+                self._clickedOnTopOfAxis(event)
+                break
+
             elif self._isNearClosingEdge(event, candle):
                 print(f"closing edge {index}")
                 self._clickedOnClosingEdge(event, index, candle)
@@ -1400,9 +1551,9 @@ class CandlestickChartCanvas(PlotCanvas):
                 print(f"right edge {index}")
                 self._clickedOnRightEdge(event,index, candle)
                 break
+            
             elif self._isNearOrigin(event):
                 self._clickedOnOrigin(event)
-
 
 
     def on_mouse_move(self, event):
@@ -1439,9 +1590,15 @@ class CandlestickChartCanvas(PlotCanvas):
         
         elif self.dragEdge == "origin": #done
             self.plotSolver.ChangeOrigin(event.x, self.canvasHeight - event.y)
+        
+        elif self.dragEdge == "axisTop":  
+            newHeight = self.canvasHeight - event.y - origin.Y
+            if newHeight > 10:
+                self.plotSolver.ChangeAxisHeight(newHeight)
 
 
         self._drawPlot()
+        self._writeValues() 
 
 
     def on_left_up(self, event):
@@ -1478,7 +1635,10 @@ class CandlestickChartCanvas(PlotCanvas):
             elif self._isNearOrigin(event):
                 self.canvas.config(cursor="fleur")
                 return
-            
+            elif self._isNearTopOfYAxis(event):
+                self.canvas.config(cursor="sb_v_double_arrow")
+                return
+
         self.canvas.config(cursor="arrow")
 
     def _drawCandlesPNG(self, draw : ImageDraw):
@@ -1529,17 +1689,20 @@ class CandlestickChartCanvas(PlotCanvas):
 
     def _makePNG(self, name: str):
         candles = self.plotSolver.GetCandleData()
-        highestRectangleHeight = max([candle.wickTop.Y for candle in candles])
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         img = Image.new("RGB", (self.canvasWidth, self.canvasHeight), color="white")
         draw = ImageDraw.Draw(img)
         self._drawCandlesPNG(draw)
-        self._drawAxesPNG(draw, highestRectangleHeight, candles[-1].rightTop.X, self.plotSolver.GetOrigin(), min(0, lowestWickHeight))
+        self._drawAxesPNG(draw, self.plotSolver.GetAxisHeight(), candles[-1].rightTop.X, self.plotSolver.GetOrigin(), min(0, lowestWickHeight))
         self._writePlotTitlePNG(draw)
         img.save(f"{name}.png")
-
-
-
+    
+    def _saveDataAsCSV(self, file: str):
+        with open(file,"w") as output:
+            candles = self.plotSolver.GetCandleData()
+            for candle in candles:
+                output.write(f"{candle.name},{candle.openingCorner.Y/self.scaleFactor + self.xAxisValue},{candle.closingCorner.Y/self.scaleFactor + self.xAxisValue},{candle.wickBottom.Y/self.scaleFactor + self.xAxisValue},{candle.wickTop.Y/self.scaleFactor + self.xAxisValue}")
+                output.write("\n")
 
 
 
@@ -1550,11 +1713,11 @@ if __name__ == "__main__" and not isOn:
     opening = [100,200,150]
     closing = [200,150,450]
     maximum = [600,700,1200]
-    minimum = [-50,-100,-50]
+    minimum = [60, 100, 70]
     width = 40
     spacing = 3
 
-    candleChart = CandlestickChartCanvas(width, opening, closing, minimum, maximum, spacing, 1000, 500, "Test1", 200,100)
+    candleChart = CandlestickChartCanvas(width, opening, closing, minimum, maximum, spacing, 1000, 500, 60,"Test1", 200,100)
     candleChart.View()
 
 
