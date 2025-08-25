@@ -9,9 +9,7 @@ This project focuses on developing a dynamic data visualization and manipulation
 
 ---
 
-**Version**: #ToDo  
 **Author**: *Jan Novák*  
-**Date**: #ToDo
 
 
 ## Table of Contents
@@ -152,3 +150,4 @@ Additionally, the system should allow for including the integration of new plot 
 | 1.8.2025 | More efficient use of constraints in interactive bar chart | Online meeting, code in repository |
 | 14.8.2025 | Improve constraint solving and continue on other plot types | Online meeting, code in repository |
 | 20.8.2025 | Continunue working on histogram and candlestick chart | Online meeting, code in repository |
+| 29.8.2025 | Presenting finished project (bar and candlistick chart, histogram) | Online meeting, code in repository |
