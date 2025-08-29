@@ -1,5 +1,5 @@
 import kiwisolver
-from kiwisolver import Variable, Constraint, Solver
+from kiwisolver import Variable, Constraint, Solver,  strength
 import random
 from typing import Union
 import warnings
@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from tkinter import colorchooser
 import os
+from tkinter import font
 
 class ValuePoint2D:
     """
@@ -97,11 +98,10 @@ class VariableRectangle:
         return ValueRectangle(self.leftBottom.Value(), self.rightTop.Value(), self.color, self.name)
 
 class VariableRectangleGroup:
-    def __init__(self, rectangleWidth: Variable, heights: list[int], innerSpacing: Variable, groupName: str = "", color: str = "blue", widthScales : list[float] = None):
-        self.rectangles = [VariableRectangle(rectangleWidth, height, groupName+f"_{i}", color, (1 if widthScales is None else widthScales[i])) for i,height in enumerate(heights)]
+    def __init__(self, rectangleWidth: Variable, heights: list[int], innerSpacing: Variable, names: list[str], color: str = "blue", widthScales : list[float] = None):
+        self.rectangles = [VariableRectangle(rectangleWidth, height, names[i] if names is not None else "", color, (1 if widthScales is None else widthScales[i])) for i,height in enumerate(heights)]
         self.innerSpacing = innerSpacing
 
-        self.groupName = groupName
 
         for i in range(1,len(self.rectangles)):
             self.rectangles[i].SetSpacingConstraint((self.rectangles[i-1].rightTop.X + self.innerSpacing == self.rectangles[i].leftBottom.X) | "required")
@@ -148,22 +148,24 @@ class VariableChart:
         self.origin: VariablePoint2D = VariablePoint2D("origin")
         self.yAxisHeight: Variable = Variable("axisTop")
 
-        self.originXCoordinateConstraint : Constraint = (self.origin.X == xCoordinate) | "strong"
-        self.originYCoordinateConstraint : Constraint = (self.origin.Y == yCoordinate) | "strong"
+
+        #self.originXCoordinateConstraint : Constraint = (self.origin.X == xCoordinate)
+        #self.originXCoordinateConstraint = self.originXCoordinateConstraint | "strong" 
+        #self.originYCoordinateConstraint : Constraint = (self.origin.Y == yCoordinate)
+        #self.originYCoordinateConstraint = self.originYCoordinateConstraint | "strong"
+        self.originXCoordinateConstraint: Constraint = Constraint(self.origin.X - xCoordinate, "==", "strong")
+
+        self.originYCoordinateConstraint: Constraint = Constraint(self.origin.Y - yCoordinate, "==", "strong")
 
 class VariableBarChart(VariableChart):
-    def __init__(self, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
+    def __init__(self, width: int, initialHeights: list[list[int]], spacing: int, innerSpacing: int, rectangleNames : list[list[str]], xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
         
         super().__init__(width, spacing, xCoordinate, yCoordinate)
-
-        if all(isinstance(item, int) for item in initialHeights):
-            initialHeights = [(value,) for value in initialHeights]
-        
 
         self.innerSpacing = Variable("global_inner_spacing")
         self.innerSpacingValueConstraint : Constraint = (self.innerSpacing == innerSpacing) | "strong"
         
-        self.groups = [VariableRectangleGroup(self.width,heights,self.innerSpacing,f"group_{i}", "blue" ,None if widthScalesForGroups is None else widthScalesForGroups[i]) for i, heights in enumerate(initialHeights)]
+        self.groups = [VariableRectangleGroup(self.width,heights,self.innerSpacing, rectangleNames[i] if rectangleNames is not None else None, "blue" ,None if widthScalesForGroups is None else widthScalesForGroups[i]) for i, heights in enumerate(initialHeights)]
         self._createGroupSpacingConstraints()
 
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
@@ -198,10 +200,10 @@ class VariableBarChart(VariableChart):
                     + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint] \
 
 class BarChartSolver:
-    def __init__(self, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
+    def __init__(self, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, rectangleNames : list[list[str]], xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
         
         self.solver = Solver()
-        self.variableBarChart = VariableBarChart(width, initialHeights, spacing, innerSpacing, xCoordinate, yCoordinate, widthScalesForGroups)
+        self.variableBarChart = VariableBarChart(width, initialHeights, spacing, innerSpacing, rectangleNames, xCoordinate, yCoordinate, widthScalesForGroups)
         self.rectangleData = None
 
         barChartConstraints = set(self.variableBarChart.GetAllConstraints())
@@ -302,13 +304,15 @@ class BarChartSolver:
 
 
 class PlotCanvas:
-    def __init__(self,canvasWidth : int, canvasHeight : int, title : str):
+    def __init__(self,canvasWidth : int, canvasHeight : int, title : str, xAxisLabel : str, yAxisLabel : str):
         self.canvasWidth : int = canvasWidth
         self.canvasHeight : int = canvasHeight
         self.title = title
         self.picturePathBuffer = None
         self.dataPathBuffer = None
         self.xAxisValue = 0
+        self.xAxisLabel = xAxisLabel
+        self.yAxisLabel = yAxisLabel
         self._setEventRegistersLeftButton()
         self._setEventRegistersRightButton()    
 
@@ -424,6 +428,11 @@ class PlotCanvas:
             valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
 
             self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e")
+
+        
+        boldFont = font.Font(family="Helvetica", size=10, weight="bold")
+        self.canvas.create_text(leftCornerXAxis + 20, self.canvasHeight - origin.Y + 10, text=self.xAxisLabel, anchor="n",font=boldFont)
+        self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - 10, text=self.yAxisLabel, anchor="s",font=boldFont)
     
     def _drawAxesPNG(self, draw: ImageDraw, maximumValue: int, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0):  
         """
@@ -450,6 +459,24 @@ class PlotCanvas:
             textHeight = bbox[3] - bbox[1]
 
             draw.text((origin.X - 10 - textWidth, y - textHeight/2), text=f"{valueString}", fill = (0,0,0))
+        
+        #Axis labels
+        font = ImageFont.truetype("arialbd.ttf", 12)
+        bbox = font.getbbox(self.xAxisLabel)
+        textW = bbox[2] - bbox[0]
+        textH = bbox[3] - bbox[1]
+        draw.text(
+            (leftCornerXAxis + 10 - textW/2, self.canvasHeight - origin.Y + 10), 
+            text=self.xAxisLabel, fill=(0,0,0), font=font
+        )
+
+        bbox = font.getbbox(self.yAxisLabel)
+        textW = bbox[2] - bbox[0]
+        textH = bbox[3] - bbox[1]
+        draw.text(
+            (origin.X - textW/2, self.canvasHeight - origin.Y - topNumber - textH - 5), 
+            text=self.yAxisLabel, fill=(0,0,0), font=font
+        )
 
     def _writePlotTitle(self):  
         self.canvas.create_text(self.canvasWidth / 2, 20,text=self.title,font=("Arial", 16, "bold"))
@@ -508,12 +535,10 @@ class PlotCanvas:
         else:
             self._saveDataAsCSV(fileName + ".csv")
 
-
-
 class BarChartCanvas(PlotCanvas):
-    def __init__(self, initialValues:  Union[list[float], list[list[float]]], initialWidth: int, initialSpacing: int, initialInnerSpacing: int, canvasWidth: int, canvasHeight: int, graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30):
+    def __init__(self, initialValues:  Union[list[float], list[list[float]]], initialWidth: int, initialSpacing: int, initialInnerSpacing: int, canvasWidth: int, canvasHeight: int, rectangleNames : list[list[str]], graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30, xAxisLabel : str = "", yAxisLabel : str = ""):
         
-        super().__init__(canvasWidth,canvasHeight,graphTitle)
+        super().__init__(canvasWidth,canvasHeight,graphTitle, xAxisLabel, yAxisLabel)
 
         self.realValues = None
 
@@ -526,7 +551,7 @@ class BarChartCanvas(PlotCanvas):
 
         # solver initialisation
         self._setScaleFactor()
-        self.plotSolver = self._createSolver(initialWidth, initialSpacing, initialInnerSpacing, xCoordinate, yCoordinate)
+        self.plotSolver = self._createSolver(initialWidth, initialSpacing, initialInnerSpacing, xCoordinate, yCoordinate, rectangleNames)
 
     
     def _setScaleFactor(self):
@@ -540,11 +565,11 @@ class BarChartCanvas(PlotCanvas):
         if not (self.canvasHeight*0.3 <= maxValue <= self.canvasHeight*0.8):
             self.scaleFactor = self.canvasHeight*0.8/maxValue
     
-    def _createSolver(self, initialBarWidth: int, initialSpacing: int, initialInnerSpacing: int, xCoordinate: int, yCoordinate: int, widthScalesForGroups : list[list[float]] = None):
+    def _createSolver(self, initialBarWidth: int, initialSpacing: int, initialInnerSpacing: int, xCoordinate: int, yCoordinate: int, names : list[list[str]] = None, widthScalesForGroups : list[list[float]] = None):
         initialHeights = [] # rescaled heights
         for group in self.realValues:
             initialHeights.append([int(value*self.scaleFactor) for value in group])
-        return BarChartSolver(initialBarWidth, initialHeights, initialSpacing, initialInnerSpacing, xCoordinate, yCoordinate, widthScalesForGroups)
+        return BarChartSolver(initialBarWidth, initialHeights, initialSpacing, initialInnerSpacing, names, xCoordinate, yCoordinate, widthScalesForGroups)
 
     def _setRightClickMenu(self, frame: tk.Frame):
         self.menu = tk.Menu(frame, tearoff=0)
@@ -889,11 +914,10 @@ class BarChartCanvas(PlotCanvas):
                     output.write(f"{rec.name},{value}")
                 output.write("\n")
 
-
 class HistogramCanvas(BarChartCanvas):
-    def __init__(self, initialValues: list[list[float,float,float]], initialWidth: int, initialPadding: int, canvasWidth: int, canvasHeight: int, graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30):
+    def __init__(self, initialValues: list[list[float,float,float]], initialWidth: int, initialPadding: int, canvasWidth: int, canvasHeight: int, graphTitle: str = "",xCoordinate: int = 50, yCoordinate: int = 30, xAxisLabel : str = "", yAxisLabel : str = ""):
         
-        PlotCanvas.__init__(self,canvasWidth,canvasHeight,graphTitle)
+        PlotCanvas.__init__(self,canvasWidth,canvasHeight,graphTitle, xAxisLabel, yAxisLabel)
 
         self.realValues = []
         
@@ -913,7 +937,7 @@ class HistogramCanvas(BarChartCanvas):
 
         self.intervalScales = [self._createIntervalScales(self.intervals)]
 
-        self.plotSolver = self._createSolver(initialWidth, initialPadding, 0, xCoordinate, yCoordinate, self.intervalScales)
+        self.plotSolver = self._createSolver(initialWidth, initialPadding, 0, xCoordinate, yCoordinate, None, self.intervalScales)
         self.plotSolver.SetIntervalValues(self.intervals)
         self.plotSolver.Update()
 
@@ -1059,13 +1083,14 @@ class HistogramCanvas(BarChartCanvas):
                 output.write(f"{rec.leftBottom.secondaryName},{rec.rightTop.secondaryName},{value}\n")
 
 class ValueCandle(ValueRectangle):
-    def __init__(self, openingCorner : ValuePoint2D, closingCorner : ValuePoint2D, wickBottom : ValuePoint2D, wickTop : ValuePoint2D, color = "blue", name = ""):
+    def __init__(self, openingCorner : ValuePoint2D, closingCorner : ValuePoint2D, wickBottom : ValuePoint2D, wickTop : ValuePoint2D, color = "blue", name = "", nameVisible : bool = False):
         super().__init__(openingCorner, closingCorner, color, name)
         self.openingCorner : ValuePoint2D = self.leftBottom
         self.closingCorner : ValuePoint2D = self.rightTop
 
         self.wickBottom : ValuePoint2D = wickBottom
         self.wickTop : ValuePoint2D = wickTop
+        self.nameVisible = nameVisible
     def __str__(self):
         return f"{self.name} opening: ({self.leftBottom.X}, {self.leftBottom.Y}), closing: ({self.rightTop.X}, {self.rightTop.Y}) Wick: bottom: ({self.wickBottom.X}, {self.wickBottom.Y}) top: ({self.wickTop.X}, {self.wickTop.Y})"
 
@@ -1095,6 +1120,7 @@ class VariableCandle(VariableRectangle):
 
         self.positiveColor = positiveColor
         self.negativeColor = negativeColor
+        self.nameVisible : bool = False
 
     def __iter__(self):
         result = list(super().__iter__())
@@ -1108,18 +1134,20 @@ class VariableCandle(VariableRectangle):
                 +self.wickBottomTrueMinimumConstraints+self.wickTopTrueMaximumConstraints
     
     def Value(self):
-        return ValueCandle(self.openingCorner.Value(), self.closingCorner.Value(), self.wickBottom.Value(), self.wickTop.Value(), self.positiveColor if self.height.value() >= 0 else self.negativeColor, self.name)
+        return ValueCandle(self.openingCorner.Value(), self.closingCorner.Value(), self.wickBottom.Value(), self.wickTop.Value(), self.positiveColor if self.height.value() >= 0 else self.negativeColor, self.name, self.nameVisible)
         
     def ChangePositiveColor(self, color: str):
         self.positiveColor = color
     def ChangeNegativeColor(self, color: str):
         self.negativeColor = color
+    def SwitchNameVisibility(self):
+        self.nameVisible = not self.nameVisible
 
 class VariableCandlesticChart(VariableChart):
-    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
         super().__init__(width, spacing, xCoordinate, yCoordinate)
 
-        self.candles = [VariableCandle(self.width, initialClosing[i] - initialOpening[i], initialOpening[i], initialMinimum[i], initialMaximum[i]) for i in range(len(initialOpening))]
+        self.candles = [VariableCandle(self.width, initialClosing[i] - initialOpening[i], initialOpening[i], initialMinimum[i], initialMaximum[i],names[i]) for i in range(len(initialOpening))]
         
         self.leftMostCandleConstriant : Constraint = (self.candles[0].openingCorner.X >= self.origin.X) | "required"
 
@@ -1148,11 +1176,14 @@ class VariableCandlesticChart(VariableChart):
     def ChangeNegativeColor(self, color : Union[str,int]):
         for candle in self.candles:
             candle.negativeColor = color
+    
+    def SwitchNameVisibility(self, index : int):
+        self.candles[index].SwitchNameVisibility()
 
 class CandlestickChartSolver:
-    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
         self.solver : Solver = Solver()
-        self.variableCandlestickChart : VariableCandlesticChart = VariableCandlesticChart(width,initialOpening,initialClosing,initialMinimum,initialMaximum,spacing,xCoordinate,yCoordinate)
+        self.variableCandlestickChart : VariableCandlesticChart = VariableCandlesticChart(width,initialOpening,initialClosing,initialMinimum,initialMaximum,spacing,names,xCoordinate,yCoordinate)
         self.candleData = None
 
         for constraint in self.variableCandlestickChart.GetAllConstraints():
@@ -1212,6 +1243,10 @@ class CandlestickChartSolver:
     def ChangeAxisHeight(self, newHeight : int):
         self.solver.suggestValue(self.variableCandlestickChart.yAxisHeight, newHeight)
         self.Solve()
+    
+    def SwitchNameVisibility(self, index : int):
+        self.variableCandlestickChart.SwitchNameVisibility(index)
+        self.Update()
 
     def Solve(self):
         self.solver.updateVariables()
@@ -1252,9 +1287,9 @@ class CandlestickChartSolver:
         return self.variableCandlestickChart.candles[candleIndex].name
 
 class CandlestickChartCanvas(PlotCanvas):
-    def __init__(self, width : int, initialOpening : list[float], initialClosing : list[float], initialMinimum : list[float], initialMaximum : list[float], spacing : int, canvasWidth: int, canvasHeight: int, xAxisValue : float = 0, graphTitle: str = "", xCoordinate : int = 50, yCoordinate : int = 30):
+    def __init__(self, width : int, initialOpening : list[float], initialClosing : list[float], initialMinimum : list[float], initialMaximum : list[float], spacing : int, canvasWidth: int, canvasHeight: int, names : list[str], xAxisValue : float = 0, graphTitle: str = "", xCoordinate : int = 50, yCoordinate : int = 30, xAxisLabel : str = "", yAxisLabel : str = ""):
         
-        super().__init__(canvasWidth, canvasHeight, graphTitle)
+        super().__init__(canvasWidth, canvasHeight, graphTitle, xAxisLabel, yAxisLabel)
         self.scaleFactor = 1
         self.realOpeningValues = initialOpening
         self.realClosingValues = initialClosing
@@ -1265,7 +1300,7 @@ class CandlestickChartCanvas(PlotCanvas):
         self._setScaleFactor()
 
         scaledXAxis = self.xAxisValue*self.scaleFactor
-        self.plotSolver : CandlestickChartSolver = CandlestickChartSolver(width,[value*self.scaleFactor-scaledXAxis  for value in initialOpening], [value*self.scaleFactor-scaledXAxis for value in initialClosing],[value*self.scaleFactor-scaledXAxis for value in initialMinimum],[value*self.scaleFactor-scaledXAxis for value in initialMaximum],spacing,xCoordinate,yCoordinate)
+        self.plotSolver : CandlestickChartSolver = CandlestickChartSolver(width,[value*self.scaleFactor-scaledXAxis  for value in initialOpening], [value*self.scaleFactor-scaledXAxis for value in initialClosing],[value*self.scaleFactor-scaledXAxis for value in initialMinimum],[value*self.scaleFactor-scaledXAxis for value in initialMaximum],spacing,names,xCoordinate,yCoordinate)
 
     def _setScaleFactor(self):
         realValues = np.abs(self.realMinimumValues) + np.abs(self.realMaximumValues) + np.abs(self.realClosingValues) + np.abs(self.realOpeningValues)
@@ -1278,6 +1313,7 @@ class CandlestickChartCanvas(PlotCanvas):
         self.menu.add_command(label="Change positive color", command=self._changePositiveColor)
         self.menu.add_command(label="Change negative color", command=self._changeNegativeColor)
         self.menu.add_command(label="Change name", command=self._changeName)
+        self.menu.add_command(label="Switch name visibility", command=self._switchNameVisibility)
 
     def View(self):        
         # UI features initialisation
@@ -1324,7 +1360,8 @@ class CandlestickChartCanvas(PlotCanvas):
 
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=candle.color, outline="black")
             self.canvas.create_line(minX, minY, maxX, maxY, fill=candle.color)
-            self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + 10, text=candle.name)
+            if candle.nameVisible: 
+                self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + 10, text=candle.name)
 
     def _writePlotTitle(self):  
         self.canvas.create_text(self.canvasWidth / 2, 20,text=self.title,font=("Arial", 16, "bold"))
@@ -1510,6 +1547,10 @@ class CandlestickChartCanvas(PlotCanvas):
         self._writeValues()
         pass
 
+    def _switchNameVisibility(self):
+        self.plotSolver.SwitchNameVisibility(self.rectangleIndexToChange)
+        self._drawPlot()
+
     def on_right_down(self, event):
             for index, candle in enumerate(self.plotSolver.GetCandleData()):
                 if self._isInsideOfCandle(event, candle):
@@ -1563,7 +1604,7 @@ class CandlestickChartCanvas(PlotCanvas):
         origin = self.plotSolver.GetOrigin()
 
         if self.dragEdge == "right":
-            newWidth = (event.x - self.dragIndex*self.plotSolver.GetSpacing() - origin.X)/(self.dragIndex+1)
+            newWidth = (event.x - (self.dragIndex+1)*self.plotSolver.GetSpacing() - origin.X)/(self.dragIndex+1)
             if newWidth >= 5:
                 self.plotSolver.ChangeWidth(newWidth)
             pass
@@ -1668,24 +1709,24 @@ class CandlestickChartCanvas(PlotCanvas):
             xMin, yMin = candle.wickBottom.X, self.canvasHeight - candle.wickBottom.Y - origin.Y
             draw.line((xMax,yMax,xMin,yMin), fill=candle.color, width=1) 
 
+            if candle.nameVisible:
+                font = ImageFont.load_default()
+                text = candle.name
 
-            font = ImageFont.load_default()
-            text = candle.name
+                # get text size
+                bbox = font.getbbox(text)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
 
-            # get text size
-            bbox = font.getbbox(text)
-            text_width = bbox[2] - bbox[0]
-            text_height = bbox[3] - bbox[1]
+                # text position
+                x_center = (x1 + x2) / 2
+                y_text = self.canvasHeight - origin.Y + 10
 
-            # text position
-            x_center = (x1 + x2) / 2
-            y_text = self.canvasHeight - origin.Y + 10
-
-            draw.text(
-                (x_center - text_width / 2, y_text - text_height/2),
-                text,
-                fill="black",
-                font=font)
+                draw.text(
+                    (x_center - text_width / 2, y_text - text_height/2),
+                    text,
+                    fill="black",
+                    font=font)
 
     def _makePNG(self, name: str):
         candles = self.plotSolver.GetCandleData()

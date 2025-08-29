@@ -12,15 +12,44 @@ class MenuScreen:
         
         self.mainMenu = tk.Frame(self.root, bg="bisque2")
         self.mainMenu.pack(fill="both",expand=True)
+        self.xAxisValueEntry = None
 
         self._setDataInput()
         self._setPlotTypeMenu()
+
+        self.dimentionsAndLabelsFrame = tk.Frame(self.mainMenu, bg="bisque2")
+        self.dimentionsAndLabelsFrame.pack()
+
         self._setPlotDimentionsMenu()
+        self._setAxisLabelsMenu()
+        self.chosenPlotType.trace_add("write", self._updateCandlestickEntry)
         self._setGenerateButton()
 
     def View(self):
         self.root.mainloop()
-       
+    
+    def _updateCandlestickEntry(self, *args):
+        if hasattr(self, "xAxisValueFrame") and self.xAxisValueFrame is not None:
+            self.xAxisValueFrame.destroy()
+            self.xAxisValueFrame = None
+
+        if self.chosenPlotType.get() == "Candlestick chart":
+
+            self.xAxisValueFrame = tk.Frame(self.mainMenu, bg="bisque2")
+            self.xAxisValueFrame.pack(pady=5, before=self.generateButton)
+
+            xLabel = tk.Label(self.xAxisValueFrame, text="X axis value:", font=("Arial", 11), bg="bisque2")
+            xLabel.pack(side="left")
+
+
+            def onlyNumber(input: str):
+                return input.isdigit() or input == ""
+            validator = self.mainMenu.register(onlyNumber)
+
+            self.xAxisValueEntry = tk.Entry(self.xAxisValueFrame, validate="key", validatecommand=(validator, "%P"))
+            self.xAxisValueEntry.insert(0, "0")
+            self.xAxisValueEntry.pack(side="left")
+
 
     def _setDataInput(self):
         self.dataInputFrame = tk.Frame(self.mainMenu, bg="bisque2")
@@ -46,8 +75,8 @@ class MenuScreen:
         self.plotMenu.pack(pady=20)
         
     def _setPlotDimentionsMenu(self):
-        self.plotDimentionsMenu = tk.Frame(self.mainMenu, bg="bisque2")
-        self.plotDimentionsMenu.pack()
+        self.plotDimentionsMenu = tk.Frame(self.dimentionsAndLabelsFrame, bg="bisque2")
+        self.plotDimentionsMenu.pack(side="left", padx=20)
 
         def onlyNumber(input: str):
             return input.isdigit() or input == ""
@@ -65,6 +94,25 @@ class MenuScreen:
         self.heightEntry = tk.Entry(self.plotDimentionsMenu, validate="key", validatecommand=(numberValidator, "%P"))
         self.heightEntry.grid(row=2, column=1, pady=5)
         pass
+
+    def _setAxisLabelsMenu(self):
+        self.axisLabelsMenu = tk.Frame(self.dimentionsAndLabelsFrame, bg="bisque2")
+        self.axisLabelsMenu.pack(side="left", padx=20)
+
+        axisLabel = tk.Label(self.axisLabelsMenu, text="Axis labels", font=("Arial", 15), bg="bisque2")
+        axisLabel.grid(row=0, column=0, sticky="w")
+
+        xLabel = tk.Label(self.axisLabelsMenu, text="x label", font=("Arial", 11), bg="bisque2")
+        xLabel.grid(row=1, column=0, sticky="w")
+        self.xAxisEntry = tk.Entry(self.axisLabelsMenu)
+        self.xAxisEntry.grid(row=1, column=1, pady=5)
+
+        yLabel = tk.Label(self.axisLabelsMenu, text="y label", font=("Arial", 11), bg="bisque2")
+        yLabel.grid(row=2, column=0, sticky="w")
+        self.yAxisEntry = tk.Entry(self.axisLabelsMenu)
+        self.yAxisEntry.grid(row=2, column=1, pady=5)
+
+
 
     def _setGenerateButton(self):
         self.generateButton = tk.Button(self.mainMenu, text="GENERATE", command=self.on_generateButton_click)
@@ -91,12 +139,14 @@ class MenuScreen:
         height = int(self.heightEntry.get())
         input = self.dataInputField.get("1.0", "end")
         plotType = self.chosenPlotType.get()
+        xLabel = self.xAxisEntry.get()
+        yLabel = self.yAxisEntry.get()
         if plotType == "Bar chart":
-            self._runBarChart(input, width, height)
+            self._runBarChart(input, width, height, xLabel, yLabel)
         elif plotType == "Histogram":
-            self._runHistogram(input, width, height)
+            self._runHistogram(input, width, height, xLabel, yLabel)
         elif plotType == "Candlestick chart":
-            self._runCandlestickChart(input, width, height)
+            self._runCandlestickChart(input, width, height, xLabel, yLabel)
 
     @staticmethod
     def _csvToListOfLists(fileString : str):
@@ -185,34 +235,35 @@ class MenuScreen:
             maxima.append(float(line[4]))
         return [names, openings, closings, minima, maxima]
 
-    def _runBarChart(self, input : str, width : int, height : int):
+    def _runBarChart(self, input : str, width : int, height : int, xLabel : str, yLabel : str):
         data = self._prepareInput_BarChart(input)
         if data is None:
             messagebox.showerror("Warning","Input text is not in correct format.")
             return
         
         names, values = data[0], data[1]
-        barChart = BarChartCanvas(values, 20, 5, 3, width, height, "Title")
+        barChart = BarChartCanvas(values, 20, 5, 3, width, height, names, "Title", 50, 30, xLabel, yLabel)
         self.root.destroy()
         barChart.View()
     
-    def _runHistogram(self, input : str, width : int, height : int):
+    def _runHistogram(self, input : str, width : int, height : int, xLabel : str, yLabel : str):
         data = self._prepareInput_Histogram(input)
         if data is None:
             messagebox.showerror("Warning","Input text is not in correct format.")
             return
         
-        histogram = HistogramCanvas(data,20,10,width,height,"Title")
+        histogram = HistogramCanvas(data,20,10,width,height,"Title", 50, 30, xLabel, yLabel)
         self.root.destroy()
         histogram.View()
 
-    def _runCandlestickChart(self, input : str, width : int, height : int):
+    def _runCandlestickChart(self, input : str, width : int, height : int, xLabel : str, yLabel : str):
         data = self._prepareInput_CandlestickChart(input)
         if data is None:
             messagebox.showerror("Warning","Input text is not in correct format.")
             return
         names, openings, closings, minima, maxima = data[0], data[1], data[2], data[3], data[4]
-        candlestickChart = CandlestickChartCanvas(20, openings, closings, minima, maxima, 5, width, height, 0, "Title")
+        xAxisValue = float(self.xAxisValueEntry.get())
+        candlestickChart = CandlestickChartCanvas(20, openings, closings, minima, maxima, 5, width, height, names, xAxisValue, "Title", 50, 30, xLabel, yLabel)
         self.root.destroy()
         candlestickChart.View()
 
