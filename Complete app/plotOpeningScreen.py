@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import simpledialog
 from tkinter import messagebox
-from barPlots import *
+from kiwiplots import *
 import csv
 
 class MenuScreen:
@@ -88,10 +88,12 @@ class MenuScreen:
         widthLabel = tk.Label(self.plotDimentionsMenu, text="width", font=("Arial", 11), bg="bisque2")
         widthLabel.grid(row=1, column=0, sticky="w")
         self.widthEntry = tk.Entry(self.plotDimentionsMenu, validate="key", validatecommand=(numberValidator, "%P"))
+        self.widthEntry.insert(0,"1000")
         self.widthEntry.grid(row=1, column=1, pady=5)
         heightLabel = tk.Label(self.plotDimentionsMenu, text="height", font=("Arial", 11), bg="bisque2")
         heightLabel.grid(row=2, column=0, sticky="w")
         self.heightEntry = tk.Entry(self.plotDimentionsMenu, validate="key", validatecommand=(numberValidator, "%P"))
+        self.heightEntry.insert(0,"500")
         self.heightEntry.grid(row=2, column=1, pady=5)
         pass
 
