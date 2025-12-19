@@ -1,5 +1,6 @@
 from kiwisolver import Variable, Constraint
 from typing import Union
+from abc import ABC, abstractmethod
 
 class ValuePoint2D:
     """
@@ -40,7 +41,17 @@ class VariablePoint2D:
   def Value(self):
         return ValuePoint2D(self.X.value(), self.Y.value(), self.name, self.secondaryName)
 
-class VariableRectangle:
+
+class VariableElement(ABC):
+
+    @abstractmethod
+    def GetAllConstraints(self)->list[Constraint]:
+         raise NotImplementedError("Method on_left_down must be declared in subclass")
+    @abstractmethod
+    def Value(self):
+         raise NotImplementedError("Method on_left_down must be declared in subclass")
+
+class VariableRectangle(VariableElement):
     """
     Creates constraints for a given rectangle.
     Width is maintained globaly, height localy
@@ -69,7 +80,8 @@ class VariableRectangle:
 
         self.spacingConstraint : Constraint = None
 
-    def __iter__(self):
+   
+    def _getShapeConstraints(self) -> list[Constraint]:
         """
         Returns iterator over basic constraints.
         """
@@ -82,18 +94,21 @@ class VariableRectangle:
             constraints.append(self.bottomLeftYPositionConstraint)
         constraints.append(self.horizontalPositionConstraint)
         constraints.append(self.verticalPositionConstraint)
-        return iter(constraints)
-   
-    
+        return constraints
+
+    def _getPositionConstraints(self) -> list[Constraint]:
+        return [(self.height >= 0)|"required",(self.leftBottom.X >= 0) | "required", (self.leftBottom.Y >= 0) | "required", (self.rightTop.X >= 0) | "required", (self.rightTop.Y >= 0) | "required"]
+
+
     def SetSpacingConstraint(self, spacingConstraint : Constraint):
         self.spacingConstraint = spacingConstraint
     
+
     def GetAllConstraints(self):
         """
         Returns all constraints, both from __iter__ method and constraints which specify domain of variables
         """
-        constraints = [constraint for constraint in self] + [(self.height >= 0)|"required",(self.leftBottom.X >= 0) | "required", (self.leftBottom.Y >= 0) | "required", (self.rightTop.X >= 0) | "required", (self.rightTop.Y >= 0) | "required"]
-        return constraints
+        return self._getShapeConstraints() + self._getPositionConstraints()
     
     def Value(self):
         """
@@ -101,14 +116,13 @@ class VariableRectangle:
         """
         return ValueRectangle(self.leftBottom.Value(), self.rightTop.Value(), self.color, self.name)
 
-class VariableRectangleGroup:
+class VariableRectangleGroup(VariableElement):
     """
     Represents a group of rectangles. Rectangles are separated by innerSpacing Variable, which is declared globaly.
     """
     def __init__(self, rectangleWidth: Variable, heights: list[int], innerSpacing: Variable, names: list[str], color: str = "blue", widthScales : list[float] = None):
         self.rectangles = [VariableRectangle(rectangleWidth, height, names[i] if names is not None else "", color, (1 if widthScales is None else widthScales[i])) for i,height in enumerate(heights)]
         self.innerSpacing = innerSpacing
-
 
         for i in range(1,len(self.rectangles)):
             self.rectangles[i].SetSpacingConstraint((self.rectangles[i-1].rightTop.X + self.innerSpacing == self.rectangles[i].leftBottom.X) | "required")
@@ -125,17 +139,22 @@ class VariableRectangleGroup:
     def SetSpacingConstraint(self, constraint: Constraint):
         self.spacingConstraint = constraint
     
-    def GetAllConstraints(self):
-        """
-        Returns all constraints.
-        """
+    def _getRectangleConstraints(self)->list[Constraint]:
         result = []
         for rec in self.rectangles:
             constraints = rec.GetAllConstraints()
             result += constraints
-        return result \
-                    + [self.rectangles[i-1].leftBottom.Y == self.rectangles[i].leftBottom.Y for i in range(1,len(self.rectangles))] \
-                    + ([] if self.spacingConstraint == None else [self.spacingConstraint])
+        return result
+    
+    def _getVerticalAligmentConstraints(self)->list[Constraint]:
+        return [self.rectangles[i-1].leftBottom.Y == self.rectangles[i].leftBottom.Y for i in range(1,len(self.rectangles))]
+
+
+    def GetAllConstraints(self)->list[Constraint]:
+        """
+        Returns all constraints.
+        """
+        return self._getRectangleConstraints() + self._getVerticalAligmentConstraints() + ([] if self.spacingConstraint == None else [self.spacingConstraint])
     
     def Value(self):
         """
@@ -186,7 +205,6 @@ class VariableCandle(VariableRectangle):
         
         super().__init__(width, height, name, positiveColor if height >= 0 else negativeColor)
 
-
         self.openingCorner : VariablePoint2D = self.leftBottom
         self.closingCorner : VariablePoint2D = self.rightTop
 
@@ -207,23 +225,24 @@ class VariableCandle(VariableRectangle):
         self.positiveColor = positiveColor
         self.negativeColor = negativeColor
         self.nameVisible : bool = False
-
-    def __iter__(self):
-        """
-        Returns basic constraints.
-        """
-        result = list(super().__iter__())
+    
+    def _getShapeConstraints(self) -> list[Constraint]:
+        result = super()._getShapeConstraints()
         result.extend([self.wickXConstraint, self.straightWickConstraint])
         result.extend([self.wickBottomConstraint, self.wickTopConstraint])
         result.append(self.openingCornerConstraint)
-        return iter(result)
+        return result
+    
+    def _getPositionConstraints(self) -> list[Constraint]:
+        return [(self.closingCorner.X >= 0) | "required", (self.openingCorner.X >= 0) | "required", (self.wickBottom.X >= 0) | "required", (self.wickTop.X >= 0) | "required"] \
+                +self.wickBottomTrueMinimumConstraints+self.wickTopTrueMaximumConstraints
         
     def GetAllConstraints(self):
         """
         Returns all constraints, both from __iter__ method and constraints which specify domain of variables
         """
-        return [constraint for constraint in self] + [(self.closingCorner.X >= 0) | "required", (self.openingCorner.X >= 0) | "required", (self.wickBottom.X >= 0) | "required", (self.wickTop.X >= 0) | "required"] \
-                +self.wickBottomTrueMinimumConstraints+self.wickTopTrueMaximumConstraints
+        return self._getShapeConstraints() + self._getPositionConstraints()
+
     
     def Value(self):
         """
