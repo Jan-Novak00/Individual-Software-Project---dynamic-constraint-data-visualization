@@ -1,8 +1,11 @@
 from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle
 from kiwisolver import Variable, Constraint
 from typing import Union
+from abc import ABC, abstractmethod
 
-class VariableChart:
+MINIMAL_WIDTH : float = 10
+
+class VariableChart(ABC):
     """
     Encapsulates all variables of all plot elemenets
     """
@@ -17,8 +20,15 @@ class VariableChart:
         self.yAxisHeight: Variable = Variable("axisTop")
 
         self.originXCoordinateConstraint: Constraint = Constraint(self.origin.X - xCoordinate, "==", "strong")
-
         self.originYCoordinateConstraint: Constraint = Constraint(self.origin.Y - yCoordinate, "==", "strong")
+    
+    @abstractmethod
+    def GetAllConstraints(self)->list[Constraint]:
+        raise NotImplementedError("Method on_left_down must be declared in subclass")
+    
+    @abstractmethod
+    def Value(self):
+        raise NotImplementedError("Method on_left_down must be declared in subclass")
 
 class VariableBarChart(VariableChart):
     """
@@ -46,11 +56,11 @@ class VariableBarChart(VariableChart):
             interval = intervals[index]
             rec.leftBottom.secondaryName, rec.rightTop.secondaryName = f"{interval[0]}", f"{interval[1]}"
 
-    def ChangeColor(self, groupIndex: int, rectangleIndex: int, color: str):
-        self.groups[groupIndex].rectangles[rectangleIndex].color = color
+    def ChangeColor(self, groupIndex: int, rectangleIndex: int, color: Union[str,int]):
+        self.groups[groupIndex].ChangeColor(rectangleIndex, color)
     
     def ChangeName(self, groupIndex: int, rectangleIndex: int, name: str):
-        self.groups[groupIndex].rectangles[rectangleIndex].name = name
+        self.groups[groupIndex].ChangeName(rectangleIndex,name)
      
     def _createGroupSpacingConstraints(self):
         for index in range(1,len(self.groups)):
@@ -58,15 +68,25 @@ class VariableBarChart(VariableChart):
     
     def Value(self):
         return [group.Value() for group in self.groups]
-
-    def GetAllConstraints(self):
+    
+    def _getGroupConstraints(self) -> list[Constraint]:
         result = []
         for group in self.groups:
             result.extend(group.GetAllConstraints())
-        return result + [(self.width >= 10) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required"] \
-                    + [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))] \
-                    + [self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint] \
-                    + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
+        return result 
+    
+    def _getSpacingConstraints(self)-> list[Constraint]:
+        global MINIMAL_WIDTH
+        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required",self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint]
+    
+    def _getVerticalGroupAligmentConstraints(self) -> list[Constraint]:
+        return [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
+    
+    def _getOriginConstraints(self) -> list[Constraint]:
+        return [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
+
+    def GetAllConstraints(self)-> list[Constraint]:
+        return self._getGroupConstraints() + self._getSpacingConstraints()+ self._getVerticalGroupAligmentConstraints() + self._getOriginConstraints()
     
 class VariableCandlesticChart(VariableChart):
     """
@@ -88,22 +108,32 @@ class VariableCandlesticChart(VariableChart):
     
     def Value(self):
         return [candle.Value() for candle in self.candles]
-
-    def GetAllConstraints(self):
+    
+    def _getCandleConstraints(self)-> list[Constraint]:
         result = []
         for candle in self.candles:
             result.extend(candle.GetAllConstraints())
-        return result + [(self.width >= 10) | "required", (self.spacing >= 0) | "required"] \
-                      + [self.widthValueConstraint, self.spacingValueConstraint] \
-                      + [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftMostCandleConstriant]
+        return result
+    
+    def _getPositionConstraints(self)-> list[Constraint]:
+        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftMostCandleConstriant]
+
+    def _getGlobalShapeConstraints(self)-> list[Constraint]:
+        return [self.widthValueConstraint, self.spacingValueConstraint]
+
+    def GetAllConstraints(self)-> list[Constraint]:
+        return self._getCandleConstraints() + self._getPositionConstraints() + self._getGlobalShapeConstraints()
     
     def ChangePositiveColor(self, color : Union[str,int]):
         for candle in self.candles:
-            candle.positiveColor = color
+            candle.ChangePositiveColor(color)
     
     def ChangeNegativeColor(self, color : Union[str,int]):
         for candle in self.candles:
-            candle.negativeColor = color
+            candle.ChangeNegativeColor(color)
     
     def SwitchNameVisibility(self, index : int):
         self.candles[index].SwitchNameVisibility()
+    
+    def ChangeName(self, index: int, name: str):
+        self.candles[index].ChangeName(name)

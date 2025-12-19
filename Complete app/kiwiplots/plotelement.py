@@ -50,6 +50,7 @@ class VariableElement(ABC):
     @abstractmethod
     def Value(self):
          raise NotImplementedError("Method on_left_down must be declared in subclass")
+   
 
 class VariableRectangle(VariableElement):
     """
@@ -79,7 +80,12 @@ class VariableRectangle(VariableElement):
         self.bottomLeftYPositionConstraint : Constraint = None
 
         self.spacingConstraint : Constraint = None
-
+    
+    def ChangeName(self, name: str) -> None:
+        self.name = name
+    
+    def ChangeColor(self, color: Union[str,int]):
+        self.color = color
    
     def _getShapeConstraints(self) -> list[Constraint]:
         """
@@ -170,6 +176,12 @@ class VariableRectangleGroup(VariableElement):
 
     def NumberOfRectangles(self):
         return len(self.rectangles)
+    
+    def ChangeName(self, index : int, name : str) -> None:
+        self.rectangles[index].ChangeName(name)
+
+    def ChangeColor(self, index : int, color: Union[str,int])-> None:
+        self.rectangles[index].ChangeColor(color)
 
 class ValueCandle(ValueRectangle):
     """
@@ -256,3 +268,4 @@ class VariableCandle(VariableRectangle):
         self.negativeColor = color
     def SwitchNameVisibility(self):
         self.nameVisible = not self.nameVisible
+    
