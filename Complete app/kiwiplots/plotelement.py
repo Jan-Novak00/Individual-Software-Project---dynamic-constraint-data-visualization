@@ -121,6 +121,12 @@ class VariableRectangle(VariableElement):
         Returns ValueRectangle representation of the instance.
         """
         return ValueRectangle(self.leftBottom.Value(), self.rightTop.Value(), self.color, self.name)
+    
+    def GetName(self):
+        return self.name
+    
+    def GetHeightVariable(self) -> Variable:
+        return self.height
 
 class VariableRectangleGroup(VariableElement):
     """
@@ -183,6 +189,12 @@ class VariableRectangleGroup(VariableElement):
     def ChangeColor(self, index : int, color: Union[str,int])-> None:
         self.rectangles[index].ChangeColor(color)
 
+    def GetName(self, rectangleIndex : int):
+        return self.rectangles[rectangleIndex].GetName()
+    
+    def GetHeightVariable(self, rectangleIndex: int) -> Variable:
+        return self.rectangles[rectangleIndex].GetHeightVariable()
+        
 class ValueCandle(ValueRectangle):
     """
     Holds information about a given candle.
@@ -269,3 +281,14 @@ class VariableCandle(VariableRectangle):
     def SwitchNameVisibility(self):
         self.nameVisible = not self.nameVisible
     
+    def GetOpeningCorner(self) -> VariablePoint2D:
+        return self.openingCorner
+    
+    def GetClosingCorner(self) -> VariablePoint2D:
+        return self.closingCorner
+    
+    def GetWickBottom(self) -> VariablePoint2D:
+        return self.wickBottom
+    
+    def GetWickTop(self) -> VariablePoint2D:
+        return self.wickTop

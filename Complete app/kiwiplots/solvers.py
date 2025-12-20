@@ -136,10 +136,10 @@ class BarChartSolver(ChartSolver):
         return self.variableChart.innerSpacing.value()
     
     def GetName(self, groupIndex: int, rectangleIndex: int):
-        return self.variableChart.groups[groupIndex].rectangles[rectangleIndex].name
+        return self.variableChart.GetName(groupIndex, rectangleIndex)
     
     def ChangeHeight(self, groupIndex: int, rectangleIndex: int, newHeight: int):
-        self.solver.suggestValue(self.variableChart.groups[groupIndex].rectangles[rectangleIndex].height, newHeight)
+        self.solver.suggestValue(self.variableChart.GetHeightVariable(groupIndex, rectangleIndex), newHeight)
         self.Solve()
     
     def ChangeInnerSpacing(self, newInnerSpacing: int):
@@ -153,6 +153,12 @@ class BarChartSolver(ChartSolver):
     def ChangeName(self,groupIndex: int, rectangleIndex: int, newColor: str):
         self.variableChart.ChangeName(groupIndex,rectangleIndex, newColor)
         self.Update()
+    
+    def ChangeSpacing(self, spacing):
+        super().ChangeSpacing(spacing)
+    
+    def ChangeWidth(self, width):
+        super().ChangeWidth(width)
 
 
 
@@ -202,20 +208,20 @@ class CandlestickChartSolver(ChartSolver):
             self.solver.addConstraint(constraint)
     
     def ChangeHeight(self, candleIndex : int, height : int):
-        self.solver.suggestValue(self.variableChart.candles[candleIndex].height, height)
+        self.solver.suggestValue(self.variableChart.GetHeightVariable(candleIndex), height)
         self.Solve()
     
     def ChangeMaximum(self, candleIndex : int, yValue : int):
-        topOfCandle = max(self.variableChart.candles[candleIndex].openingCorner.Y.value(), self.variableChart.candles[candleIndex].closingCorner.Y.value())
-        self.solver.suggestValue(self.variableChart.candles[candleIndex].wickTop.Y, yValue if (yValue >= topOfCandle) else topOfCandle)
+        topOfCandle = max(self.variableChart.GetOpeningCorner(candleIndex).Y.value(), self.variableChart.GetClosingCorner(candleIndex).Y.value())
+        self.solver.suggestValue(self.variableChart.GetWickTop(candleIndex).Y, yValue if (yValue >= topOfCandle) else topOfCandle)
         self.Solve()
 
     def ChangeMinimum(self, candleIndex : int, yValue : int):
-        self.solver.suggestValue(self.variableChart.candles[candleIndex].wickBottom.Y, yValue)
+        self.solver.suggestValue(self.variableChart.GetWickBottom(candleIndex).Y, yValue)
         self.Solve()
 
     def ChangeOpening(self, candleIndex: int, yValue : int):
-        self.solver.suggestValue(self.variableChart.candles[candleIndex].openingCorner.Y, yValue)
+        self.solver.suggestValue(self.variableChart.GetOpeningCorner(candleIndex).Y, yValue)
         self.Solve()
     
     def SwitchNameVisibility(self, index : int):
@@ -231,11 +237,11 @@ class CandlestickChartSolver(ChartSolver):
         self.Update()
     
     def ChangeName(self, candleIndex : int, name : str):
-        self.variableChart.candles[candleIndex].name = name
+        self.variableChart.ChangeName(candleIndex, name)
         self.Update()
 
     def GetCandleData(self):
         return self.data
     
     def GetName(self, candleIndex : int):
-        return self.variableChart.candles[candleIndex].name
+        return self.variableChart.GetName(candleIndex)

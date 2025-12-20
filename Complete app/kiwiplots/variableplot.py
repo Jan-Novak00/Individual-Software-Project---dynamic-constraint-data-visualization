@@ -1,4 +1,4 @@
-from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle
+from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValuePoint2D
 from kiwisolver import Variable, Constraint
 from typing import Union
 from abc import ABC, abstractmethod
@@ -29,6 +29,11 @@ class VariableChart(ABC):
     @abstractmethod
     def Value(self):
         raise NotImplementedError("Method on_left_down must be declared in subclass")
+    
+    def GetOrigin(self)-> ValuePoint2D:
+        return self.origin.Value()
+
+
 
 class VariableBarChart(VariableChart):
     """
@@ -41,7 +46,7 @@ class VariableBarChart(VariableChart):
         self.innerSpacing = Variable("global_inner_spacing")
         self.innerSpacingValueConstraint : Constraint = (self.innerSpacing == innerSpacing) | "strong"
         
-        self.groups = [VariableRectangleGroup(self.width,heights,self.innerSpacing, rectangleNames[i] if rectangleNames is not None else None, "blue" ,None if widthScalesForGroups is None else widthScalesForGroups[i]) for i, heights in enumerate(initialHeights)]
+        self.groups : list[VariableRectangleGroup] = [VariableRectangleGroup(self.width,heights,self.innerSpacing, rectangleNames[i] if rectangleNames is not None else None, "blue" ,None if widthScalesForGroups is None else widthScalesForGroups[i]) for i, heights in enumerate(initialHeights)]
         self._createGroupSpacingConstraints()
 
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
@@ -69,6 +74,7 @@ class VariableBarChart(VariableChart):
     def Value(self):
         return [group.Value() for group in self.groups]
     
+    
     def _getGroupConstraints(self) -> list[Constraint]:
         result = []
         for group in self.groups:
@@ -87,6 +93,12 @@ class VariableBarChart(VariableChart):
 
     def GetAllConstraints(self)-> list[Constraint]:
         return self._getGroupConstraints() + self._getSpacingConstraints()+ self._getVerticalGroupAligmentConstraints() + self._getOriginConstraints()
+    
+    def GetName(self, groupIndex : int, rectangleIndex : int):
+        return self.groups[groupIndex].GetName(rectangleIndex)
+    
+    def GetHeightVariable(self,groupIndex : int, rectangleIndex : int) -> Variable:
+        return self.groups[groupIndex].GetHeightVariable(rectangleIndex)
     
 class VariableCandlesticChart(VariableChart):
     """
@@ -137,3 +149,21 @@ class VariableCandlesticChart(VariableChart):
     
     def ChangeName(self, index: int, name: str):
         self.candles[index].ChangeName(name)
+    
+    def GetHeightVariable(self, candleIndex : int) -> Variable:
+        return self.candles[candleIndex].GetHeightVariable()
+    
+    def GetName(self, index: int):
+        return self.candles[index].GetName()
+    
+    def GetOpeningCorner(self, index : int) -> VariablePoint2D:
+        return self.candles[index].GetOpeningCorner()
+
+    def GetClosingCorner(self, index : int) -> VariablePoint2D:
+        return self.candles[index].GetClosingCorner()
+    
+    def GetWickBottom(self, index : int) -> VariablePoint2D:
+        return self.candles[index].GetWickBottom()
+    
+    def GetWickTop(self, index : int) -> VariablePoint2D:
+        return self.candles[index].GetWickTop()
