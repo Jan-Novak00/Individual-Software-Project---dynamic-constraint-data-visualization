@@ -292,3 +292,35 @@ class VariableCandle(VariableRectangle):
     
     def GetWickTop(self) -> VariablePoint2D:
         return self.wickTop
+
+class ValueLine:
+    def __init__(self, leftEnd : ValuePoint2D, rightEnd : ValuePoint2D):
+        self.leftEnd : ValuePoint2D = leftEnd
+        self.rightEnd : ValuePoint2D = rightEnd
+    def __str__(self):
+        return f"<{self.leftEnd.name}>-<{self.rightEnd.name}>: ({self.leftEnd.X}, {self.leftEnd.Y})-({self.rightEnd.X}, {self.rightEnd.Y})"
+
+class VariableLine(VariableElement):
+    def __init__(self, width : Variable, xAxisHeight : Variable, leftHeight : int, rightHeight : int, leftName : str = "", rightName : str = ""):
+        self.width : Variable = width
+        self.xAxisHeight : Variable = xAxisHeight
+        self.leftHeight : Variable = Variable(f"{leftName}_height")
+        self.rightHeight : Variable = Variable(f"{rightName}_height")
+        self.leftEnd : VariablePoint2D = VariablePoint2D(leftName)
+        self.rightEnd : VariablePoint2D = VariablePoint2D(rightName)
+
+        self.horizontalPositionConstraint : Constraint = ((self.leftEnd.X + self.width == self.rightEnd.X) | "required")
+        self.verticalConstraints : list[Constraint] = [
+            ((self.xAxisHeight + self.leftHeight == self.leftEnd.Y) | "required"),
+            ((self.xAxisHeight + self.rightHeight == self.rightEnd.Y) | "required")
+        ]
+        self.heightConstraints : list[Constraint] = [
+            ((self.leftHeight == float(leftHeight)) | "strong"),
+            ((self.rightHeight == float(rightHeight)) | "strong")
+        ]
+    
+    def GetAllConstraints(self):
+        return self.verticalConstraints + [self.horizontalPositionConstraint] + self.heightConstraints
+    
+    def Value(self):
+        return ValueLine(self.leftEnd.Value(), self.rightEnd.Value())

@@ -1,8 +1,10 @@
-from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D
-from .variableplot import VariableChart, VariableBarChart, VariableCandlesticChart
+from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueLine, VariableLine
+from .variableplot import VariableChart, VariableBarChart, VariableCandlesticChart, VariableLineChart
 from kiwisolver import Variable, Constraint, Solver
 from typing import Union
 from abc import ABC, abstractmethod
+import itertools as it
+from .utils import *
 
 class ChartSolver(ABC):
     """
@@ -75,7 +77,6 @@ class ChartSolver(ABC):
     def ChangeSpacing(self, spacing : int):
         self.solver.suggestValue(self.variableChart.spacing, spacing)
         self.Solve()
-
 
 class BarChartSolver(ChartSolver):
     """
@@ -160,8 +161,6 @@ class BarChartSolver(ChartSolver):
     def ChangeWidth(self, width):
         super().ChangeWidth(width)
 
-
-
 class CandlestickChartSolver(ChartSolver):
     """
     ChartSolver version for candlestick chart.
@@ -245,3 +244,49 @@ class CandlestickChartSolver(ChartSolver):
     
     def GetName(self, candleIndex : int):
         return self.variableChart.GetName(candleIndex)
+
+class LineChartSolver(ChartSolver):
+    def __init__(self, width : int, initialValues : list[int], pointNames : list[str] = [], xCoordinate : int = 0, yCoordinate : int = 0):
+        self.initialWidth : int = width
+        self.initialValues : list[int] = initialValues
+        self.initialPointNames : list[str] = pointNames
+        self.initialxCoordinate = xCoordinate
+        self.initialyCoordinate = yCoordinate
+        super().__init__()
+        self.variableChart : VariableLineChart = self.variableChart
+        
+
+    def _initializeVariableChart(self):
+        return VariableLineChart(self.initialWidth,self.initialValues, self.initialPointNames, self.initialxCoordinate, self.initialyCoordinate)
+    
+    def _setConstraints(self):
+        constraints : set[Constraint] = set(self.variableChart.GetAllConstraints())
+        for constraint in constraints:
+            self.solver.addConstraint(constraint)
+    
+    def _addEditVariables(self):
+        chart : VariableLineChart = self.variableChart
+        self.solver.addEditVariable(self.variableChart.width, "strong")
+        self.solver.addEditVariable(self.variableChart.origin.X, "strong")
+        self.solver.addEditVariable(self.variableChart.origin.Y, "strong")
+        self.solver.addEditVariable(self.variableChart.yAxisHeight, "strong")
+        for line in chart.lines:
+            self.solver.addEditVariable(line.leftHeight, "strong")
+            self.solver.addEditVariable(line.rightHeight, "strong")
+    
+    def _initialSuggest(self):
+        chart : VariableLineChart = self.variableChart
+        self.solver.suggestValue(self.variableChart.yAxisHeight, max(self.initialValues)+10)
+        self.solver.suggestValue(chart.width, self.initialWidth)
+        self.solver.suggestValue(chart.origin.X, self.initialxCoordinate)
+        self.solver.suggestValue(chart.origin.Y,self.initialyCoordinate)
+        valuePairs = list(pairwise(self.initialValues))
+        for i in range(len(chart.lines)):
+            line = chart.lines[i]
+            values = valuePairs[i]
+            self.solver.suggestValue(line.leftHeight, values[0])
+            self.solver.suggestValue(line.rightHeight,values[1])
+
+    def GetLineData(self):
+        return [line.Value() for line in self.variableChart.lines]
+            
