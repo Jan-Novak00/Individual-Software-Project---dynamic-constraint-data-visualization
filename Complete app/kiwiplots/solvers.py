@@ -272,7 +272,7 @@ class LineChartSolver(ChartSolver):
         self.solver.addEditVariable(self.variableChart.yAxisHeight, "strong")
         for line in chart.lines:
             self.solver.addEditVariable(line.leftHeight, "strong")
-            self.solver.addEditVariable(line.rightHeight, "strong")
+            self.solver.addEditVariable(line.rightHeight, "medium")
     
     def _initialSuggest(self):
         chart : VariableLineChart = self.variableChart
@@ -289,4 +289,9 @@ class LineChartSolver(ChartSolver):
 
     def GetLineData(self):
         return [line.Value() for line in self.variableChart.lines]
+    
+    def ChangeHeight(self, pointIndex: int, height: int):
+        print(f"Height changed for point {pointIndex} to {height}.")
+        self.solver.suggestValue(self.variableChart.GetHeightList()[pointIndex], height)
+        self.Solve()
             

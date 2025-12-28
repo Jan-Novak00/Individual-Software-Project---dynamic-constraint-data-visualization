@@ -314,13 +314,13 @@ class VariableLine(VariableElement):
             ((self.xAxisHeight + self.leftHeight == self.leftEnd.Y) | "required"),
             ((self.xAxisHeight + self.rightHeight == self.rightEnd.Y) | "required")
         ]
-        self.heightConstraints : list[Constraint] = [
-            ((self.leftHeight == float(leftHeight)) | "strong"),
-            ((self.rightHeight == float(rightHeight)) | "strong")
-        ]
+        #self.heightConstraints : list[Constraint] = [
+        #    ((self.leftHeight == float(leftHeight)) | "strong"),
+        #    ((self.rightHeight == float(rightHeight)) | "strong")
+        #]
     
     def GetAllConstraints(self):
-        return self.verticalConstraints + [self.horizontalPositionConstraint] + self.heightConstraints
+        return self.verticalConstraints + [self.horizontalPositionConstraint] #+ self.heightConstraints
     
     def Value(self):
         return ValueLine(self.leftEnd.Value(), self.rightEnd.Value())

@@ -201,4 +201,6 @@ class VariableLineChart(VariableChart):
 
     def Value(self):
         return [line.Value() for line in self.lines]
-
+    
+    def GetHeightList(self): # better less couplet implementation required
+        return [line.leftHeight for line in self.lines] + [self.lines[-1].rightHeight]
