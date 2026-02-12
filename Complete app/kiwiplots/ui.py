@@ -77,6 +77,7 @@ class CanvasHandler(ABC):
         self.canvas : tk.Canvas = None # type: ignore
         self.drawer : CanvasDrawer = None  # type: ignore
         self.dataViewer : DataViewer = None # type: ignore
+        self.plotSolver : ChartSolver = None  # type: ignore
         self._setEventRegistersLeftButton()
         self._setEventRegistersRightButton()
     
@@ -103,10 +104,10 @@ class CanvasHandler(ABC):
         self.rectangleIndexToChange = None
     
     def _updateCanvas(self):
-        self.drawer.draw(self.solver) # type: ignore
+        self.drawer.draw(self.plotSolver) 
     
     def _updateDataView(self):
-        self.dataViewer.write(self.solver.Value()) # type: ignore
+        self.dataViewer.write(self.plotSolver)
     
     def on_left_down(self, event: tk.Event)->None:
         raise NotImplementedError("Method CanvasHandler.on_left_down must be declared in subclass")
@@ -129,7 +130,7 @@ class CanvasHandler(ABC):
     def inicializeDataView(self, textWindow: tk.Text)->None:
         raise NotImplementedError("Method CanvasHandler.inicializeDataView must be declared in subclass")
     
-    def inicializeCanvas(self, canvas: tk.Canvas)->None:
+    def inicializeCanvas(self, canvas: tk.Canvas, height: int)->None:
         raise NotImplementedError("Method CanvasHandler.inicializeCanvas must be declared in subclass")
     
 
@@ -187,7 +188,7 @@ class UICore:
         self.defaultMenu.add_command(label = "Change title", command=self._changeTitle)
 
     def inicializeHandlers(self):
-        self.canvasHandler.inicializeCanvas(self.canvas)
+        self.canvasHandler.inicializeCanvas(self.canvas, self.plotHeight)
         self.canvasHandler.inicializeDataView(self.dataWindow)
     
     def _changeTitle(self):
@@ -223,12 +224,14 @@ class UICore:
 class CandlesticDataViewer(DataViewer):
     def __init__(self, textWindow: tk.Text):
         super().__init__(textWindow)
+    def write(self,solver: CandlestickChartSolver):
+        print("Data view not implemented yet")
 
 
 class CandlesticCanvasDrawer(CanvasDrawer):
-    def __init__(self, canvas : tk.Canvas, scaleFactor : float = 1, xAxisValue : float = 0, xAxisLabel : str = "", yAxisLabel : str = ""):
+    def __init__(self, canvas : tk.Canvas, canvasHeight : int, scaleFactor : float = 1, xAxisValue : float = 0, xAxisLabel : str = "", yAxisLabel : str = ""):
         super().__init__(canvas,scaleFactor,xAxisLabel,yAxisLabel)
-        self.canvasHeight = self.canvas.winfo_height()
+        self.canvasHeight = canvasHeight
         self.xAxisValue = xAxisValue
     
     def _drawCandles(self, solver: CandlestickChartSolver): 
@@ -298,6 +301,7 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         """
         Draws candles and axes on the plot
         """
+        print("Debug: drawing candles")
         self.canvas.delete("all")
         self._writePlotTitle()
         self._drawCandles(solver)
@@ -307,7 +311,14 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles]) # type: ignore
         self._drawAxes(solver.GetAxisHeight(), candles[-1].rightTop.X, origin, min(0, lowestWickHeight))  # type: ignore
-        
+
+class CandlesticPictureDrawer(PictureDrawer):
+    def draw(self, solver: CandlestickChartSolver):
+        print("Drawing plot not implemented yet")
+
+class CandlesticDataWriter(DataWriter):
+    def write(self, solver: CandlestickChartSolver):
+        print("Storing data not implemented yet")
 
 class CandlesticCanvasHandler(CanvasHandler):
 
@@ -324,10 +335,10 @@ class CandlesticCanvasHandler(CanvasHandler):
     def inicializeDataView(self, textWindow: tk.Text):
         self.dataViewer = CandlesticDataViewer(textWindow)
     
-    def inicializeCanvas(self, canvas: tk.Canvas):
+    def inicializeCanvas(self, canvas: tk.Canvas, height : int):
         self.canvas = canvas
-        self.canvasHeight = canvas.winfo_height()
-        self.drawer = CandlesticCanvasDrawer(canvas) #ToDo
+        self.canvasHeight = height
+        self.drawer = CandlesticCanvasDrawer(canvas, height) #ToDo
     
     ##################################
     # Predicates for locating events #
