@@ -16,12 +16,35 @@ from abc import ABC, abstractmethod # type: ignore
 
 # Search for: "move to superclass", "ToDo"
 
+
 def _isNear(val1: float, val2: float, tolerance : float=5)->bool:
     """
     Returns True, if two values are near to each other with given tolerance
     """
     return abs(val1 - val2) < tolerance
 
+
+def _ceilToNearestTen(number: float):
+    return ((number // 10) + 1) * 10
+
+def _floorToNearestTen(number: float):
+    return ((number // 10) - 1) * 10
+
+def _divideInterval(low: float, high: float, parts: int):
+    if parts < 2:
+        return [low, high]
+
+    step = (high - low) // (parts - 1)
+    return [low + i * step for i in range(parts)]
+
+
+"""
+Abstract class. Caries shared metadata about plot data, such as scale factor etc., which are used to convert pixel dimension into data dimension. 
+"""
+class PlotMetadata(ABC):
+    def __init__(self, scaleFactor: float, xAxisValue: float):
+        self.scaleFactor : float = scaleFactor
+        self.xAxisValue : float = xAxisValue
 
 
 """
@@ -31,7 +54,7 @@ class DataViewer(ABC):
     def __init__(self, textWindow : tk.Text):
         self.dataWindow : tk.Text = textWindow
 
-    def write(self, data)->None: # type: ignore
+    def write(self, plotMetadata: PlotMetadata, solver: ChartSolver, changedIndex: int, changedStatus: str = "")->None: # type: ignore
         raise NotImplementedError("Method DataViewr.write must be declared in subclass")
 
 """
@@ -39,32 +62,15 @@ Abstract class. Contains logic to draw given plot element to canvas (tk.canvas).
 Implementations depend on given type of plot element. 
 """
 class CanvasDrawer(ABC):
-    def __init__(self, canvas : tk.Canvas, scaleFactor : float = 1, xAxisLabel : str = "", yAxisLabel : str = "") -> None:
+    def __init__(self, canvas : tk.Canvas) -> None:
         self.canvas : tk.Canvas = canvas
-        self.scaleFactor: float = scaleFactor # used to calculate values on axies    
-        self.xAxisLabel : str = xAxisLabel    # label of x axis
-        self.yAxisLabel : str = yAxisLabel    # label of y axis
-        self.xAxisValue = 0                   # which y value does x axis represent (usualy 0, in candlestic chart it can be different)
     
-    def draw(self, solver : ChartSolver)->None:
+    def draw(self, plotMetadata: PlotMetadata, solver : ChartSolver)->None:
         """
         Draw data on the canvas.
         """
         raise NotImplementedError("Method CanvasDrawer.draw must be declared in subclass")
-    @staticmethod
-    def _ceilToNearestTen(number: float):
-        return ((number // 10) + 1) * 10
-    @staticmethod
-    def _floorToNearestTen(number: float):
-        return ((number // 10) - 1) * 10
-
-    @staticmethod
-    def _divideInterval(low: float, high: float, parts: int):
-        if parts < 2:
-            return [low, high]
-
-        step = (high - low) // (parts - 1)
-        return [low + i * step for i in range(parts)]
+    
 
 
 """
@@ -73,11 +79,14 @@ Implementations are based on type of graph user is working with.
 Inicialized via dependency injection.
 """
 class CanvasHandler(ABC):
-    def __init__(self) -> None:
+    def __init__(self, plotMetadata: PlotMetadata) -> None:
         self.canvas : tk.Canvas = None # type: ignore
+        self.defaultMenu : tk.Menu = None # type: ignore
+        self.elementMenu : tk.Menu = None # type: ignore
         self.drawer : CanvasDrawer = None  # type: ignore
         self.dataViewer : DataViewer = None # type: ignore
         self.plotSolver : ChartSolver = None  # type: ignore
+        self.plotMetada = plotMetadata                           #ToDo  typovani
         self._setEventRegistersLeftButton()
         self._setEventRegistersRightButton()
     
@@ -104,16 +113,28 @@ class CanvasHandler(ABC):
         self.rectangleIndexToChange = None
     
     def _updateCanvas(self):
-        self.drawer.draw(self.plotSolver) 
+        self.drawer.draw(self.plotMetada,self.plotSolver) 
     
     def _updateDataView(self):
-        self.dataViewer.write(self.plotSolver)
+        self.dataViewer.write(self.plotMetada, self.plotSolver, self.dragIndex, self.dragEdge) # type: ignore
+    
+    def _changeTitle(self):
+        """
+        Plot title change using UI
+        """
+        newTitle = simpledialog.askstring("Enter new title","New title: ")
+        if newTitle is None:
+            return
+        else:
+            self.plotSolver.ChangeTitle(newTitle)
+            self._updateCanvas()
+
     
     def on_left_down(self, event: tk.Event)->None:
         raise NotImplementedError("Method CanvasHandler.on_left_down must be declared in subclass")
     
     def on_right_down(self, event: tk.Event)->None:
-        raise NotImplementedError("Method CanvasHandler.on_right_down must be declared in subclass")
+        self.defaultMenu.post(event.x_root,event.y_root)
 
     def on_mouse_move(self,event: tk.Event)->None:
         raise NotImplementedError("Method CanvasHandler.on_mouse_move must be declared in subclass")
@@ -130,8 +151,16 @@ class CanvasHandler(ABC):
     def inicializeDataView(self, textWindow: tk.Text)->None:
         raise NotImplementedError("Method CanvasHandler.inicializeDataView must be declared in subclass")
     
-    def inicializeCanvas(self, canvas: tk.Canvas, height: int)->None:
+    def inicializeCanvas(self, canvas: tk.Canvas, width:int, height: int)->None:
         raise NotImplementedError("Method CanvasHandler.inicializeCanvas must be declared in subclass")
+    
+    def inicializeDefaultRightClickMenu(self, menu: tk.Menu)->None:
+        self.defaultMenu = menu
+        self.defaultMenu.add_command(label = "Change title", command=self._changeTitle)
+    
+    def inicializeRightClickMenu(self, menu: tk.Menu)->None:
+        raise NotImplementedError("Method CanvasHandler.inicializeRightClickMenu must be declared in subclass")
+        
     
 
 """
@@ -139,7 +168,7 @@ Abstract class. Contains logic to create image of the graph.
 """
 class PictureDrawer(ABC):
     
-    def draw(self, solver: ChartSolver):
+    def draw(self, plotMetada : PlotMetadata, solver: ChartSolver, width: int, height: int):
         raise NotImplementedError("Method PictureDrawer.draw must be declared in subclass")
 
 """
@@ -147,7 +176,7 @@ Abstract class. Contains logic to create text output of the data.
 """
 class DataWriter(ABC):
 
-    def write(self, solver: ChartSolver):
+    def write(self, plotMetada : PlotMetadata, solver: ChartSolver):
         raise NotImplementedError("Method DataWriter.write must be declared in subclass")
     pass
 
@@ -155,13 +184,16 @@ class DataWriter(ABC):
 Handles communication between UI features.
 """
 class UICore:
-    def __init__(self, solver : ChartSolver, canvasHandler : CanvasHandler, pictureDrawer : PictureDrawer, dataWriter: DataWriter, plotWidth: int, plotHeight: int):
+    def __init__(self, plotMetadata: PlotMetadata, solver : ChartSolver, canvasHandler : CanvasHandler, pictureDrawer : PictureDrawer, dataWriter: DataWriter, plotWidth: int, plotHeight: int):
         self.solver : ChartSolver = solver
         self.canvasHandler : CanvasHandler = canvasHandler
         self.pictureDrawer : PictureDrawer = pictureDrawer
         self.dataWriter : DataWriter = dataWriter
         self.plotWidth = plotWidth
         self.plotHeight = plotHeight
+        self.picturePathBuffer : Union[str,None] = None
+        self.dataPathBuffer : Union[str,None] = None
+        self.plotMetadata : PlotMetadata = plotMetadata 
 
 
     def inicializeUIElements(self):
@@ -185,20 +217,40 @@ class UICore:
         self.saveDataButton.pack(pady=5)
 
         self.defaultMenu = tk.Menu(self.frame,tearoff=0)
-        self.defaultMenu.add_command(label = "Change title", command=self._changeTitle)
+        self.elementMenu = tk.Menu(self.frame,tearoff=0)
 
     def inicializeHandlers(self):
-        self.canvasHandler.inicializeCanvas(self.canvas, self.plotHeight)
+        self.canvasHandler.inicializeCanvas(self.canvas, self.plotWidth, self.plotHeight)
         self.canvasHandler.inicializeDataView(self.dataWindow)
+        self.canvasHandler.inicializeDefaultRightClickMenu(self.defaultMenu)
+        self.canvasHandler.inicializeRightClickMenu(self.elementMenu)
     
-    def _changeTitle(self):
-        print("Title change not yet implemented")
     
     def on_saveDataButton_click(self):
-        self.dataWriter.write(self.solver)
+        if self.dataPathBuffer == None:
+            self.dataPathBuffer = os.path.join(os.getcwd(), self.solver.GetTitle())
+        fileName = simpledialog.askstring("Save data", "File name (without extension): ", initialvalue=self.dataPathBuffer)
+        if fileName == None:
+            return
+        else:
+            self.dataPathBuffer = fileName
+
+        self.dataWriter.write(self.plotMetadata, self.solver, self.dataPathBuffer + ".csv") # type: ignore    
     
     def on_savePictureButton_click(self):
-        self.pictureDrawer.draw(self.solver)
+        self.canvasHandler.UpdateUI()
+        if self.picturePathBuffer == None:
+            self.picturePathBuffer = os.path.join(os.getcwd(), self.solver.GetTitle())  
+        
+        pictureName = simpledialog.askstring("Save plot", "Image name (without extension): ", initialvalue=self.picturePathBuffer)
+
+        if pictureName == None:
+            return
+        else:
+            self.picturePathBuffer = pictureName 
+
+        print("Saving canvas to", pictureName + ".png")
+        self.pictureDrawer.draw(self.plotMetadata, self.solver, self.plotWidth, self.plotHeight)
     
     def View(self):
         self.inicializeUIElements()
@@ -221,20 +273,52 @@ class UICore:
 
 ########################################################################################
 
+class CandlesticPlotMetadata(PlotMetadata):
+    def __init__(self, scaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
+        self.scaleFactor : float = scaleFactor
+        self.xAxisValue : float = xAxisValue
+        self.xAxisLabel : str = xAxisLabel
+        self.yAxisLabel : str = yAxisLabel
+
+
 class CandlesticDataViewer(DataViewer):
     def __init__(self, textWindow: tk.Text):
         super().__init__(textWindow)
-    def write(self,solver: CandlestickChartSolver):
-        print("Data view not implemented yet")
 
+    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str = ""):
+        """
+        Displays all data for the user and highlights which data is being edited
+        """
+        xAxisValue = plotMetadata.xAxisValue
+        scaleFactor = plotMetadata.scaleFactor
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        valueEdited = changedStatus in ["opening", "closing", "maximum", "minimum"]
+        candles = solver.GetCandleData()
+
+        for i in range(len(candles)-1, -1, -1):
+            candle = candles[i]
+            openingValue = candle.openingCorner.Y/scaleFactor + xAxisValue
+            closingValue = candle.closingCorner.Y/scaleFactor + xAxisValue
+            maximumValue = candle.wickTop.Y/scaleFactor + xAxisValue
+            minimumValue = candle.wickBottom.Y/scaleFactor + xAxisValue
+            
+            string = f"{candle.name}:\n\topening = {openingValue:.4f},\n\tclosing = {closingValue:.4f},\n\tmin = {minimumValue:.4f},\n\tmax = {maximumValue:.4f}\n\n"
+            if valueEdited and i == changedIndex:
+                self.dataWindow.insert("1.0",f"{string}\n", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"{string}\n")
+        self.dataWindow.config(state="disabled")
 
 class CandlesticCanvasDrawer(CanvasDrawer):
-    def __init__(self, canvas : tk.Canvas, canvasHeight : int, scaleFactor : float = 1, xAxisValue : float = 0, xAxisLabel : str = "", yAxisLabel : str = ""):
-        super().__init__(canvas,scaleFactor,xAxisLabel,yAxisLabel)
+    def __init__(self, canvas : tk.Canvas, canvasWidth : int, canvasHeight : int):
+        super().__init__(canvas)
         self.canvasHeight = canvasHeight
-        self.xAxisValue = xAxisValue
+        self.canvasWidth = canvasWidth
     
-    def _drawCandles(self, solver: CandlestickChartSolver): 
+    def _drawCandles(self, solver: CandlestickChartSolver, scaleFactor : float, xAxisValue : float): 
         
         origin = solver.GetOrigin()
         candles = solver.GetCandleData()
@@ -262,23 +346,22 @@ class CandlesticCanvasDrawer(CanvasDrawer):
             maxX = candle.wickTop.X
             maxY = self.canvasHeight - (candle.wickTop.Y + origin.Y)
 
-            self.canvas.create_rectangle(x1,y2,x2,y1, fill=candle.color, outline="black")
-            self.canvas.create_line(minX, minY, maxX, maxY, fill=candle.color)
+            self.canvas.create_rectangle(x1,y2,x2,y1, fill=candle.color, outline="black") # type: ignore
+            self.canvas.create_line(minX, minY, maxX, maxY, fill=candle.color) # type: ignore
             if candle.nameVisible: 
                 self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + 10, text=candle.name)
     
-    def _writePlotTitle(self):
-        print("Write title todo")
-        return
-        self.canvas.create_text(self.canvasWidth / 2, 20,text=self.title,font=("Arial", 16, "bold")) # problem is with self.title
+    def _writePlotTitle(self, solver: CandlestickChartSolver):
+
+        self.canvas.create_text(self.canvasWidth / 2, 20,text=solver.GetTitle(),font=("Arial", 16, "bold")) 
     
-    def _drawAxes(self, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0):   # move to superclass
+    def _drawAxes(self, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, scaleFactor : float, minimumValue : int, xAxisLabel : str, yAxisLabel : str, xAxisValue : float):   # move to superclass
         """
         Draws axes on the canvas
         """
-        topNumber = self._ceilToNearestTen(maximumValue) 
+        topNumber = _ceilToNearestTen(maximumValue) 
 
-        marks = self._divideInterval(minimumValue, topNumber, 5)
+        marks = _divideInterval(minimumValue, topNumber, 5)
       
         self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y, fill="black", width=1)
         self.canvas.create_line(origin.X, self.canvasHeight - origin.Y - minimumValue, origin.X, self.canvasHeight - origin.Y - topNumber, fill="black", width=1)
@@ -287,38 +370,147 @@ class CandlesticCanvasDrawer(CanvasDrawer):
             y = self.canvasHeight - origin.Y - mark
             self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")
 
-            trueValue = mark/self.scaleFactor + self.xAxisValue
+            trueValue = mark/scaleFactor + xAxisValue
             valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
 
             self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e")
 
         
         boldFont = font.Font(family="Helvetica", size=10, weight="bold")
-        self.canvas.create_text(leftCornerXAxis + 20, self.canvasHeight - origin.Y + 10, text=self.xAxisLabel, anchor="n",font=boldFont)
-        self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - 10, text=self.yAxisLabel, anchor="s",font=boldFont)
+        self.canvas.create_text(leftCornerXAxis + 20, self.canvasHeight - origin.Y + 10, text=xAxisLabel, anchor="n",font=boldFont)
+        self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - 10, text=yAxisLabel, anchor="s",font=boldFont)
     
-    def draw(self, solver : CandlestickChartSolver)->None:
+    def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver)->None:
         """
         Draws candles and axes on the plot
         """
         print("Debug: drawing candles")
         self.canvas.delete("all")
-        self._writePlotTitle()
-        self._drawCandles(solver)
+        self._writePlotTitle(solver)
+        self._drawCandles(solver, plotMetadata.scaleFactor, plotMetadata.xAxisValue)
 
         origin = solver.GetOrigin()
         candles = solver.GetCandleData()
         
-        lowestWickHeight = min([candle.wickBottom.Y for candle in candles]) # type: ignore
-        self._drawAxes(solver.GetAxisHeight(), candles[-1].rightTop.X, origin, min(0, lowestWickHeight))  # type: ignore
+        lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
+        self._drawAxes(solver.GetAxisHeight(), candles[-1].rightTop.X, origin, plotMetadata.scaleFactor, min(0, lowestWickHeight), plotMetadata.xAxisLabel, plotMetadata.yAxisLabel, plotMetadata.xAxisValue)  
 
 class CandlesticPictureDrawer(PictureDrawer):
-    def draw(self, solver: CandlestickChartSolver):
-        print("Drawing plot not implemented yet")
+
+    def _drawCandlesPNG(self, solver: CandlestickChartSolver, draw : ImageDraw.ImageDraw, height: int):
+        candles = solver.GetCandleData()
+        origin = solver.GetOrigin()
+        for candle in candles:
+            leftBottomX, leftBottomY = None, None
+            rightTopX, rightTopY = None, None
+
+            if candle.closingCorner.Y - candle.openingCorner.Y >= 0:
+                leftBottomX, leftBottomY = candle.openingCorner.X, candle.openingCorner.Y
+                rightTopX, rightTopY = candle.closingCorner.X, candle.closingCorner.Y
+            else:
+                leftBottomX, leftBottomY = candle.openingCorner.X, candle.closingCorner.Y
+                rightTopX, rightTopY = candle.closingCorner.X, candle.openingCorner.Y
+
+
+            x1 = leftBottomX
+            y1 = height - leftBottomY - origin.Y
+            
+            x2 = rightTopX
+            y2 = height - rightTopY - origin.Y
+
+            draw.rectangle((x1,y2,x2,y1), fill=candle.color, outline="black")
+
+            xMax, yMax = candle.wickTop.X, height - candle.wickTop.Y - origin.Y
+            xMin, yMin = candle.wickBottom.X, height - candle.wickBottom.Y - origin.Y
+            draw.line((xMax,yMax,xMin,yMin), fill=candle.color, width=1) 
+
+            if candle.nameVisible:
+                font = ImageFont.load_default()
+                text = candle.name
+
+                # get text size
+                bbox = font.getbbox(text)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+
+                # text position
+                x_center = (x1 + x2) / 2
+                y_text = height - origin.Y + 10
+
+                draw.text(
+                    (x_center - text_width / 2, y_text - text_height/2),
+                    text,
+                    fill="black",
+                    font=font)
+    
+    def _drawAxesPNG(self, scaleFactor:float, height: int, xAxisValue: float, draw: ImageDraw.ImageDraw, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0, xAxisLabel:str = "", yAxisLabel: str = ""):  
+        """
+        Draws axes on the PNG output
+        """
+        topNumber = _ceilToNearestTen(maximumValue) 
+
+        marks = _divideInterval(minimumValue,topNumber, 5)
+      
+        draw.line((origin.X, height - origin.Y, leftCornerXAxis + 10, height - origin.Y), fill=(0,0,0), width=1)
+        draw.line((origin.X, height - origin.Y - minimumValue, origin.X, height - origin.Y - topNumber), fill=(0,0,0), width=1)
+
+        for mark in marks:
+            y = height - origin.Y - mark
+            draw.line((origin.X - 5, y, origin.X, y), fill=(0,0,0))
+
+            trueValue = mark/scaleFactor + xAxisValue
+            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
+            font = ImageFont.load_default()
+
+            # get text size
+            bbox = font.getbbox(valueString)
+            textWidth = bbox[2] - bbox[0]
+            textHeight = bbox[3] - bbox[1]
+
+            draw.text((origin.X - 10 - textWidth, y - textHeight/2), text=f"{valueString}", fill = (0,0,0))
+        
+        #Axis labels
+        font = ImageFont.truetype("arialbd.ttf", 12)
+        bbox = font.getbbox(xAxisLabel)
+        textW = bbox[2] - bbox[0]
+        textH = bbox[3] - bbox[1]
+        draw.text(
+            (leftCornerXAxis + 10 - textW/2, height - origin.Y + 10), 
+            text=xAxisLabel, fill=(0,0,0), font=font
+        )
+
+        bbox = font.getbbox(yAxisLabel)
+        textW = bbox[2] - bbox[0]
+        textH = bbox[3] - bbox[1]
+        draw.text(
+            (origin.X - textW/2, height - origin.Y - topNumber - textH - 5), 
+            text=yAxisLabel, fill=(0,0,0), font=font
+        )
+    
+    def _writePlotTitlePNG(self, draw: ImageDraw.ImageDraw, solver:CandlestickChartSolver, width: int):
+        font = ImageFont.truetype("arialbd.ttf", 16)
+        text = solver.GetTitle()
+        bbox = font.getbbox(text)
+        textWidth = bbox[2] - bbox[0]
+        draw.text((width / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
+
+    def draw(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, width: int, height: int):
+        candles = solver.GetCandleData()
+        lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
+        img = Image.new("RGB", (width, height), color="white")
+        draw = ImageDraw.Draw(img)
+        self._drawCandlesPNG(solver, draw, height)
+        self._drawAxesPNG(plotMetadata.scaleFactor,height, plotMetadata.xAxisValue,draw, solver.GetAxisHeight(), candles[-1].rightTop.X, solver.GetOrigin(), min(0, lowestWickHeight))
+        self._writePlotTitlePNG(draw,solver,width)
+        img.save(f"{solver.GetTitle()}.png")
 
 class CandlesticDataWriter(DataWriter):
-    def write(self, solver: CandlestickChartSolver):
-        print("Storing data not implemented yet")
+    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, file: str):
+        with open(file,"w") as output:
+            candles = solver.GetCandleData()
+            for candle in candles:
+                output.write(f"{candle.name},{candle.openingCorner.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue},{candle.closingCorner.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue},{candle.wickBottom.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue},{candle.wickTop.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue}")
+                output.write("\n")
 
 class CandlesticCanvasHandler(CanvasHandler):
 
@@ -326,19 +518,22 @@ class CandlesticCanvasHandler(CanvasHandler):
     # Inicializastion #
     ###################
 
-    def __init__(self, solver: CandlestickChartSolver) -> None:
-        super().__init__()
+    def __init__(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver) -> None:
+        super().__init__(plotMetadata)
         self.plotSolver : CandlestickChartSolver = solver 
         self.canvasHeight : int = None # type: ignore
-        
     
     def inicializeDataView(self, textWindow: tk.Text):
         self.dataViewer = CandlesticDataViewer(textWindow)
     
-    def inicializeCanvas(self, canvas: tk.Canvas, height : int):
+    def inicializeCanvas(self, canvas: tk.Canvas, width: int, height : int):
         self.canvas = canvas
         self.canvasHeight = height
-        self.drawer = CandlesticCanvasDrawer(canvas, height) #ToDo
+        self.drawer = CandlesticCanvasDrawer(canvas, width, height) #ToDo
+    
+    def inicializeRightClickMenu(self, menu: tk.Menu) -> None:
+        self.elementMenu = menu
+        #ToDo
     
     ##################################
     # Predicates for locating events #
@@ -576,12 +771,10 @@ class CandlesticCanvasHandler(CanvasHandler):
         return
     
     def on_right_down(self, event: tk.Event):
-            print("Right mouse click to do")
-            return
             for index, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
                 if self._isInsideOfCandle(event, candle):
                     self.rectangleIndexToChange = index
-#                    self.menu.post(event.x_root, event.y_root) # problem here
+                    self.elementMenu.post(event.x_root, event.y_root) # problem here
                     return
             super().on_right_down(event)
 
