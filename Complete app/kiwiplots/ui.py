@@ -25,12 +25,41 @@ def _isNear(val1: float, val2: float, tolerance : float=5)->bool:
 
 
 def _ceilToNearestTen(number: float):
+    """
+    Rounds a number up to the nearest ten.
+    
+    Args:
+        number: The number to round up.
+    
+    Returns:
+        The number rounded up to the nearest ten.
+    """
     return ((number // 10) + 1) * 10
 
 def _floorToNearestTen(number: float):
+    """
+    Rounds a number down to the nearest ten.
+    
+    Args:
+        number: The number to round down.
+    
+    Returns:
+        The number rounded down to the nearest ten.
+    """
     return ((number // 10) - 1) * 10
 
 def _divideInterval(low: float, high: float, parts: int):
+    """
+    Divides an interval into a specified number of equally spaced parts.
+    
+    Args:
+        low: The lower bound of the interval.
+        high: The upper bound of the interval.
+        parts: The number of parts to divide the interval into. If less than 2, returns [low, high].
+    
+    Returns:
+        A list of values representing the division points, including the boundaries.
+    """
     if parts < 2:
         return [low, high]
 
@@ -38,48 +67,102 @@ def _divideInterval(low: float, high: float, parts: int):
     return [low + i * step for i in range(parts)]
 
 
-"""
-Abstract class. Caries shared metadata about plot data, such as scale factor etc., which are used to convert pixel dimension into data dimension. 
-"""
+
 class PlotMetadata(ABC):
+    """
+    Abstract class that carries shared metadata about plot data.
+    
+    Contains information such as scale factor and axis values used to convert
+    pixel dimensions into data dimensions.
+    """
     def __init__(self, scaleFactor: float, xAxisValue: float):
+        """
+        Initializes PlotMetadata with scale and axis information.
+        
+        Args:
+            scaleFactor: The scaling factor for converting pixel coordinates to data values.
+            xAxisValue: The data value corresponding to the x-axis origin.
+        """
         self.scaleFactor : float = scaleFactor
         self.xAxisValue : float = xAxisValue
 
 
-"""
-Abstract class. Contains logic to show current data values represented by a graph.
-"""
+
 class DataViewer(ABC):
+    """
+
+    Abstract class. Contains logic for showing current data values represented by a graph.
+
+    """
     def __init__(self, textWindow : tk.Text):
+        """
+        Initializes the DataViewer with a text window for displaying data.
+        
+        Args:
+            textWindow: A tkinter Text widget where data will be displayed.
+        """
         self.dataWindow : tk.Text = textWindow
 
     def write(self, plotMetadata: PlotMetadata, solver: ChartSolver, changedIndex: int, changedStatus: str = "")->None: # type: ignore
+        """
+        Displays plot data in the text window.
+        
+        This method should update the text window with current data values from the solver,
+        and highlight the data element that is currently being edited.
+        
+        Args:
+            plotMetadata: Metadata about the plot including scale factor and axis values.
+            solver: The solver containing the plot data to be displayed.
+            changedIndex: Index of the data element currently being modified. -1 or None if none are being modified.
+            changedStatus: Name of the value being changed (e.g., 'opening', 'closing', 'maximum', 'minimum').
+        """
         raise NotImplementedError("Method DataViewr.write must be declared in subclass")
 
 """
+
 Abstract class. Contains logic to draw given plot element to canvas (tk.canvas).
 Implementations depend on given type of plot element. 
+
 """
 class CanvasDrawer(ABC):
     def __init__(self, canvas : tk.Canvas) -> None:
+        """
+        Initializes the CanvasDrawer with a canvas for rendering.
+        
+        Args:
+            canvas: A tkinter Canvas widget where the plot will be drawn.
+        """
         self.canvas : tk.Canvas = canvas
     
     def draw(self, plotMetadata: PlotMetadata, solver : ChartSolver)->None:
         """
-        Draw data on the canvas.
+        Renders the plot data and axes on the canvas.
+        
+        This method should clear the canvas and redraw all plot elements including
+        data visualizations, axes, labels, and titles.
+        
+        Args:
+            plotMetadata: Metadata about the plot including scale factor and axis values.
+            solver: The solver containing the plot data to be rendered.
         """
         raise NotImplementedError("Method CanvasDrawer.draw must be declared in subclass")
-    
 
 
-"""
-Abstract class. Handles user interaction with the graph on tk.Canvas.
-Implementations are based on type of graph user is working with.
-Inicialized via dependency injection.
-"""
 class CanvasHandler(ABC):
+    """
+    Abstract class for handling user interactions with the plot on a tkinter Canvas.
+    
+    Manages mouse events, cursor changes, and updates to the plot data and visualization.
+    Implementations are specific to the type of plot being displayed.
+    """
     def __init__(self, plotMetadata: PlotMetadata) -> None:
+        """
+        Initializes the CanvasHandler with plot metadata.
+        After initialization CanvasHandler should be provided with tkinter widgets.
+
+        Args:
+            plotMetadata: Metadata about the plot including scale factor and axis values.
+        """
         self.canvas : tk.Canvas = None # type: ignore
         self.defaultMenu : tk.Menu = None # type: ignore
         self.elementMenu : tk.Menu = None # type: ignore
@@ -91,6 +174,11 @@ class CanvasHandler(ABC):
         self._setEventRegistersRightButton()
     
     def UpdateUI(self):
+        """
+        Updates both the canvas drawing and the data viewer display.
+        
+        Refreshes the visualization to reflect any changes in the plot data.
+        """
         self._updateCanvas()
         self._updateDataView()
     
@@ -113,9 +201,17 @@ class CanvasHandler(ABC):
         self.rectangleIndexToChange = None
     
     def _updateCanvas(self):
+        """
+        Redraws the plot on the canvas using the current solver state.
+        """
         self.drawer.draw(self.plotMetada,self.plotSolver) 
     
     def _updateDataView(self):
+        """
+        Updates the data viewer to display current plot values.
+        
+        Highlights the data element currently being edited if any.
+        """
         self.dataViewer.write(self.plotMetada, self.plotSolver, self.dragIndex, self.dragEdge) # type: ignore
     
     def _changeTitle(self):
@@ -131,52 +227,157 @@ class CanvasHandler(ABC):
 
     
     def on_left_down(self, event: tk.Event)->None:
+        """
+        Handles left mouse button press events.
+        
+        Determines which plot element was clicked and registers the drag operation.
+        
+        Args:
+            event: The tkinter Event object containing mouse coordinates and button information.
+        """
         raise NotImplementedError("Method CanvasHandler.on_left_down must be declared in subclass")
     
     def on_right_down(self, event: tk.Event)->None:
+        """
+        Handles right mouse button press events.
+        
+        Displays the default context menu at the cursor position.
+        
+        Args:
+            event: The tkinter Event object containing mouse coordinates.
+        """
         self.defaultMenu.post(event.x_root,event.y_root)
 
     def on_mouse_move(self,event: tk.Event)->None:
+        """
+        Handles mouse motion events while dragging.
+        
+        Updates the plot element being dragged based on mouse position.
+        Updates canvas and data display after each movement.
+        
+        Args:
+            event: The tkinter Event object containing current mouse coordinates.
+        """
         raise NotImplementedError("Method CanvasHandler.on_mouse_move must be declared in subclass")
     
     def on_left_up(self,event: tk.Event)->None:
+        """
+        Handles left mouse button release events.
+        
+        Ends the drag operation and clears all drag-related state variables.
+        
+        Args:
+            event: The tkinter Event object containing mouse coordinates.
+        """
         raise NotImplementedError("Method CanvasHandler.on_left_up must be declared in subclass")
     
     def on_right_up(self,event: tk.Event)->None:
+        """
+        Handles right mouse button release events.
+        
+        Args:
+            event: The tkinter Event object containing mouse coordinates.
+        """
         raise NotImplementedError("Method CanvasHandler.on_right_up must be declared in subclass")
     
     def check_cursor(self, event: tk.Event)->None:
+        """
+        Updates cursor appearance based on mouse position over plot elements.
+        
+        Changes the cursor to indicate what action is possible at the current location
+        (e.g., resize, drag, cross for point selection).
+        
+        Args:
+            event: The tkinter Event object containing current mouse coordinates.
+        """
         raise NotImplementedError("Method CanvasHandler.check_cursor must be declared in subclass")
     
     def inicializeDataView(self, textWindow: tk.Text)->None:
+        """
+        Initializes the data viewer component with a text window.
+        
+        Creates the appropriate DataViewer implementation for this plot type.
+        
+        Args:
+            textWindow: A tkinter Text widget where plot data will be displayed.
+        """
         raise NotImplementedError("Method CanvasHandler.inicializeDataView must be declared in subclass")
     
     def inicializeCanvas(self, canvas: tk.Canvas, width:int, height: int)->None:
+        """
+        Initializes the canvas drawer with the plot canvas and dimensions.
+        
+        Creates the appropriate CanvasDrawer implementation for this plot type.
+        
+        Args:
+            canvas: The tkinter Canvas widget for drawing.
+            width: Width of the canvas in pixels.
+            height: Height of the canvas in pixels.
+        """
         raise NotImplementedError("Method CanvasHandler.inicializeCanvas must be declared in subclass")
     
     def inicializeDefaultRightClickMenu(self, menu: tk.Menu)->None:
+        """
+        Initializes the default right-click context menu.
+        
+        Sets up the menu that appears when right-clicking on empty canvas area.
+        
+        Args:
+            menu: The tkinter Menu widget to use as the default context menu.
+        """
         self.defaultMenu = menu
         self.defaultMenu.add_command(label = "Change title", command=self._changeTitle)
     
     def inicializeRightClickMenu(self, menu: tk.Menu)->None:
+        """
+        Initializes the element-specific right-click context menu.
+        
+        Sets up the menu that appears when right-clicking on a plot element.
+        Subclasses should add menu items specific to their plot type.
+        
+        Args:
+            menu: The tkinter Menu widget to use as the element context menu.
+        """
         raise NotImplementedError("Method CanvasHandler.inicializeRightClickMenu must be declared in subclass")
         
     
 
-"""
-Abstract class. Contains logic to create image of the graph.
-"""
 class PictureDrawer(ABC):
+    """
+    Abstract class for generating image output of plots.
+    """
     
     def draw(self, plotMetada : PlotMetadata, solver: ChartSolver, width: int, height: int):
-        raise NotImplementedError("Method PictureDrawer.draw must be declared in subclass")
+        """
+        Generates and saves a PNG image of the plot.
+        
+        This method should create an image representation of the plot,
+        including all data elements, axes, and labels, and save it to a file.
+        
+        Args:
+            plotMetada: Metadata about the plot including scale factor and axis values.
+            solver: The solver containing the plot data to be rendered.
+            width: The width of the output image in pixels. Corresponds to canvas width.
+            height: The height of the output image in pixels. Corresponds to canvas height.
+        """
+        raise NotImplementedError("Method PictureDrawer.draw must ASVbe declared in subclass")
 
-"""
-Abstract class. Contains logic to create text output of the data.
-"""
 class DataWriter(ABC):
+    """
+    Abstract class for exporting plot data to file formats.
+    """
 
     def write(self, plotMetada : PlotMetadata, solver: ChartSolver):
+        """
+        Exports plot data to a file.
+        
+        This method should retrieve all plot data from the solver and write it to
+        a file in a structured format (CSV).
+        
+        Args:
+            plotMetada: Metadata about the plot including scale factor and axis values.
+            solver: The solver containing the plot data to be exported.
+        """
         raise NotImplementedError("Method DataWriter.write must be declared in subclass")
     pass
 
@@ -184,7 +385,24 @@ class DataWriter(ABC):
 Handles communication between UI features.
 """
 class UICore:
+    """
+
+    Handles communication between UI features.
+    
+    """
     def __init__(self, plotMetadata: PlotMetadata, solver : ChartSolver, canvasHandler : CanvasHandler, pictureDrawer : PictureDrawer, dataWriter: DataWriter, plotWidth: int, plotHeight: int):
+        """
+        Initializes UICore with all required components.
+        
+        Args:
+            plotMetadata: Metadata about the plot dimensions and scale.
+            solver: The solver containing the plot data.
+            canvasHandler: Handler for canvas events and interactions.
+            pictureDrawer: Component for saving plots as images.
+            dataWriter: Component for exporting plot data.
+            plotWidth: Width of the plot canvas in pixels.
+            plotHeight: Height of the plot canvas in pixels.
+        """
         self.solver : ChartSolver = solver
         self.canvasHandler : CanvasHandler = canvasHandler
         self.pictureDrawer : PictureDrawer = pictureDrawer
@@ -198,7 +416,7 @@ class UICore:
 
     def inicializeUIElements(self):
         """
-        Shows the window, inicializes UI
+        Creates and initializes all UI elements including canvas, buttons, and text windows.
         """
         self.root = tk.Tk()
         self.frame = tk.Frame(self.root)
@@ -220,6 +438,9 @@ class UICore:
         self.elementMenu = tk.Menu(self.frame,tearoff=0)
 
     def inicializeHandlers(self):
+        """
+        Initializes all event handlers with their respective UI components.
+        """
         self.canvasHandler.inicializeCanvas(self.canvas, self.plotWidth, self.plotHeight)
         self.canvasHandler.inicializeDataView(self.dataWindow)
         self.canvasHandler.inicializeDefaultRightClickMenu(self.defaultMenu)
@@ -227,6 +448,11 @@ class UICore:
     
     
     def on_saveDataButton_click(self):
+        """
+        Handles the 'Save data' button click event.
+        
+        Prompts the user for a file path and exports the plot data.
+        """
         if self.dataPathBuffer == None:
             self.dataPathBuffer = os.path.join(os.getcwd(), self.solver.GetTitle())
         fileName = simpledialog.askstring("Save data", "File name (without extension): ", initialvalue=self.dataPathBuffer)
@@ -238,6 +464,11 @@ class UICore:
         self.dataWriter.write(self.plotMetadata, self.solver, self.dataPathBuffer + ".csv") # type: ignore    
     
     def on_savePictureButton_click(self):
+        """
+        Handles the 'Save as PNG' button click event.
+        
+        Prompts the user for a file path and saves the plot as a PNG image.
+        """
         self.canvasHandler.UpdateUI()
         if self.picturePathBuffer == None:
             self.picturePathBuffer = os.path.join(os.getcwd(), self.solver.GetTitle())  
@@ -253,15 +484,23 @@ class UICore:
         self.pictureDrawer.draw(self.plotMetadata, self.solver, self.plotWidth, self.plotHeight)
     
     def View(self):
+        """
+        Initializes and displays the main UI window.
+        
+        Sets up all UI elements, handlers, and starts the event loop.
+        """
         self.inicializeUIElements()
         self.inicializeHandlers()
-
-        #self._setRightClickMenu(self.frame)  ToDo - set right click menu
 
         self.canvasHandler.UpdateUI() #initial draw
         self._UIRun()
     
     def _UIRun(self):
+        """
+        Binds all mouse and motion events to their respective handlers.
+        
+        Starts the main tkinter event loop.
+        """
         self.canvas.bind("<Button-1>", self.canvasHandler.on_left_down) # type: ignore
         self.canvas.bind("<B1-Motion>", self.canvasHandler.on_mouse_move) # type: ignore
         self.canvas.bind("<ButtonRelease-1>", self.canvasHandler.on_left_up) # type: ignore
@@ -529,7 +768,7 @@ class CandlesticCanvasHandler(CanvasHandler):
     def inicializeCanvas(self, canvas: tk.Canvas, width: int, height : int):
         self.canvas = canvas
         self.canvasHeight = height
-        self.drawer = CandlesticCanvasDrawer(canvas, width, height) #ToDo
+        self.drawer = CandlesticCanvasDrawer(canvas, width, height)
     
     def inicializeRightClickMenu(self, menu: tk.Menu) -> None:
         self.elementMenu = menu
