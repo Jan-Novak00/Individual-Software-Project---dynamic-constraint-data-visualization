@@ -533,7 +533,10 @@ class CandlesticCanvasHandler(CanvasHandler):
     
     def inicializeRightClickMenu(self, menu: tk.Menu) -> None:
         self.elementMenu = menu
-        #ToDo
+        self.elementMenu.add_command(label="Change positive color", command=self._changePositiveColor)
+        self.elementMenu.add_command(label="Change negative color", command=self._changeNegativeColor)
+        self.elementMenu.add_command(label="Change name", command=self._changeName)
+        self.elementMenu.add_command(label="Switch name visibility", command=self._switchNameVisibility)
     
     ##################################
     # Predicates for locating events #
@@ -777,4 +780,34 @@ class CandlesticCanvasHandler(CanvasHandler):
                     self.elementMenu.post(event.x_root, event.y_root) # problem here
                     return
             super().on_right_down(event)
+    
+    def _changePositiveColor(self):
+        color = colorchooser.askcolor(title="Choose different color")
+        if color[1] == None:
+            return
+        self.plotSolver.ChangePositiveColor(color[1])
+        self._updateCanvas()
+    
+    def _changeNegativeColor(self):
+        color = colorchooser.askcolor(title="Choose different color")
+        if color[1] == None:
+            return
+        self.plotSolver.ChangeNegativeColor(color[1])
+        self._updateCanvas()
+
+    def _changeName(self):
+        currentName = self.plotSolver.GetName(self.rectangleIndexToChange)
+        newName = simpledialog.askstring("Change name", "New name:", initialvalue=currentName)
+        if newName == None:
+            return
+        self.plotSolver.ChangeName(self.rectangleIndexToChange, newName)
+        self._updateCanvas()
+        self._updateDataView()
+        pass
+
+    def _switchNameVisibility(self):
+        self.plotSolver.SwitchNameVisibility(self.rectangleIndexToChange)
+        self._updateCanvas()
+    
+
 
