@@ -3,11 +3,12 @@ from .solvers import *
 from .tkinterface import *
 from .variableplot import *
 from kiwiplots.plotui.uicore import *
-from kiwiplots.plotui.canvasdrawers import *
-from kiwiplots.plotui.eventhandlers import *
-from kiwiplots.plotui.datawriters import *
-from kiwiplots.plotui.dataviewers import *
-from kiwiplots.plotui.picturedrawers import *
-from kiwiplots.plotui.candlesticeventhandler import *
-from kiwiplots.plotui.plotmetadata import *
 from kiwiplots.plotui.uifactory import UIFactory
+
+#from kiwiplots.plotui.canvasdrawers import *
+#from kiwiplots.plotui.eventhandlers import *
+#from kiwiplots.plotui.datawriters import *
+#from kiwiplots.plotui.dataviewers import *
+#from kiwiplots.plotui.picturedrawers import *
+#from kiwiplots.plotui.candlesticeventhandler import *
+#from kiwiplots.plotui.plotmetadata import *
