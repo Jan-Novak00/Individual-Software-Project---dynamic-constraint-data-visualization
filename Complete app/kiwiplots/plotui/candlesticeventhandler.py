@@ -9,7 +9,7 @@ from kiwiplots.plotelement import ValueCandle, ValuePoint2D
 from tkinter import simpledialog
 from tkinter import colorchooser 
 
-class CandlesticCanvasHandler(EventHandler):
+class CandlesticEventHandler(EventHandler):
     ###################
     # Inicializastion #
     ###################
