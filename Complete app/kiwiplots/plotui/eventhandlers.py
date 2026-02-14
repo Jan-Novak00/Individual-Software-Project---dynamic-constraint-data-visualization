@@ -2,7 +2,10 @@ from abc import ABC
 from .plotmetadata import PlotMetadata
 import tkinter as tk
 from kiwiplots.plotelement import ValuePoint2D
-from tkinter import simpledialog 
+from tkinter import simpledialog
+from .canvasdrawers import CanvasDrawer
+from .dataviewers import DataViewer
+from kiwiplots.solvers import ChartSolver
 
 class EventHandler(ABC):
     """
