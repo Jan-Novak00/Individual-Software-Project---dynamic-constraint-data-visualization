@@ -7,6 +7,11 @@ from .canvasdrawers import CanvasDrawer
 from .dataviewers import DataViewer
 from kiwiplots.solvers import ChartSolver
 
+
+class EventRegisters(ABC):
+    def reset(self)->None:
+        raise NotImplementedError("Method EventRegisters.reset must be declared in subclass")
+
 class EventHandler(ABC):
     """
     Abstract class for handling user interactions with the plot on a tkinter Canvas.
@@ -14,6 +19,26 @@ class EventHandler(ABC):
     Manages mouse events, cursor changes, and updates to the plot data and visualization.
     Implementations are specific to the type of plot being displayed.
     """
+    class EventRegistersLeftButton(EventRegisters):
+        def __init__(self):
+            self.reset()
+
+        def reset(self)-> None:
+            self.dragEdge : str = None                # which edge is being dragged                 # type: ignore
+            self.dragStart = ValuePoint2D(0,0)  # where draging started
+            self.dragIndex : int = None               # index of plot element which is being dragged #type: ignore
+            self.originalLeftX : float = None           #                 #ToDo redundant?         #type: ignore
+            self.originalSpacing : float = None         #                           #type: ignore
+            #self.rightEdgeCursorOffset : float = None   #                    #ToDo redundant?               #type: ignore
+            self.originalHeight : float = None          #               #type: ignore
+    
+    class EventRegistersRightButton(EventRegisters):
+        def __init__(self) -> None:
+            self.reset()
+        
+        def reset(self)->None:
+            self.rectangleIndexToChange : int = None #type: ignore
+
     def __init__(self, plotMetadata: PlotMetadata) -> None:
         """
         Initializes the CanvasHandler with plot metadata.
@@ -29,8 +54,8 @@ class EventHandler(ABC):
         self.dataViewer : DataViewer = None                                                                             # type: ignore
         self.plotSolver : ChartSolver = None                                                                            # type: ignore
         self.plotMetada = plotMetadata                           #ToDo  typing
-        self._setEventRegistersLeftButton()
-        self._setEventRegistersRightButton()
+        self.eventRegistersLeft : EventHandler.EventRegistersLeftButton = EventHandler.EventRegistersLeftButton()
+        self.eventRegistersRight : EventHandler.EventRegistersRightButton = EventHandler.EventRegistersRightButton()
     
     def UpdateUI(self):
         """
@@ -41,23 +66,6 @@ class EventHandler(ABC):
         self._updateCanvas()
         self._updateDataView()
     
-    def _setEventRegistersLeftButton(self):
-        """
-        Variables which register information about events regarding the left mouse button
-        """
-        self.dragEdge = None                # which edge is being dragged
-        self.dragStart = ValuePoint2D(0,0)  # where draging started
-        self.dragIndex = None               # index of plot element which is being dragged
-        self.originalLeftX = None           # 
-        self.originalSpacing = None         #
-        self.rightEdgeCursorOffset = None   #
-        self.originalHeight = None          #
-    
-    def _setEventRegistersRightButton(self):
-        """
-        Variables which register information about events regarding the right mouse button
-        """
-        self.rectangleIndexToChange = None
     
     def _updateCanvas(self):
         """
@@ -71,7 +79,7 @@ class EventHandler(ABC):
         
         Highlights the data element currently being edited if any.
         """
-        self.dataViewer.write(self.plotMetada, self.plotSolver, self.dragIndex, self.dragEdge) # type: ignore
+        self.dataViewer.write(self.plotMetada, self.plotSolver, self.eventRegistersLeft.dragIndex, self.eventRegistersLeft.dragEdge) # type: ignore
     
     def _changeTitle(self):
         """
