@@ -1,4 +1,4 @@
-from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D
+from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
 from .variableplot import VariableChart, VariableBarChart, VariableCandlesticChart
 from kiwisolver import Variable, Constraint, Solver
 from typing import Union
@@ -75,13 +75,19 @@ class ChartSolver(ABC):
     def ChangeSpacing(self, spacing : int):
         self.solver.suggestValue(self.variableChart.spacing, spacing)
         self.Solve()
+    
+    def ChangeTitle(self, title : str):
+        self.variableChart.ChangeTitle(title)
+    
+    def GetTitle(self):
+        return self.variableChart.GetTitle()
 
 
 class BarChartSolver(ChartSolver):
     """
     ChartSolver version for bar chart and histogram.
     """
-    def __init__(self, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, rectangleNames : list[list[str]], xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
+    def __init__(self, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, rectangleNames : list[list[str]], title: str, xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
         #Variable capture for correct parent constructor call
         self.initialHeights = initialHeights
         self.initialWidth = width
@@ -91,13 +97,14 @@ class BarChartSolver(ChartSolver):
         self.initialxCoordinate = xCoordinate
         self.initialyCoordinate = yCoordinate
         self.initialWidthScaleForGroups = widthScalesForGroups
+        self.initialTitle = title
         #Parent constructor call
         super().__init__()
         #Change of typehinting for variableChart
         self.variableChart : VariableBarChart = self.variableChart
 
     def _initializeVariableChart(self) -> VariableChart:
-        return VariableBarChart(self.initialWidth, self.initialHeights, self.initialSpacing, self.initialInnerSpacing, self.initialRectangleNames, self.initialxCoordinate, self.initialyCoordinate, self.initialWidthScaleForGroups)
+        return VariableBarChart(self.initialWidth, self.initialHeights, self.initialSpacing, self.initialInnerSpacing, self.initialRectangleNames, self.initialTitle,self.initialxCoordinate, self.initialyCoordinate, self.initialWidthScaleForGroups)
 
     def _setConstraints(self):
         barChartConstraints = set(self.variableChart.GetAllConstraints())
@@ -166,7 +173,7 @@ class CandlestickChartSolver(ChartSolver):
     """
     ChartSolver version for candlestick chart.
     """
-    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str], title:str, xCoordinate : int = 0, yCoordinate : int = 0):
         self.initialWidth = width
         self.initialOpening = initialOpening
         self.initialClosing = initialClosing
@@ -176,6 +183,7 @@ class CandlestickChartSolver(ChartSolver):
         self.initialNames = names
         self.initialxCoordinate = xCoordinate
         self.initialyCoordinate = yCoordinate
+        self.initialTitle = title
         
         super().__init__()
         
@@ -201,7 +209,7 @@ class CandlestickChartSolver(ChartSolver):
             self.solver.suggestValue(candle.openingCorner.Y, self.initialOpening[index])
 
     def _initializeVariableChart(self) -> VariableChart:
-        return VariableCandlesticChart(self.initialWidth, self.initialOpening, self.initialClosing, self.initialMinimum, self.initialMaximum, self.initialSpacing, self.initialNames, self.initialxCoordinate,self.initialyCoordinate)
+        return VariableCandlesticChart(self.initialWidth, self.initialOpening, self.initialClosing, self.initialMinimum, self.initialMaximum, self.initialSpacing, self.initialNames, self.initialTitle, self.initialxCoordinate,self.initialyCoordinate)
 
     def _setConstraints(self):
         for constraint in self.variableChart.GetAllConstraints():
@@ -240,8 +248,8 @@ class CandlestickChartSolver(ChartSolver):
         self.variableChart.ChangeName(candleIndex, name)
         self.Update()
 
-    def GetCandleData(self):
-        return self.data
+    def GetCandleData(self)->list[ValueCandle]:
+        return self.data # type: ignore
     
     def GetName(self, candleIndex : int):
         return self.variableChart.GetName(candleIndex)
