@@ -80,7 +80,7 @@ class UICore:
         Prompts the user for a file path and exports the plot data.
         """
         if self.dataPathBuffer == None:
-            self.dataPathBuffer = os.path.join(os.getcwd(), self.solver.GetTitle())
+            self.dataPathBuffer = os.path.join(os.getcwd(), self.plotMetadata.title)
         fileName = simpledialog.askstring("Save data", "File name (without extension): ", initialvalue=self.dataPathBuffer)
         if fileName == None:
             return
@@ -97,7 +97,7 @@ class UICore:
         """
         self.canvasHandler.UpdateUI()
         if self.picturePathBuffer == None:
-            self.picturePathBuffer = os.path.join(os.getcwd(), self.solver.GetTitle())  
+            self.picturePathBuffer = os.path.join(os.getcwd(), self.plotMetadata.title)  
         
         pictureName = simpledialog.askstring("Save plot", "Image name (without extension): ", initialvalue=self.picturePathBuffer)
 

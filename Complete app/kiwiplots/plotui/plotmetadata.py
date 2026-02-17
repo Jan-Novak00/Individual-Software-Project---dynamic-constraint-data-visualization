@@ -7,7 +7,7 @@ class PlotMetadata(ABC):
     Contains information such as scale factor and axis values used to convert
     pixel dimensions into data dimensions.
     """
-    def __init__(self, scaleFactor: float, xAxisValue: float):
+    def __init__(self, title: str, scaleFactor: float, xAxisValue: float):
         """
         Initializes PlotMetadata with scale and axis information.
         
@@ -17,11 +17,14 @@ class PlotMetadata(ABC):
         """
         self.scaleFactor : float = scaleFactor
         self.xAxisValue : float = xAxisValue
+        self.title = title
+
 
 
 class CandlesticPlotMetadata(PlotMetadata):
-    def __init__(self, scaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
+    def __init__(self, title: str, scaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
         self.scaleFactor : float = scaleFactor
         self.xAxisValue : float = xAxisValue
         self.xAxisLabel : str = xAxisLabel
         self.yAxisLabel : str = yAxisLabel
+        self.title: str = title

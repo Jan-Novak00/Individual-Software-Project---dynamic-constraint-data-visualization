@@ -11,12 +11,12 @@ from tkinter import colorchooser
 
 class CandlesticEventHandler(EventHandler):
     ###################
-    # Inicializastion #
+    # Inicialization #
     ###################
 
     def __init__(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver) -> None:
         super().__init__(plotMetadata)
-        self.plotSolver : CandlestickChartSolver = solver 
+        self.plotSolver : CandlestickChartSolver = solver  # type: ignore
         self.canvasHeight : int = None # type: ignore
     
     def inicializeDataView(self, textWindow: tk.Text):

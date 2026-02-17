@@ -47,7 +47,7 @@ class UIFactory:
             UICore: A fully configured UICore instance containing metadata, solver, event handler,
                     picture drawer, and data writer for the candlestick chart
         """
-        metadata : CandlesticPlotMetadata = UIFactory._createCandlesticChartMetadata(xAxisLabel,yAxisLabel, xAxisValue, initialOpening,initialClosing,initialMinimum,initialMaximum,plotHeight)
+        metadata : CandlesticPlotMetadata = UIFactory._createCandlesticChartMetadata(title,xAxisLabel,yAxisLabel, xAxisValue, initialOpening,initialClosing,initialMinimum,initialMaximum,plotHeight)
         solver : CandlestickChartSolver = UIFactory._createCandlesticChartSolver(metadata,initialOpening,initialClosing,initialMinimum,initialMaximum,names,title)
         eventHandler : EventHandler = CandlesticEventHandler(metadata, solver)
         pictureDrawer : PictureDrawer = CandlesticPictureDrawer()
@@ -56,7 +56,8 @@ class UIFactory:
 
 
     @staticmethod
-    def _createCandlesticChartMetadata(xAxisLabel: str, 
+    def _createCandlesticChartMetadata(title: str,
+                              xAxisLabel: str, 
                               yAxisLabel: str, 
                               xAxisValue : float,
                               initialOpening : list[float], 
@@ -73,6 +74,7 @@ class UIFactory:
         this range, it calculates a scale factor to fit them optimally.
         
         Args:
+            title (str): Title of the plot
             xAxisLabel (str): Label for the x-axis
             yAxisLabel (str): Label for the y-axis
             xAxisValue (float): The value where the x-axis is positioned
@@ -91,7 +93,7 @@ class UIFactory:
         if not (plotHeight*0.3 <= maxValue <= plotHeight*0.7):
             scaleFactor = plotHeight*0.8/maxValue
 
-        return CandlesticPlotMetadata(scaleFactor,xAxisValue,xAxisLabel,yAxisLabel)
+        return CandlesticPlotMetadata(title,scaleFactor,xAxisValue,xAxisLabel,yAxisLabel)
     
     @staticmethod
     def _createCandlesticChartSolver(metadata : CandlesticPlotMetadata,
@@ -135,7 +137,6 @@ class UIFactory:
                                       rescaleList(initialMaximum, metadata.scaleFactor,rescaledXAxisValue),
                                       INITIAL_SPACING,
                                       names,
-                                      title,
                                       INITIAL_ORIGIN_X,
                                       INITIAL_ORIGIN_Y)
 

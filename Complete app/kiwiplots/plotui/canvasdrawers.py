@@ -72,9 +72,9 @@ class CandlesticCanvasDrawer(CanvasDrawer):
             if candle.nameVisible: 
                 self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + 10, text=candle.name)
     
-    def _writePlotTitle(self, solver: CandlestickChartSolver):
+    def _writePlotTitle(self, title: str):
 
-        self.canvas.create_text(self.canvasWidth / 2, 20,text=solver.GetTitle(),font=("Arial", 16, "bold")) 
+        self.canvas.create_text(self.canvasWidth / 2, 20,text=title,font=("Arial", 16, "bold")) 
     
     def _drawAxes(self, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, scaleFactor : float, minimumValue : int, xAxisLabel : str, yAxisLabel : str, xAxisValue : float):   # move to superclass
         """
@@ -101,13 +101,13 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         self.canvas.create_text(leftCornerXAxis + 20, self.canvasHeight - origin.Y + 10, text=xAxisLabel, anchor="n",font=boldFont)
         self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - 10, text=yAxisLabel, anchor="s",font=boldFont)
     
-    def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver)->None:
+    def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver)->None: # type: ignore #ToDo typing of plot metadata
         """
         Draws candles and axes on the plot
         """
         print("Debug: drawing candles")
         self.canvas.delete("all")
-        self._writePlotTitle(solver)
+        self._writePlotTitle(plotMetadata.title)
         self._drawCandles(solver, plotMetadata.scaleFactor, plotMetadata.xAxisValue)
 
         origin = solver.GetOrigin()

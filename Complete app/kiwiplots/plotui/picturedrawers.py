@@ -117,9 +117,9 @@ class CandlesticPictureDrawer(PictureDrawer):
             text=yAxisLabel, fill=(0,0,0), font=font
         )
     
-    def _writePlotTitlePNG(self, draw: ImageDraw.ImageDraw, solver:CandlestickChartSolver, width: int):
+    def _writePlotTitlePNG(self, draw: ImageDraw.ImageDraw, solver:CandlestickChartSolver, width: int, title: str):
         font = ImageFont.truetype("arialbd.ttf", 16)
-        text = solver.GetTitle()
+        text = title
         bbox = font.getbbox(text)
         textWidth = bbox[2] - bbox[0]
         draw.text((width / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
@@ -131,5 +131,5 @@ class CandlesticPictureDrawer(PictureDrawer):
         draw = ImageDraw.Draw(img)
         self._drawCandlesPNG(solver, draw, height)
         self._drawAxesPNG(plotMetadata.scaleFactor,height, plotMetadata.xAxisValue,draw, solver.GetAxisHeight(), candles[-1].rightTop.X, solver.GetOrigin(), min(0, lowestWickHeight))
-        self._writePlotTitlePNG(draw,solver,width)
-        img.save(f"{solver.GetTitle()}.png")
+        self._writePlotTitlePNG(draw,solver,width,plotMetadata.title)
+        img.save(f"{plotMetadata.title}.png")

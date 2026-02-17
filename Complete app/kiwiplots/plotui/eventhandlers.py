@@ -81,7 +81,7 @@ class EventHandler(ABC):
         if newTitle is None:
             return
         else:
-            self.plotSolver.ChangeTitle(newTitle)
+            self.plotMetada.title = newTitle
             self._updateCanvas()
 
     
