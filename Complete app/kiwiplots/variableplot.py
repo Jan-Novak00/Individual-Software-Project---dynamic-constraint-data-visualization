@@ -9,7 +9,8 @@ class VariableChart(ABC):
     """
     Encapsulates all variables of all plot elemenets
     """
-    def __init__(self, width : int, spacing : int, xCoordinate : int, yCoordinate : int):
+    def __init__(self, width : int, spacing : int, xCoordinate : int, yCoordinate : int, title: str):
+        self.title : str = title
         self.width = Variable("global_width")
         self.widthValueConstraint : Constraint = ((self.width == width) | "strong")
 
@@ -33,15 +34,22 @@ class VariableChart(ABC):
     def GetOrigin(self)-> ValuePoint2D:
         return self.origin.Value()
 
+    def GetTitle(self):
+        return self.title
+    
+    def ChangeTitle(self, title: str):
+        self.title = title
+
+
 
 
 class VariableBarChart(VariableChart):
     """
     VariableChart version for bar chart and histogram
     """
-    def __init__(self, width: int, initialHeights: list[list[int]], spacing: int, innerSpacing: int, rectangleNames : list[list[str]], xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
+    def __init__(self, width: int, initialHeights: list[list[int]], spacing: int, innerSpacing: int, rectangleNames : list[list[str]], title:str, xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
         
-        super().__init__(width, spacing, xCoordinate, yCoordinate)
+        super().__init__(width, spacing, xCoordinate, yCoordinate, title)
 
         self.innerSpacing = Variable("global_inner_spacing")
         self.innerSpacingValueConstraint : Constraint = (self.innerSpacing == innerSpacing) | "strong"
@@ -104,8 +112,8 @@ class VariableCandlesticChart(VariableChart):
     """
     VariableChart version for candlestick chart
     """
-    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
-        super().__init__(width, spacing, xCoordinate, yCoordinate)
+    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str], title: str, xCoordinate : int = 0, yCoordinate : int = 0):
+        super().__init__(width, spacing, xCoordinate, yCoordinate, title)
 
         self.candles = [VariableCandle(self.width, initialClosing[i] - initialOpening[i], initialOpening[i], initialMinimum[i], initialMaximum[i],names[i]) for i in range(len(initialOpening))]
         
