@@ -3,16 +3,26 @@ from .plotmetadata import *
 from kiwiplots.solvers import *
 from .eventhandlers import EventHandler
 from .candlesticeventhandler import CandlesticEventHandler
+from .barcharteventhandler import BarChartEventHandler
 from .picturedrawers import *
 from .datawriters import *
 from numpy import abs
 
 INITIAL_WIDTH : int   = 10
-INITIAL_SPACING : int = 10
+INITIAL_SPACING : int = 15
+INITIAL_INNER_SPACING = 10
 INITIAL_ORIGIN_X : int = 50
 INITIAL_ORIGIN_Y : int = 30
 
 class UIFactory:
+
+    @staticmethod
+    def _calculateScaleFactor(values: list[float],height: int)->float:
+        scaleFactor : float = 1
+        maxValue = max(values,default=1)
+        if not (height*0.3 <= maxValue <= height*0.7):
+            scaleFactor = height*0.8/maxValue
+        return scaleFactor
 
     @staticmethod
     def createCandlesticChart(title: str, 
@@ -48,7 +58,7 @@ class UIFactory:
                     picture drawer, and data writer for the candlestick chart
         """
         metadata : CandlesticPlotMetadata = UIFactory._createCandlesticChartMetadata(title,xAxisLabel,yAxisLabel, xAxisValue, initialOpening,initialClosing,initialMinimum,initialMaximum,plotHeight)
-        solver : CandlestickChartSolver = UIFactory._createCandlesticChartSolver(metadata,initialOpening,initialClosing,initialMinimum,initialMaximum,names,title)
+        solver : CandlestickChartSolver = UIFactory._createCandlesticChartSolver(metadata,initialOpening,initialClosing,initialMinimum,initialMaximum,names)
         eventHandler : EventHandler = CandlesticEventHandler(metadata, solver)
         pictureDrawer : PictureDrawer = CandlesticPictureDrawer()
         dataWriter : DataWriter = CandlesticDataWriter()
@@ -87,13 +97,9 @@ class UIFactory:
         Returns:
             CandlesticPlotMetadata: Metadata object containing scale factor and axis information
         """
-        scaleFactor : float = 1
-        allValues = abs(initialClosing) + abs(initialOpening) + abs(initialMinimum) + abs(initialMaximum)
-        maxValue = max(allValues,default=1)
-        if not (plotHeight*0.3 <= maxValue <= plotHeight*0.7):
-            scaleFactor = plotHeight*0.8/maxValue
-
-        return CandlesticPlotMetadata(title,scaleFactor,xAxisValue,xAxisLabel,yAxisLabel)
+        allValues : list[float] = abs(initialClosing) + abs(initialOpening) + abs(initialMinimum) + abs(initialMaximum) # pyright: ignore[reportAssignmentType]
+    
+        return CandlesticPlotMetadata(title,UIFactory._calculateScaleFactor(allValues,plotHeight),xAxisValue,xAxisLabel,yAxisLabel)
     
     @staticmethod
     def _createCandlesticChartSolver(metadata : CandlesticPlotMetadata,
@@ -101,8 +107,7 @@ class UIFactory:
                                      initialClosing : list[float], 
                                      initialMinimum : list[float], 
                                      initialMaximum : list[float],
-                                     names : list[str],
-                                     title : str
+                                     names : list[str]
                                      )-> CandlestickChartSolver:
         """
         Creates a solver for the candlestick chart with rescaled data.
@@ -141,6 +146,34 @@ class UIFactory:
                                       INITIAL_ORIGIN_Y)
 
     @staticmethod
-    def createBarChart():
-        pass
+    def createBarChart( title: str, 
+                        xAxisLabel : str, 
+                        yAxisLabel : str, 
+                        initialValues : list[list[float]],
+                        rectangleNames : list[list[str]],
+                        plotWidth: int,
+                        plotHeight: int
+                        )->UICore:
+        metadata : BarPlotMetadata = UIFactory._createBarChartMetadata(title, xAxisLabel, yAxisLabel, initialValues, plotHeight)
+        solver : BarChartSolver = UIFactory._createBarChartSolver(metadata,initialValues,rectangleNames)
+        pictureDrawer : BarChartPictureDrawer = BarChartPictureDrawer()
+        dataWriter : BarChartDataWriter = BarChartDataWriter()
+        eventHandler : EventHandler = BarChartEventHandler(metadata,solver)
+        return UICore(metadata,solver,eventHandler,pictureDrawer,dataWriter,plotWidth,plotHeight)
     
+    @staticmethod
+    def _createBarChartMetadata(title: str, xAxisLabel: str, yAxisLabel: str, initialValues: list[list[float]], plotHeight: int):
+        allValues : list[float] = []
+        for group in initialValues:
+            for value in group:
+                allValues.append(value)
+        return BarPlotMetadata(title,UIFactory._calculateScaleFactor(allValues,plotHeight),xAxisLabel,yAxisLabel)
+    
+    @staticmethod
+    def _createBarChartSolver(metadata: BarPlotMetadata, initialValues: list[list[float]], rectangleNames : list[list[str]])->BarChartSolver:
+        rescaledGroupValues : list[list[int]] = []
+        for group in initialValues:
+            rescaledGroupValues.append([int(metadata.scaleFactor*value) for value in group])
+        
+        return BarChartSolver(INITIAL_WIDTH,rescaledGroupValues,INITIAL_SPACING,INITIAL_INNER_SPACING,rectangleNames,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y)
+        

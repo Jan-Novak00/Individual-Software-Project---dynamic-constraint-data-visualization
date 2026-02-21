@@ -1,6 +1,5 @@
 from abc import ABC
 import tkinter as tk
-
 from kiwiplots.plotui.plotmetadata import PlotMetadata
 from kiwiplots.solvers import ChartSolver
 from .plotmetadata import *
@@ -88,7 +87,6 @@ class BarChartDataViewer(DataViewer):
                 valueString = f"{trueValue:.4g}"
             else:
                 valueString = str(trueValue)
-
 
             if valueEdited and i == changedIndex:
                 self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n", "changing_Value")
