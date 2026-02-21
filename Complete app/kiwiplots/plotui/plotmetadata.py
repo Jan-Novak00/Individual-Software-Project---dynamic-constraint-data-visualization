@@ -28,3 +28,9 @@ class CandlesticPlotMetadata(PlotMetadata):
         self.xAxisLabel : str = xAxisLabel
         self.yAxisLabel : str = yAxisLabel
         self.title: str = title
+
+class BarPlotMetadata(PlotMetadata):
+    def __init__(self, title: str, scaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
+        super().__init__(title, scaleFactor, 0)
+        self.xAxisLabel : str = xAxisLabel
+        self.yAxisLabel : str = yAxisLabel

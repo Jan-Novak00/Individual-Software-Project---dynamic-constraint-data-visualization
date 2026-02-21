@@ -23,7 +23,56 @@ class PictureDrawer(ABC):
             height: The height of the output image in pixels. Corresponds to canvas height.
         """
         raise NotImplementedError("Method PictureDrawer.draw must ASVbe declared in subclass")
+    
+    def _drawAxesPNG(self, scaleFactor: float, height: int, xAxisValue: float, draw: ImageDraw.ImageDraw, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0, xAxisLabel:str = "", yAxisLabel: str = ""):  
+        """
+        Draws axes on the PNG output
+        """
+        topNumber = ceilToNearestTen(maximumValue) 
 
+        marks = divideInterval(minimumValue,topNumber, 5)
+      
+        draw.line((origin.X, height - origin.Y, leftCornerXAxis + 10, height - origin.Y), fill=(0,0,0), width=1)
+        draw.line((origin.X, height - origin.Y - minimumValue, origin.X, height - origin.Y - topNumber), fill=(0,0,0), width=1)
+
+        for mark in marks:
+            y = height - origin.Y - mark
+            draw.line((origin.X - 5, y, origin.X, y), fill=(0,0,0))
+
+            trueValue = mark/scaleFactor + xAxisValue
+            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
+            font = ImageFont.load_default()
+
+            # get text size
+            bbox = font.getbbox(valueString)
+            textWidth = bbox[2] - bbox[0]
+            textHeight = bbox[3] - bbox[1]
+
+            draw.text((origin.X - 10 - textWidth, y - textHeight/2), text=f"{valueString}", fill = (0,0,0))
+        
+        #Axis labels
+        font = ImageFont.truetype("arialbd.ttf", 12)
+        bbox = font.getbbox(xAxisLabel)
+        textW = bbox[2] - bbox[0]
+        textH = bbox[3] - bbox[1]
+        draw.text(
+            (leftCornerXAxis + 10 - textW/2, height - origin.Y + 10), 
+            text=xAxisLabel, fill=(0,0,0), font=font
+        )
+
+        bbox = font.getbbox(yAxisLabel)
+        textW = bbox[2] - bbox[0]
+        textH = bbox[3] - bbox[1]
+        draw.text(
+            (origin.X - textW/2, height - origin.Y - topNumber - textH - 5), 
+            text=yAxisLabel, fill=(0,0,0), font=font
+        )
+    def _writePlotTitlePNG(self, draw: ImageDraw.ImageDraw, solver: ChartSolver, width: int, title: str):
+        font = ImageFont.truetype("arialbd.ttf", 16)
+        text = title
+        bbox = font.getbbox(text)
+        textWidth = bbox[2] - bbox[0]
+        draw.text((width / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
 
 
 class CandlesticPictureDrawer(PictureDrawer):
@@ -73,58 +122,7 @@ class CandlesticPictureDrawer(PictureDrawer):
                     fill="black",
                     font=font)
     
-    def _drawAxesPNG(self, scaleFactor:float, height: int, xAxisValue: float, draw: ImageDraw.ImageDraw, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0, xAxisLabel:str = "", yAxisLabel: str = ""):  
-        """
-        Draws axes on the PNG output
-        """
-        topNumber = ceilToNearestTen(maximumValue) 
-
-        marks = divideInterval(minimumValue,topNumber, 5)
-      
-        draw.line((origin.X, height - origin.Y, leftCornerXAxis + 10, height - origin.Y), fill=(0,0,0), width=1)
-        draw.line((origin.X, height - origin.Y - minimumValue, origin.X, height - origin.Y - topNumber), fill=(0,0,0), width=1)
-
-        for mark in marks:
-            y = height - origin.Y - mark
-            draw.line((origin.X - 5, y, origin.X, y), fill=(0,0,0))
-
-            trueValue = mark/scaleFactor + xAxisValue
-            valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
-            font = ImageFont.load_default()
-
-            # get text size
-            bbox = font.getbbox(valueString)
-            textWidth = bbox[2] - bbox[0]
-            textHeight = bbox[3] - bbox[1]
-
-            draw.text((origin.X - 10 - textWidth, y - textHeight/2), text=f"{valueString}", fill = (0,0,0))
-        
-        #Axis labels
-        font = ImageFont.truetype("arialbd.ttf", 12)
-        bbox = font.getbbox(xAxisLabel)
-        textW = bbox[2] - bbox[0]
-        textH = bbox[3] - bbox[1]
-        draw.text(
-            (leftCornerXAxis + 10 - textW/2, height - origin.Y + 10), 
-            text=xAxisLabel, fill=(0,0,0), font=font
-        )
-
-        bbox = font.getbbox(yAxisLabel)
-        textW = bbox[2] - bbox[0]
-        textH = bbox[3] - bbox[1]
-        draw.text(
-            (origin.X - textW/2, height - origin.Y - topNumber - textH - 5), 
-            text=yAxisLabel, fill=(0,0,0), font=font
-        )
-    
-    def _writePlotTitlePNG(self, draw: ImageDraw.ImageDraw, solver:CandlestickChartSolver, width: int, title: str):
-        font = ImageFont.truetype("arialbd.ttf", 16)
-        text = title
-        bbox = font.getbbox(text)
-        textWidth = bbox[2] - bbox[0]
-        draw.text((width / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
-
-    def draw(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, width: int, height: int):
+    def draw(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, width: int, height: int): # type: ignore
         candles = solver.GetCandleData()
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         img = Image.new("RGB", (width, height), color="white")
@@ -132,4 +130,52 @@ class CandlesticPictureDrawer(PictureDrawer):
         self._drawCandlesPNG(solver, draw, height)
         self._drawAxesPNG(plotMetadata.scaleFactor,height, plotMetadata.xAxisValue,draw, solver.GetAxisHeight(), candles[-1].rightTop.X, solver.GetOrigin(), min(0, lowestWickHeight))
         self._writePlotTitlePNG(draw,solver,width,plotMetadata.title)
+        img.save(f"{plotMetadata.title}.png")
+
+class BarChartPictureDrawer(PictureDrawer):
+    def _drawRectanglesPNG(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
+        rectangles = solver.GetRectangleDataAsList()
+        origin = solver.GetOrigin()
+        for rec in rectangles:
+            x1 = rec.leftBottom.X
+            y1 = height - rec.leftBottom.Y
+            
+            x2 = rec.rightTop.X
+            y2 = height - rec.rightTop.Y
+            draw.rectangle((x1,y2,x2,y1), fill=rec.color, outline="black")
+            font = ImageFont.load_default()
+            text = rec.name
+
+            # get text size
+            bbox = font.getbbox(text)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+
+            # text position
+            x_center = (x1 + x2) / 2
+            y_text = (y1 + 10)
+
+            draw.text(
+                (x_center - text_width / 2, y_text - text_height/2),
+                text,
+                fill="black",
+                font=font)
+
+
+    def draw(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver, width:int, height: int): # type: ignore
+        rectangles = solver.GetRectangleDataAsList()
+        img = Image.new("RGB", (width, height), color="white")
+        draw = ImageDraw.Draw(img)
+        self._drawRectanglesPNG(draw,solver, height)
+        self._drawAxesPNG(plotMetadata.scaleFactor, 
+                          height, 
+                          plotMetadata.xAxisValue, 
+                          draw, 
+                          solver.GetAxisHeight(), 
+                          rectangles[-1].rightTop.X, 
+                          solver.GetOrigin(), 
+                          0, 
+                          plotMetadata.xAxisLabel, 
+                          plotMetadata.yAxisLabel)
+        self._writePlotTitlePNG(draw, solver,width,plotMetadata.title)
         img.save(f"{plotMetadata.title}.png")

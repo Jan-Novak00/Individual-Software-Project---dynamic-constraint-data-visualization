@@ -140,4 +140,7 @@ class UIFactory:
                                       INITIAL_ORIGIN_X,
                                       INITIAL_ORIGIN_Y)
 
+    @staticmethod
+    def createBarChart():
+        pass
     
