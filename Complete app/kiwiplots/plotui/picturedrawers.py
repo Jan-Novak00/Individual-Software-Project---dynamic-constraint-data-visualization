@@ -74,7 +74,6 @@ class PictureDrawer(ABC):
         textWidth = bbox[2] - bbox[0]
         draw.text((width / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
 
-
 class CandlesticPictureDrawer(PictureDrawer):
     def _drawCandlesPNG(self, solver: CandlestickChartSolver, draw : ImageDraw.ImageDraw, height: int):
         candles = solver.GetCandleData()
@@ -122,7 +121,7 @@ class CandlesticPictureDrawer(PictureDrawer):
                     fill="black",
                     font=font)
     
-    def draw(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, width: int, height: int): # type: ignore
+    def draw(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, width: int, height: int): # pyright: ignore[reportIncompatibleMethodOverride]
         candles = solver.GetCandleData()
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         img = Image.new("RGB", (width, height), color="white")
@@ -162,7 +161,7 @@ class BarChartPictureDrawer(PictureDrawer):
                 font=font)
 
 
-    def draw(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver, width:int, height: int): # type: ignore
+    def draw(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver, width:int, height: int):  # pyright: ignore[reportIncompatibleMethodOverride]
         rectangles = solver.GetRectangleDataAsList()
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)

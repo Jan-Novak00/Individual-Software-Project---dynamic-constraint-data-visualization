@@ -21,9 +21,23 @@ class DataWriter(ABC):
         raise NotImplementedError("Method DataWriter.write must be declared in subclass")
 
 class CandlesticDataWriter(DataWriter):
-    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, file: str):
+    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, file: str): # pyright: ignore[reportIncompatibleMethodOverride]
         with open(file,"w") as output:
             candles = solver.GetCandleData()
             for candle in candles:
                 output.write(f"{candle.name},{candle.openingCorner.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue},{candle.closingCorner.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue},{candle.wickBottom.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue},{candle.wickTop.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue}")
+                output.write("\n")
+
+class BarChartDataWriter(DataWriter):
+    def write(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver, file: str): # pyright: ignore[reportIncompatibleMethodOverride]
+        with open(file,"w") as output:
+            groups = solver.GetRectangleData()
+            for group in groups: # pyright: ignore[reportOptionalIterable]
+                for i in range(len(group)):
+                    rec = group[i]
+                    if i != 0:
+                        output.write(",")
+                    height = rec.GetHeight()
+                    value = height/plotMetadata.scaleFactor
+                    output.write(f"{rec.name},{value}")
                 output.write("\n")

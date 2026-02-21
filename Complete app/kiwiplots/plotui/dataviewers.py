@@ -38,7 +38,7 @@ class CandlesticDataViewer(DataViewer):
     def __init__(self, textWindow: tk.Text):
         super().__init__(textWindow)
 
-    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str = ""):
+    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str = ""): # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Displays all data for the user and highlights which data is being edited
         """
