@@ -1,5 +1,8 @@
 from abc import ABC
 import tkinter as tk
+
+from kiwiplots.plotui.plotmetadata import PlotMetadata
+from kiwiplots.solvers import ChartSolver
 from .plotmetadata import *
 from kiwiplots.solvers import *
 
@@ -18,7 +21,7 @@ class DataViewer(ABC):
         """
         self.dataWindow : tk.Text = textWindow
 
-    def write(self, plotMetadata: PlotMetadata, solver: ChartSolver, changedIndex: int, changedStatus: str = "")->None: # type: ignore
+    def write(self, plotMetadata: PlotMetadata, solver: ChartSolver, changedIndex: int, changedStatus: str)->None: # type: ignore
         """
         Displays plot data in the text window.
         
@@ -38,7 +41,7 @@ class CandlesticDataViewer(DataViewer):
     def __init__(self, textWindow: tk.Text):
         super().__init__(textWindow)
 
-    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str = ""): # pyright: ignore[reportIncompatibleMethodOverride]
+    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str): # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Displays all data for the user and highlights which data is being edited
         """
@@ -64,3 +67,32 @@ class CandlesticDataViewer(DataViewer):
             else:
                 self.dataWindow.insert("1.0",f"{string}\n")
         self.dataWindow.config(state="disabled")
+
+class BarChartDataViewer(DataViewer):
+    def write(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+        """
+        Displays all data for the user and highlights which data is being edited
+        """
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        valueEdited = changedStatus == "top"
+        rectangles = solver.GetRectangleDataAsList()
+
+        for i in range(len(rectangles)-1, -1, -1):
+            rec = rectangles[i]
+            trueValue = rec.GetHeight()/plotMetadata.scaleFactor
+            valueString = ""
+            if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
+                valueString = f"{trueValue:.4g}"
+            else:
+                valueString = str(trueValue)
+
+
+            if valueEdited and i == changedIndex:
+                self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n")
+        self.dataWindow.config(state="disabled")
+    
