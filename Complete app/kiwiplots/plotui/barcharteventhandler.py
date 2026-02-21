@@ -15,7 +15,7 @@ class BarChartEventHandler(EventHandler):
     ###################
     # Inicialization #
     ###################
-    
+
     def __init__(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver) -> None:
         super().__init__(plotMetadata)
         self.plotSolver : BarChartSolver = solver  # type: ignore
@@ -126,9 +126,22 @@ class BarChartEventHandler(EventHandler):
         super().on_right_down(event) 
 
     def _changeColor(self):
-        raise NotImplementedError("Change color not implemented")
+        groupIndex = self._indexToGroupIndex(self.eventRegistersRight.rectangleIndexToChange)
+        color = colorchooser.askcolor(title="Choose different color")
+        if color[1] == None:
+            return
+        self.plotSolver.ChangeColor(groupIndex[0],groupIndex[1],color[1])
+        self._updateCanvas()
+
     def _changeName(self):
-        raise NotImplementedError("Change name not implemented")
+        groupIndex = self._indexToGroupIndex(self.eventRegistersRight.rectangleIndexToChange)
+        currentName = self.plotSolver.GetName(groupIndex[0],groupIndex[1])
+        newName = simpledialog.askstring("Change name", "New name:", initialvalue=currentName)
+        if newName == None:
+            return
+        self.plotSolver.ChangeName(groupIndex[0], groupIndex[1], newName)
+        self._updateCanvas()
+        self._updateDataView()
     
 
     #######################
@@ -152,7 +165,7 @@ class BarChartEventHandler(EventHandler):
         if self.eventRegistersLeft.dragEdge == "right":
             newWidth = self._getNewWidth(event, groupIndex, rectangleInGroupIndex, groups, origin) # pyright: ignore[reportArgumentType, reportPossiblyUnboundVariable]
             if newWidth > 10:
-                self.plotSolver.ChangeWidth(newWidth) # pyright: ignore[reportArgumentType]
+                self.plotSolver.ChangeWidth(newWidth)  # pyright: ignore[reportArgumentType]
 
         elif self.eventRegistersLeft.dragEdge == "axisTop":  
             newHeight = self.canvasHeight - event.y - origin.Y
@@ -206,7 +219,7 @@ class BarChartEventHandler(EventHandler):
             elif self._isNearTopOfYAxis(event):
                 self.canvas.config(cursor="sb_v_double_arrow")
                 return
-        super().check_cursor(event)
+        self.canvas.config(cursor="arrow")
 
     ##################################
     # Predicates for locating events #
