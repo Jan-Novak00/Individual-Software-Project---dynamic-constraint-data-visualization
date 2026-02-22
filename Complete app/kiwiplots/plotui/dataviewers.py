@@ -45,7 +45,7 @@ class CandlesticDataViewer(DataViewer):
         Displays all data for the user and highlights which data is being edited
         """
         xAxisValue = plotMetadata.xAxisValue
-        scaleFactor = plotMetadata.scaleFactor
+        scaleFactor = plotMetadata.heightScaleFactor
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
@@ -68,7 +68,7 @@ class CandlesticDataViewer(DataViewer):
         self.dataWindow.config(state="disabled")
 
 class BarChartDataViewer(DataViewer):
-    def write(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+    def write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Displays all data for the user and highlights which data is being edited
         """
@@ -81,7 +81,7 @@ class BarChartDataViewer(DataViewer):
 
         for i in range(len(rectangles)-1, -1, -1):
             rec = rectangles[i]
-            trueValue = rec.GetHeight()/plotMetadata.scaleFactor
+            trueValue = rec.GetHeight()/plotMetadata.heightScaleFactor
             valueString = ""
             if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
                 valueString = f"{trueValue:.4g}"
@@ -93,4 +93,28 @@ class BarChartDataViewer(DataViewer):
             else:
                 self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n")
         self.dataWindow.config(state="disabled")
-    
+
+class HistogramDataViewer(DataViewer):
+    def write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        valueEdited = changedStatus == "top"
+        rectangles = solver.GetRectangleDataAsList()
+
+        for i in range(len(rectangles)-1, -1, -1):
+            rec = rectangles[i]
+            trueValue = rec.GetHeight()/plotMetadata.heightScaleFactor
+            valueString = ""
+            if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
+                valueString = f"{trueValue:.4g}"
+            else:
+                valueString = str(trueValue)
+
+
+            if valueEdited and i == changedIndex:
+                self.dataWindow.insert("1.0",f"({rec.leftBottom.secondaryName}, {rec.rightTop.secondaryName}) = {valueString}\n", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"({rec.leftBottom.secondaryName}, {rec.rightTop.secondaryName}) = {valueString}\n")
+        self.dataWindow.config(state="disabled")

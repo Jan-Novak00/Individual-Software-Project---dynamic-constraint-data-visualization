@@ -25,11 +25,11 @@ class CandlesticDataWriter(DataWriter):
         with open(file,"w") as output:
             candles = solver.GetCandleData()
             for candle in candles:
-                output.write(f"{candle.name},{candle.openingCorner.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue},{candle.closingCorner.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue},{candle.wickBottom.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue},{candle.wickTop.Y/plotMetadata.scaleFactor + plotMetadata.xAxisValue}")
+                output.write(f"{candle.name},{candle.openingCorner.Y/plotMetadata.heightScaleFactor + plotMetadata.xAxisValue},{candle.closingCorner.Y/plotMetadata.heightScaleFactor + plotMetadata.xAxisValue},{candle.wickBottom.Y/plotMetadata.heightScaleFactor + plotMetadata.xAxisValue},{candle.wickTop.Y/plotMetadata.heightScaleFactor + plotMetadata.xAxisValue}")
                 output.write("\n")
 
 class BarChartDataWriter(DataWriter):
-    def write(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver, file: str): # pyright: ignore[reportIncompatibleMethodOverride]
+    def write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, file: str): # pyright: ignore[reportIncompatibleMethodOverride]
         with open(file,"w") as output:
             groups = solver.GetRectangleData()
             for group in groups: # pyright: ignore[reportOptionalIterable]
@@ -38,6 +38,15 @@ class BarChartDataWriter(DataWriter):
                     if i != 0:
                         output.write(",")
                     height = rec.GetHeight()
-                    value = height/plotMetadata.scaleFactor
+                    value = height/plotMetadata.heightScaleFactor
                     output.write(f"{rec.name},{value}")
                 output.write("\n")
+
+class HistogramDataWriter(DataWriter):
+    def write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, file: str): # pyright: ignore[reportIncompatibleMethodOverride]
+        with open(file,"w") as output:
+            rectangles = solver.GetRectangleDataAsList()
+            for rec in rectangles:
+                height = rec.GetHeight()
+                value = height/plotMetadata.heightScaleFactor
+                output.write(f"{rec.leftBottom.secondaryName},{rec.rightTop.secondaryName},{value}\n")

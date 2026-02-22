@@ -4,6 +4,7 @@ from kiwiplots.solvers import *
 from .eventhandlers import EventHandler
 from .candlesticeventhandler import CandlesticEventHandler
 from .barcharteventhandler import BarChartEventHandler
+from .histogrameventhandler import HistogramEventHandler
 from .picturedrawers import *
 from .datawriters import *
 from numpy import abs
@@ -13,6 +14,7 @@ INITIAL_SPACING : int = 15
 INITIAL_INNER_SPACING = 10
 INITIAL_ORIGIN_X : int = 50
 INITIAL_ORIGIN_Y : int = 30
+INITIAL_PADDING : int = 10
 
 class UIFactory:
 
@@ -58,7 +60,7 @@ class UIFactory:
                     picture drawer, and data writer for the candlestick chart
         """
         metadata : CandlesticPlotMetadata = UIFactory._createCandlesticChartMetadata(title,xAxisLabel,yAxisLabel, xAxisValue, initialOpening,initialClosing,initialMinimum,initialMaximum,plotHeight)
-        solver : CandlestickChartSolver = UIFactory._createCandlesticChartSolver(metadata,initialOpening,initialClosing,initialMinimum,initialMaximum,names)
+        solver : ChartSolver = UIFactory._createCandlesticChartSolver(metadata,initialOpening,initialClosing,initialMinimum,initialMaximum,names)
         eventHandler : EventHandler = CandlesticEventHandler(metadata, solver)
         pictureDrawer : PictureDrawer = CandlesticPictureDrawer()
         dataWriter : DataWriter = CandlesticDataWriter()
@@ -133,13 +135,13 @@ class UIFactory:
         def rescaleList(inputList : list[float], scaleFactor : float, scaledXAxisValue: float) -> list[int]:
             return [int(value*scaleFactor-scaledXAxisValue) for value in inputList]
         
-        rescaledXAxisValue : float = metadata.xAxisValue*metadata.scaleFactor
+        rescaledXAxisValue : float = metadata.xAxisValue*metadata.heightScaleFactor
 
         return CandlestickChartSolver(INITIAL_WIDTH,
-                                      rescaleList(initialOpening, metadata.scaleFactor,rescaledXAxisValue),
-                                      rescaleList(initialClosing, metadata.scaleFactor,rescaledXAxisValue),
-                                      rescaleList(initialMinimum, metadata.scaleFactor,rescaledXAxisValue),
-                                      rescaleList(initialMaximum, metadata.scaleFactor,rescaledXAxisValue),
+                                      rescaleList(initialOpening, metadata.heightScaleFactor,rescaledXAxisValue),
+                                      rescaleList(initialClosing, metadata.heightScaleFactor,rescaledXAxisValue),
+                                      rescaleList(initialMinimum, metadata.heightScaleFactor,rescaledXAxisValue),
+                                      rescaleList(initialMaximum, metadata.heightScaleFactor,rescaledXAxisValue),
                                       INITIAL_SPACING,
                                       names,
                                       INITIAL_ORIGIN_X,
@@ -154,10 +156,10 @@ class UIFactory:
                         plotWidth: int,
                         plotHeight: int
                         )->UICore:
-        metadata : BarPlotMetadata = UIFactory._createBarChartMetadata(title, xAxisLabel, yAxisLabel, initialValues, plotHeight)
-        solver : BarChartSolver = UIFactory._createBarChartSolver(metadata,initialValues,rectangleNames)
-        pictureDrawer : BarChartPictureDrawer = BarChartPictureDrawer()
-        dataWriter : BarChartDataWriter = BarChartDataWriter()
+        metadata : BarChartMetadata = UIFactory._createBarChartMetadata(title, xAxisLabel, yAxisLabel, initialValues, plotHeight)
+        solver : ChartSolver = UIFactory._createBarChartSolver(metadata,initialValues,rectangleNames)
+        pictureDrawer : PictureDrawer = BarChartPictureDrawer()
+        dataWriter : DataWriter = BarChartDataWriter()
         eventHandler : EventHandler = BarChartEventHandler(metadata,solver)
         return UICore(metadata,solver,eventHandler,pictureDrawer,dataWriter,plotWidth,plotHeight)
     
@@ -167,13 +169,48 @@ class UIFactory:
         for group in initialValues:
             for value in group:
                 allValues.append(value)
-        return BarPlotMetadata(title,UIFactory._calculateScaleFactor(allValues,plotHeight),xAxisLabel,yAxisLabel)
+        return BarChartMetadata(title,UIFactory._calculateScaleFactor(allValues,plotHeight),xAxisLabel,yAxisLabel)
     
     @staticmethod
-    def _createBarChartSolver(metadata: BarPlotMetadata, initialValues: list[list[float]], rectangleNames : list[list[str]])->BarChartSolver:
+    def _createBarChartSolver(metadata: BarChartMetadata, initialValues: list[list[float]], rectangleNames : list[list[str]], initialSpacing : int = INITIAL_SPACING, initialInnerSpacing : int = INITIAL_INNER_SPACING)->BarChartSolver:
         rescaledGroupValues : list[list[int]] = []
         for group in initialValues:
-            rescaledGroupValues.append([int(metadata.scaleFactor*value) for value in group])
+            rescaledGroupValues.append([int(metadata.heightScaleFactor*value) for value in group])
         
-        return BarChartSolver(INITIAL_WIDTH,rescaledGroupValues,INITIAL_SPACING,INITIAL_INNER_SPACING,rectangleNames,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y)
+        return BarChartSolver(INITIAL_WIDTH,rescaledGroupValues,initialSpacing,initialInnerSpacing,rectangleNames,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y)
         
+
+    @staticmethod
+    def createHistogram(title: str,
+                        xAxisLabel: str,
+                        yAxisLabel: str,
+                        initialValues: list[float], 
+                        intervals: list[tuple[float,float]],
+                        plotWidth: int,
+                        plotHeight: int):
+        metadata : HistogramMetadata = UIFactory._createHistogramMetadata(title,xAxisLabel,yAxisLabel,initialValues,intervals,plotHeight)
+        solver : ChartSolver = UIFactory._createHistogramSolver(metadata, initialValues, intervals)
+        pictureDrawer : PictureDrawer = HistorgramPictureDrawer()
+        dataWriter : DataWriter = HistogramDataWriter()
+        eventHandler : EventHandler = HistogramEventHandler(metadata,solver)
+        return UICore(metadata,solver,eventHandler,pictureDrawer,dataWriter,plotWidth,plotHeight)
+
+
+    @staticmethod
+    def _createHistogramMetadata(title: str, xAxisLabel: str, yAxisLabel: str, initialValues : list[float], intervals: list[tuple[float,float]], plotHeight: int)-> HistogramMetadata:
+        heightScaleFactor : float = UIFactory._calculateScaleFactor(initialValues,plotHeight)
+        widthScales = [UIFactory._createScalesForIntervalGroup(intervals)]
+        return HistogramMetadata(title, heightScaleFactor, widthScales, xAxisLabel, yAxisLabel)
+
+    @staticmethod
+    def _createScalesForIntervalGroup(intervals : list[tuple[float,float]])->list[float]:
+        intervalLengths : list[float] = [interval[1]-interval[0] for interval in intervals]
+        minimum = min([length for length in intervalLengths if length > 0], default=1)
+        scales = [length/minimum for length in intervalLengths]
+        return scales
+
+    @staticmethod
+    def _createHistogramSolver(metadata: HistogramMetadata, initialValues: list[float], intervals: list[tuple[float,float]]) -> BarChartSolver:
+        solver: BarChartSolver = UIFactory._createBarChartSolver(metadata,[initialValues],[["" for _ in initialValues]],INITIAL_PADDING,0)
+        solver.SetIntervalValues(intervals) # pyright: ignore[reportArgumentType]
+        return solver

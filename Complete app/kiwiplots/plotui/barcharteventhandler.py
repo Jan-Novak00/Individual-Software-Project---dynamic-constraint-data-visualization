@@ -1,9 +1,9 @@
 import tkinter as tk
 from typing import Union
-from .canvasdrawers import BarPlotCanvasDrawer
+from .canvasdrawers import BarChartCanvasDrawer
 from .eventhandlers import EventHandler
 from kiwiplots.solvers import BarChartSolver
-from .plotmetadata import BarPlotMetadata
+from .plotmetadata import BarChartMetadata
 from .plotmath import isNear
 from .dataviewers import BarChartDataViewer
 from kiwiplots.plotelement import ValueRectangle, ValuePoint2D
@@ -16,7 +16,7 @@ class BarChartEventHandler(EventHandler):
     # Inicialization #
     ###################
 
-    def __init__(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver) -> None:
+    def __init__(self, plotMetadata: BarChartMetadata, solver: BarChartSolver) -> None:
         super().__init__(plotMetadata)
         self.plotSolver : BarChartSolver = solver  # type: ignore
         self.canvasHeight : int = None # type: ignore
@@ -28,7 +28,7 @@ class BarChartEventHandler(EventHandler):
     def inicializeCanvas(self, canvas: tk.Canvas, width: int, height: int) -> None:
         self.canvas = canvas
         self.canvasHeight = height
-        self.drawer = BarPlotCanvasDrawer(canvas,width,height)
+        self.drawer = BarChartCanvasDrawer(canvas,width,height)
     
     def inicializeRightClickMenu(self, menu: tk.Menu) -> None:
         self.elementMenu = menu

@@ -127,7 +127,7 @@ class CandlesticPictureDrawer(PictureDrawer):
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
         self._drawCandlesPNG(solver, draw, height)
-        self._drawAxesPNG(plotMetadata.scaleFactor,height, plotMetadata.xAxisValue,draw, solver.GetAxisHeight(), candles[-1].rightTop.X, solver.GetOrigin(), min(0, lowestWickHeight))
+        self._drawAxesPNG(plotMetadata.heightScaleFactor,height, plotMetadata.xAxisValue,draw, solver.GetAxisHeight(), candles[-1].rightTop.X, solver.GetOrigin(), min(0, lowestWickHeight))
         self._writePlotTitlePNG(draw,solver,width,plotMetadata.title)
         img.save(f"{plotMetadata.title}.png")
 
@@ -161,12 +161,12 @@ class BarChartPictureDrawer(PictureDrawer):
                 font=font)
 
 
-    def draw(self, plotMetadata: BarPlotMetadata, solver: BarChartSolver, width:int, height: int):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def draw(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, width:int, height: int):  # pyright: ignore[reportIncompatibleMethodOverride]
         rectangles = solver.GetRectangleDataAsList()
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
         self._drawRectanglesPNG(draw,solver, height)
-        self._drawAxesPNG(plotMetadata.scaleFactor, 
+        self._drawAxesPNG(plotMetadata.heightScaleFactor, 
                           height, 
                           plotMetadata.xAxisValue, 
                           draw, 
@@ -178,3 +178,39 @@ class BarChartPictureDrawer(PictureDrawer):
                           plotMetadata.yAxisLabel)
         self._writePlotTitlePNG(draw, solver,width,plotMetadata.title)
         img.save(f"{plotMetadata.title}.png")
+
+class HistorgramPictureDrawer(BarChartPictureDrawer):
+    def _drawRectanglesPNG(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
+        rectangles = solver.GetRectangleDataAsList()
+        for rec in rectangles:
+            x1 = rec.leftBottom.X
+            y1 = height - rec.leftBottom.Y
+            
+            x2 = rec.rightTop.X
+            y2 = height - rec.rightTop.Y
+            draw.rectangle((x1,y2,x2,y1), fill=rec.color, outline="black")
+            font = ImageFont.load_default()
+            textLeft = rec.leftBottom.secondaryName
+            textRight = rec.rightTop.secondaryName
+
+            # get text size
+            bboxLeft = font.getbbox(textLeft)
+            textLeft_width = bboxLeft[2] - bboxLeft[0]
+            textLeft_height = bboxLeft[3] - bboxLeft[1]
+
+            bboxRight = font.getbbox(textRight)
+            textRight_width = bboxRight[2] - bboxRight[0]
+            textRight_height = bboxRight[3] - bboxRight[1]
+
+            y_text = (y1 + 10)
+
+            draw.text(
+                (x1 - textLeft_width / 2, y_text - textLeft_height/2),
+                textLeft,
+                fill="black",
+                font=font)
+            draw.text(
+                (x2 - textRight_width / 2, y_text - textRight_height/2),
+                textRight,
+                fill="black",
+                font=font)

@@ -113,9 +113,9 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         candles = solver.GetCandleData()
         
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
-        self._drawAxes(solver.GetAxisHeight(), candles[-1].rightTop.X, origin, plotMetadata.scaleFactor, min(0, lowestWickHeight), plotMetadata.xAxisLabel, plotMetadata.yAxisLabel, plotMetadata.xAxisValue)  
+        self._drawAxes(solver.GetAxisHeight(), candles[-1].rightTop.X, origin, plotMetadata.heightScaleFactor, min(0, lowestWickHeight), plotMetadata.xAxisLabel, plotMetadata.yAxisLabel, plotMetadata.xAxisValue)  
 
-class BarPlotCanvasDrawer(CanvasDrawer):
+class BarChartCanvasDrawer(CanvasDrawer):
     def _drawRectangles(self, solver: BarChartSolver): 
         """
         Draws rectangles on the plot and writes their names under them.
@@ -131,7 +131,7 @@ class BarPlotCanvasDrawer(CanvasDrawer):
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
 
 
-    def draw(self, plotMetadata: BarPlotMetadata, solver : BarChartSolver) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+    def draw(self, plotMetadata: BarChartMetadata, solver : BarChartSolver) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Draws rectangles and axes on the plot
         """
@@ -145,4 +145,21 @@ class BarPlotCanvasDrawer(CanvasDrawer):
         #highestRectangleHeight = max([rec.rightTop.Y - origin.Y for rec in rectangles])
         y = solver.GetAxisHeight()
 
-        self._drawAxes(solver.GetAxisHeight(), rectangles[-1].rightTop.X, origin, plotMetadata.scaleFactor,0,plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
+        self._drawAxes(solver.GetAxisHeight(), rectangles[-1].rightTop.X, origin, plotMetadata.heightScaleFactor,0,plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
+
+
+class HistogramCanvasDrawer(BarChartCanvasDrawer):
+    def _drawRectangles(self, solver: BarChartSolver): 
+        """
+        Draws rectangles on the plot and writes their names under them.
+        """
+        rectangles = solver.GetRectangleDataAsList()
+        for rec in rectangles: 
+            x1 = rec.leftBottom.X
+            y1 = self.canvasHeight - rec.leftBottom.Y
+            
+            x2 = rec.rightTop.X
+            y2 = self.canvasHeight - rec.rightTop.Y
+            self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black") # pyright: ignore[reportArgumentType]
+            self.canvas.create_text(x1,y1 + 10, text=rec.leftBottom.secondaryName)
+            self.canvas.create_text(x2,y1 + 10, text=rec.rightTop.secondaryName)

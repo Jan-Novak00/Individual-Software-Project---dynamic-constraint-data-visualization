@@ -7,7 +7,7 @@ class PlotMetadata(ABC):
     Contains information such as scale factor and axis values used to convert
     pixel dimensions into data dimensions.
     """
-    def __init__(self, title: str, scaleFactor: float, xAxisValue: float):
+    def __init__(self, title: str, heightScaleFactor: float, xAxisValue: float):
         """
         Initializes PlotMetadata with scale and axis information.
         
@@ -15,22 +15,27 @@ class PlotMetadata(ABC):
             scaleFactor: The scaling factor for converting pixel coordinates to data values.
             xAxisValue: The data value corresponding to the x-axis origin.
         """
-        self.scaleFactor : float = scaleFactor
+        self.heightScaleFactor : float = heightScaleFactor
         self.xAxisValue : float = xAxisValue
         self.title = title
 
 
 
 class CandlesticPlotMetadata(PlotMetadata):
-    def __init__(self, title: str, scaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
-        self.scaleFactor : float = scaleFactor
+    def __init__(self, title: str, heightScaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
+        self.heightScaleFactor : float = heightScaleFactor
         self.xAxisValue : float = xAxisValue
         self.xAxisLabel : str = xAxisLabel
         self.yAxisLabel : str = yAxisLabel
         self.title: str = title
 
-class BarPlotMetadata(PlotMetadata):
-    def __init__(self, title: str, scaleFactor: float, xAxisLabel : str, yAxisLabel : str):
-        super().__init__(title, scaleFactor, 0)
+class BarChartMetadata(PlotMetadata):
+    def __init__(self, title: str, heightScaleFactor: float, xAxisLabel : str, yAxisLabel : str):
+        super().__init__(title, heightScaleFactor, 0)
         self.xAxisLabel : str = xAxisLabel
         self.yAxisLabel : str = yAxisLabel
+
+class HistogramMetadata(BarChartMetadata):
+    def __init__(self, title: str, heightScaleFactor: float, intervalGropsScaleFactors: list[list[float]], xAxisLabel : str, yAxisLabel : str):
+        super().__init__(title,heightScaleFactor,xAxisLabel,yAxisLabel)
+        self.widthScaleFactor: list[list[float]] = intervalGropsScaleFactors
