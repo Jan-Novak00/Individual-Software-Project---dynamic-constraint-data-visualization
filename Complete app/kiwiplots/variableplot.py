@@ -35,24 +35,25 @@ class VariableChart(ABC):
 
 
 
+
 class VariableBarChart(VariableChart):
     """
     VariableChart version for bar chart and histogram
     """
-    def __init__(self, width: int, initialHeights: list[list[int]], spacing: int, innerSpacing: int, rectangleNames : list[list[str]], xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None):
+    def __init__(self, width: int, initialHeights: list[list[int]], spacing: int, innerSpacing: int, rectangleNames : list[list[str]],xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None): # type: ignore
         
         super().__init__(width, spacing, xCoordinate, yCoordinate)
 
         self.innerSpacing = Variable("global_inner_spacing")
         self.innerSpacingValueConstraint : Constraint = (self.innerSpacing == innerSpacing) | "strong"
         
-        self.groups : list[VariableRectangleGroup] = [VariableRectangleGroup(self.width,heights,self.innerSpacing, rectangleNames[i] if rectangleNames is not None else None, "blue" ,None if widthScalesForGroups is None else widthScalesForGroups[i]) for i, heights in enumerate(initialHeights)]
+        self.groups : list[VariableRectangleGroup] = [VariableRectangleGroup(self.width,heights,self.innerSpacing, rectangleNames[i] if rectangleNames is not None else None, "blue" ,None if widthScalesForGroups is None else widthScalesForGroups[i]) for i, heights in enumerate(initialHeights)] # type: ignore
         self._createGroupSpacingConstraints()
 
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
     
-    def SetIntervalValues(self, intervals: list[list[float,float]]):
+    def SetIntervalValues(self, intervals: list[list[float,float]]): # type: ignore
         """
         Sets interval scales for histogram.
         """
@@ -104,7 +105,7 @@ class VariableCandlesticChart(VariableChart):
     """
     VariableChart version for candlestick chart
     """
-    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str],  xCoordinate : int = 0, yCoordinate : int = 0):
         super().__init__(width, spacing, xCoordinate, yCoordinate)
 
         self.candles = [VariableCandle(self.width, initialClosing[i] - initialOpening[i], initialOpening[i], initialMinimum[i], initialMaximum[i],names[i]) for i in range(len(initialOpening))]
@@ -138,11 +139,11 @@ class VariableCandlesticChart(VariableChart):
     
     def ChangePositiveColor(self, color : Union[str,int]):
         for candle in self.candles:
-            candle.ChangePositiveColor(color)
+            candle.ChangePositiveColor(color) # type: ignore
     
     def ChangeNegativeColor(self, color : Union[str,int]):
         for candle in self.candles:
-            candle.ChangeNegativeColor(color)
+            candle.ChangeNegativeColor(color) # type: ignore
     
     def SwitchNameVisibility(self, index : int):
         self.candles[index].SwitchNameVisibility()

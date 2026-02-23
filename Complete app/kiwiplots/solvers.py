@@ -1,4 +1,4 @@
-from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D
+from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
 from .variableplot import VariableChart, VariableBarChart, VariableCandlesticChart
 from kiwisolver import Variable, Constraint, Solver
 from typing import Union
@@ -75,6 +75,7 @@ class ChartSolver(ABC):
     def ChangeSpacing(self, spacing : int):
         self.solver.suggestValue(self.variableChart.spacing, spacing)
         self.Solve()
+    
 
 
 class BarChartSolver(ChartSolver):
@@ -166,7 +167,7 @@ class CandlestickChartSolver(ChartSolver):
     """
     ChartSolver version for candlestick chart.
     """
-    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str],xCoordinate : int = 0, yCoordinate : int = 0):
         self.initialWidth = width
         self.initialOpening = initialOpening
         self.initialClosing = initialClosing
@@ -176,6 +177,7 @@ class CandlestickChartSolver(ChartSolver):
         self.initialNames = names
         self.initialxCoordinate = xCoordinate
         self.initialyCoordinate = yCoordinate
+
         
         super().__init__()
         
@@ -240,8 +242,8 @@ class CandlestickChartSolver(ChartSolver):
         self.variableChart.ChangeName(candleIndex, name)
         self.Update()
 
-    def GetCandleData(self):
-        return self.data
+    def GetCandleData(self)->list[ValueCandle]:
+        return self.data # type: ignore
     
     def GetName(self, candleIndex : int):
         return self.variableChart.GetName(candleIndex)
