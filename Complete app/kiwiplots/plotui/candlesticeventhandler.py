@@ -34,60 +34,7 @@ class CandlesticEventHandler(EventHandler):
         self.elementMenu.add_command(label="Change name", command=self._changeName)
         self.elementMenu.add_command(label="Switch name visibility", command=self._switchNameVisibility)
     
-    ##################################
-    # Predicates for locating events #
-    ##################################
     
-    def _isNearClosingEdge(self, event: tk.Event, candle : ValueCandle):
-        origin = self.plotSolver.GetOrigin()
-        closingY = self.canvasHeight - (candle.closingCorner.Y + origin.Y)
-        return isNear(closingY, event.y) and candle.openingCorner.X <= event.x <= candle.closingCorner.X
-
-    def _isNearOpeningEdge(self, event: tk.Event, candle : ValueCandle):
-        origin = self.plotSolver.GetOrigin()
-        openingY = self.canvasHeight - (candle.openingCorner.Y + origin.Y)
-        return isNear(openingY, event.y) and candle.openingCorner.X <= event.x <= candle.closingCorner.X
-
-    def _isNearLeftEdge(self, event: tk.Event, candle : ValueCandle):
-        origin = self.plotSolver.GetOrigin()
-        candleBottomY, candleTopY = self.canvasHeight - (min(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y), self.canvasHeight - (max(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y)
-        return isNear(event.x, candle.openingCorner.X) and candleTopY <= event.y <= candleBottomY
-        pass
-
-    def _isNearRightEdge(self, event: tk.Event, candle : ValueCandle):
-        origin = self.plotSolver.GetOrigin()
-        candleBottomY, candleTopY = self.canvasHeight - (min(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y), self.canvasHeight - (max(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y)
-        return isNear(event.x, candle.closingCorner.X) and candleTopY <= event.y <= candleBottomY
-      
-
-    def _isNearMaximum(self, event: tk.Event, candle : ValueCandle):
-        origin = self.plotSolver.GetOrigin()
-        maxY = self.canvasHeight - (candle.wickTop.Y + origin.Y)
-        return isNear(maxY, event.y) and isNear(candle.wickTop.X, event.x)
-        
-
-    def _isNearMinimum(self, event: tk.Event, candle : ValueCandle):
-        origin = self.plotSolver.GetOrigin()
-        minY = self.canvasHeight - (candle.wickBottom.Y + origin.Y)
-        return isNear(minY, event.y) and isNear(candle.wickBottom.X, event.x)
-    
-    def _isNearOrigin(self, event: tk.Event):
-        origin = self.plotSolver.GetOrigin()
-        return isNear(event.x, origin.X) and isNear(event.y, self.canvasHeight - origin.Y)
-    
-    def _isNearTopOfYAxis(self,event: tk.Event):
-        topNormalized = self.canvasHeight - self.plotSolver.GetAxisHeight() - self.plotSolver.GetOrigin().Y
-        return isNear(event.y, topNormalized, 10) and isNear(event.x, self.plotSolver.GetOrigin().X, 10)
-    
-    def _isInsideOfCandle(self,event: tk.Event, candle : ValueCandle):
-        originY = self.plotSolver.GetOrigin().Y
-        xCoordinateOK = candle.leftBottom.X <= event.x <= candle.rightTop.X
-        bottomY = candle.openingCorner.Y if candle.openingCorner.Y <= candle.closingCorner.Y else candle.closingCorner.Y
-        topY = candle.closingCorner.Y if candle.openingCorner.Y <= candle.closingCorner.Y else candle.openingCorner.Y
-        topY, bottomY = self.canvasHeight - bottomY - originY, self.canvasHeight - topY - originY
-        yCoordinateOK = bottomY <= event.y <= topY
-        return yCoordinateOK and xCoordinateOK
-
     ########################
     # Left click handeling #
     ########################
@@ -176,7 +123,6 @@ class CandlesticEventHandler(EventHandler):
     def on_left_up(self, event: tk.Event):
         self.eventRegistersLeft.reset()
     
-
     #######################
     # Mouse move handling #
     #######################
@@ -299,3 +245,57 @@ class CandlesticEventHandler(EventHandler):
     def _switchNameVisibility(self):
         self.plotSolver.SwitchNameVisibility(self.eventRegistersRight.rectangleIndexToChange)
         self._updateCanvas()
+    
+    ##################################
+    # Predicates for locating events #
+    ##################################
+    
+    def _isNearClosingEdge(self, event: tk.Event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        closingY = self.canvasHeight - (candle.closingCorner.Y + origin.Y)
+        return isNear(closingY, event.y) and candle.openingCorner.X <= event.x <= candle.closingCorner.X
+
+    def _isNearOpeningEdge(self, event: tk.Event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        openingY = self.canvasHeight - (candle.openingCorner.Y + origin.Y)
+        return isNear(openingY, event.y) and candle.openingCorner.X <= event.x <= candle.closingCorner.X
+
+    def _isNearLeftEdge(self, event: tk.Event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        candleBottomY, candleTopY = self.canvasHeight - (min(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y), self.canvasHeight - (max(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y)
+        return isNear(event.x, candle.openingCorner.X) and candleTopY <= event.y <= candleBottomY
+        pass
+
+    def _isNearRightEdge(self, event: tk.Event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        candleBottomY, candleTopY = self.canvasHeight - (min(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y), self.canvasHeight - (max(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y)
+        return isNear(event.x, candle.closingCorner.X) and candleTopY <= event.y <= candleBottomY
+      
+
+    def _isNearMaximum(self, event: tk.Event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        maxY = self.canvasHeight - (candle.wickTop.Y + origin.Y)
+        return isNear(maxY, event.y) and isNear(candle.wickTop.X, event.x)
+        
+
+    def _isNearMinimum(self, event: tk.Event, candle : ValueCandle):
+        origin = self.plotSolver.GetOrigin()
+        minY = self.canvasHeight - (candle.wickBottom.Y + origin.Y)
+        return isNear(minY, event.y) and isNear(candle.wickBottom.X, event.x)
+    
+    def _isNearOrigin(self, event: tk.Event):
+        origin = self.plotSolver.GetOrigin()
+        return isNear(event.x, origin.X) and isNear(event.y, self.canvasHeight - origin.Y)
+    
+    def _isNearTopOfYAxis(self,event: tk.Event):
+        topNormalized = self.canvasHeight - self.plotSolver.GetAxisHeight() - self.plotSolver.GetOrigin().Y
+        return isNear(event.y, topNormalized, 10) and isNear(event.x, self.plotSolver.GetOrigin().X, 10)
+    
+    def _isInsideOfCandle(self,event: tk.Event, candle : ValueCandle):
+        originY = self.plotSolver.GetOrigin().Y
+        xCoordinateOK = candle.leftBottom.X <= event.x <= candle.rightTop.X
+        bottomY = candle.openingCorner.Y if candle.openingCorner.Y <= candle.closingCorner.Y else candle.closingCorner.Y
+        topY = candle.closingCorner.Y if candle.openingCorner.Y <= candle.closingCorner.Y else candle.openingCorner.Y
+        topY, bottomY = self.canvasHeight - bottomY - originY, self.canvasHeight - topY - originY
+        yCoordinateOK = bottomY <= event.y <= topY
+        return yCoordinateOK and xCoordinateOK
