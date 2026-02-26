@@ -67,10 +67,10 @@ class UICore:
         """
         Initializes all event handlers with their respective UI components.
         """
-        self.canvasHandler.inicializeCanvas(self.canvas, self.plotWidth, self.plotHeight)
-        self.canvasHandler.inicializeDataView(self.dataWindow)
-        self.canvasHandler.inicializeDefaultRightClickMenu(self.defaultMenu)
-        self.canvasHandler.inicializeRightClickMenu(self.elementMenu)
+        self.canvasHandler.initializeCanvas(self.canvas, self.plotWidth, self.plotHeight)
+        self.canvasHandler.initializeDataView(self.dataWindow)
+        self.canvasHandler.initializeDefaultRightClickMenu(self.defaultMenu)
+        self.canvasHandler.initializeRightClickMenu(self.elementMenu)
     
     
     def on_saveDataButton_click(self):

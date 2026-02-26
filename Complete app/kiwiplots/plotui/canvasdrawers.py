@@ -107,13 +107,13 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         """
         self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)
-        self._drawCandles(solver)
-
         origin = solver.GetOrigin()
         candles = solver.GetCandleData()
         
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         self._drawAxes(solver.GetAxisHeight(), int(candles[-1].rightTop.X), origin, plotMetadata.heightScaleFactor, int(min(0, lowestWickHeight)), plotMetadata.xAxisLabel, plotMetadata.yAxisLabel, plotMetadata.xAxisValue)  
+        
+        self._drawCandles(solver)
 
 class BarChartCanvasDrawer(CanvasDrawer):
     def _drawRectangles(self, solver: BarChartSolver): 
@@ -167,11 +167,12 @@ class LineChartCanvasDrawer(CanvasDrawer):
     def _drawLines(self, solver: LineChartSolver):
         RADIUS : int = 4
         lines = solver.GetLineData()
+        origin = solver.GetOrigin()
         for line in lines:
-            x1, y1 = line.leftEnd.X, self.canvasHeight - line.leftEnd.Y
-            x2, y2 = line.rightEnd.X, self.canvasHeight - line.rightEnd.Y
+            x1, y1 = line.leftEnd.X, self.canvasHeight - (line.leftEnd.Y + origin.Y)
+            x2, y2 = line.rightEnd.X, self.canvasHeight - (line.rightEnd.Y + origin.Y)
             
-            self.canvas.create_line(x1,y1,x2,y2, width = 3)
+            self.canvas.create_line(x1,y1,x2,y2, width = 1)
             self.canvas.create_oval(
             x1 - RADIUS, y1 - RADIUS,
             x1 + RADIUS, y1 + RADIUS,
@@ -189,11 +190,15 @@ class LineChartCanvasDrawer(CanvasDrawer):
     def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver)->None:
         self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)
-
         lines = solver.GetLineData()
-        self._drawLines(solver)
 
         origin = solver.GetOrigin()
-
         y = solver.GetAxisHeight()
+
+        yValues = [line.leftEnd.Y for line in lines]+[line.rightEnd.Y for line in lines]
+        #maximum: float = max(yValues)
+        minimum: float = min(yValues+[0])
+
+        self._drawAxes(solver.GetAxisHeight(),int(lines[-1].rightEnd.X),origin,plotMetadata.heightScaleFactor,int(minimum),plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
+        self._drawLines(solver)
         pass

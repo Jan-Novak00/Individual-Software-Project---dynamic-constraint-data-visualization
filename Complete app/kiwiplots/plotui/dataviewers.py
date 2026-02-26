@@ -121,5 +121,24 @@ class HistogramDataViewer(DataViewer):
 
 class LineChartDataViewer(DataViewer):
     def write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, changedStatus: str)->None:
-        #ToDo
-        return
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        valueEdited = False #
+        lines = solver.GetLineData()
+        for i in range(len(lines)-1,-1,-1):
+            line = lines[i]
+            value = line.leftEnd.Y if i != len(lines)-1 else line.rightEnd.Y
+            label = line.leftEnd.name if i != len(lines)-1 else line.rightEnd.name
+            trueValue = value/plotMetadata.heightScaleFactor
+            valueString = ""
+            if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
+                valueString = f"{trueValue:.4g}"
+            else:
+                valueString = str(trueValue)
+            
+            if valueEdited and i == changedIndex:
+                self.dataWindow.insert("1.0",f"{label},{valueString}\n", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"{label},{valueString}\n")
+        self.dataWindow.config(state="disabled")

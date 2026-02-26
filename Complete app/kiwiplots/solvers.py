@@ -292,7 +292,7 @@ class LineChartSolver(ChartSolver):
     def GetLineData(self):
         return [line.Value() for line in self.variableChart.lines]
     
-    def ChangeHeight(self, pointIndex: int, height: int):
+    def ChangeHeight(self, pointIndex: int, height: float):
         print(f"Height changed for point {pointIndex} to {height}.")
         self.solver.suggestValue(self.variableChart.GetHeightList()[pointIndex], height)
         self.Solve()
