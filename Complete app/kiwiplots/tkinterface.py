@@ -10,6 +10,11 @@ from tkinter import simpledialog
 from tkinter import colorchooser
 from tkinter import font
 import os
+import warnings
+
+warnings.warn("This module (tkinterface.py) is deprecated and will be deleted in the future.",
+              category=DeprecationWarning,
+              stacklevel=1)
 
 class PlotCanvas:
     """
@@ -638,7 +643,6 @@ class BarChartCanvas(PlotCanvas):
                 fill="black",
                 font=font)
 
-
     def _makePNG(self, name: str):
         rectangles = self.plotSolver.GetRectangleDataAsList()
         img = Image.new("RGB", (self.canvasWidth, self.canvasHeight), color="white")
@@ -647,7 +651,6 @@ class BarChartCanvas(PlotCanvas):
         self._drawAxesPNG(draw, self.plotSolver.GetAxisHeight(), rectangles[-1].rightTop.X, self.plotSolver.GetOrigin())
         self._writePlotTitlePNG(draw)
         img.save(f"{name}.png")
-
 
     def _saveDataAsCSV(self, file: str):
         with open(file,"w") as output:

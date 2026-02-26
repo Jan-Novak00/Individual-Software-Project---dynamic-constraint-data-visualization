@@ -219,10 +219,12 @@ class MenuScreen:
         CSVlist = self._csvToListOfLists(inputString)
         if not self._validateInput_For_Histogram(CSVlist):
             return None
+        intervals = []
         values = []
         for line in CSVlist:
-            values.append([float(line[0]),float(line[1]),float(line[2])])
-        return values
+            intervals.append((float(line[0]),float(line[1])))
+            values.append(float(line[2]))
+        return [values, intervals]
 
     def _prepareInput_CandlestickChart(self, inputString : str):
         CSVlist = self._csvToListOfLists(inputString)
@@ -242,11 +244,9 @@ class MenuScreen:
         if data is None:
             messagebox.showerror("Warning","Input text is not in correct format.")
             return
-        
         names, values = data[0], data[1]
-        barChart = BarChartCanvas(values, 20, 5, 3, width, height, names, "Title", 50, 30, xLabel, yLabel)
         self.root.destroy()
-        barChart.View()
+        UIFactory.createBarChart("Title (ToDo)",xLabel,yLabel,values,names,width,height).View()
     
     def _runHistogram(self, input : str, width : int, height : int, xLabel : str, yLabel : str):
         data = self._prepareInput_Histogram(input)
@@ -254,9 +254,9 @@ class MenuScreen:
             messagebox.showerror("Warning","Input text is not in correct format.")
             return
         
-        histogram = HistogramCanvas(data,20,10,width,height,"Title", 50, 30, xLabel, yLabel)
         self.root.destroy()
-        histogram.View()
+        UIFactory.createHistogram("Title (ToDo)",xLabel,yLabel,data[0],data[1],width,height).View()
+        
 
     def _runCandlestickChart(self, input : str, width : int, height : int, xLabel : str, yLabel : str):
         data = self._prepareInput_CandlestickChart(input)
@@ -264,16 +264,11 @@ class MenuScreen:
             messagebox.showerror("Warning","Input text is not in correct format.")
             return
         names, openings, closings, minima, maxima = data[0], data[1], data[2], data[3], data[4]
-        xAxisValue = float(self.xAxisValueEntry.get())
-        candlestickChart = CandlestickChartCanvas(20, openings, closings, minima, maxima, 5, width, height, names, xAxisValue, "Title", 50, 30, xLabel, yLabel)
+        xAxisValue = float(self.xAxisValueEntry.get()) # pyright: ignore[reportOptionalMemberAccess]
         self.root.destroy()
-        candlestickChart.View()
-
+        UIFactory.createCandlesticChart("Title (ToDo)",xLabel,yLabel,xAxisValue,openings,closings,minima,maxima,names,width,height).View()
     
 
-
-
-
-
-menu = MenuScreen()
-menu.View()
+if __name__ == "__main__":
+    menu = MenuScreen()
+    menu.View()
