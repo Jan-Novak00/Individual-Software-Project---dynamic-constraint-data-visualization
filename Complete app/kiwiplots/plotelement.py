@@ -6,7 +6,7 @@ class ValuePoint2D:
     """
     Holds information about 2D points.
     """
-    def __init__(self, X: int, Y: int, name: str = "", secondaryName: str = ""):
+    def __init__(self, X: float, Y: float, name: str = "", secondaryName: str = ""):
         self.X = X
         self.Y = Y
         self.name = name
@@ -301,7 +301,7 @@ class ValueLine:
         return f"<{self.leftEnd.name}>-<{self.rightEnd.name}>: ({self.leftEnd.X}, {self.leftEnd.Y})-({self.rightEnd.X}, {self.rightEnd.Y})"
 
 class VariableLine(VariableElement):
-    def __init__(self, width : Variable, xAxisHeight : Variable, leftHeight : int, rightHeight : int, leftName : str = "", rightName : str = ""):
+    def __init__(self, width : Variable, xAxisHeight : Variable, leftHeight : float, rightHeight : float, leftName : str = "", rightName : str = ""):
         self.width : Variable = width
         self.xAxisHeight : Variable = xAxisHeight
         self.leftHeight : Variable = Variable(f"{leftName}_height")

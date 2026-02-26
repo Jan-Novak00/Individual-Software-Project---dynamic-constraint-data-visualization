@@ -118,3 +118,8 @@ class HistogramDataViewer(DataViewer):
             else:
                 self.dataWindow.insert("1.0",f"({rec.leftBottom.secondaryName}, {rec.rightTop.secondaryName}) = {valueString}\n")
         self.dataWindow.config(state="disabled")
+
+class LineChartDataViewer(DataViewer):
+    def write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, changedStatus: str)->None:
+        #ToDo
+        return

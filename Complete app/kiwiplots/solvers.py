@@ -1,5 +1,5 @@
 from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
-from .variableplot import VariableChart, VariableBarChart, VariableCandlesticChart
+from .variableplot import *
 from kiwisolver import Variable, Constraint, Solver
 from typing import Union
 from abc import ABC, abstractmethod
@@ -248,9 +248,9 @@ class CandlestickChartSolver(ChartSolver):
         return self.variableChart.GetName(candleIndex)
 
 class LineChartSolver(ChartSolver):
-    def __init__(self, width : int, initialValues : list[int], pointNames : list[str] = [], xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialValues : list[float], pointNames : list[str] = [], xCoordinate : int = 0, yCoordinate : int = 0):
         self.initialWidth : int = width
-        self.initialValues : list[int] = initialValues
+        self.initialValues : list[float] = initialValues
         self.initialPointNames : list[str] = pointNames
         self.initialxCoordinate = xCoordinate
         self.initialyCoordinate = yCoordinate

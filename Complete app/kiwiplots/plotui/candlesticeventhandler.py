@@ -11,7 +11,7 @@ from tkinter import colorchooser
 
 class CandlesticEventHandler(EventHandler):
     ###################
-    # Inicialization #
+    # Initialization #
     ###################
 
     def __init__(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver) -> None:
@@ -165,7 +165,7 @@ class CandlesticEventHandler(EventHandler):
         elif self.eventRegistersLeft.dragEdge == "axisTop":  
             newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 10:
-                self.plotSolver.ChangeAxisHeight(newHeight)
+                self.plotSolver.ChangeAxisHeight(int(newHeight))
         
         self._updateCanvas()
         self._updateDataView()
@@ -202,7 +202,6 @@ class CandlesticEventHandler(EventHandler):
 
         self.canvas.config(cursor="arrow")
     
-
     ########################
     # Right mouse handling #
     ########################

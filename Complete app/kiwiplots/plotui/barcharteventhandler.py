@@ -170,14 +170,14 @@ class BarChartEventHandler(EventHandler):
         elif self.eventRegistersLeft.dragEdge == "axisTop":  
             newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 10:
-                self.plotSolver.ChangeAxisHeight(newHeight)
+                self.plotSolver.ChangeAxisHeight(int(newHeight))
 
 
         elif self.eventRegistersLeft.dragEdge == "top":
   
             newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 0:
-                self.plotSolver.ChangeHeight(groupIndex, rectangleInGroupIndex, newHeight) # pyright: ignore[reportPossiblyUnboundVariable]
+                self.plotSolver.ChangeHeight(groupIndex, rectangleInGroupIndex, int(newHeight)) # pyright: ignore[reportPossiblyUnboundVariable]
             self._updateDataView()
 
         elif self.eventRegistersLeft.dragEdge == "leftMost":
@@ -186,7 +186,7 @@ class BarChartEventHandler(EventHandler):
             else:
                 newSpacing = (event.x - sum([groups[i][-1].rightTop.X - groups[i][0].leftBottom.X for i in range(0,groupIndex)]) - origin.X) // (1+groupIndex)   # pyright: ignore[reportPossiblyUnboundVariable, reportOptionalSubscript]
             if newSpacing > 0:
-                self.plotSolver.ChangeSpacing(newSpacing)
+                self.plotSolver.ChangeSpacing(int(newSpacing))
         
         elif self.eventRegistersLeft.dragEdge == "leftMiddle" and rectangleInGroupIndex > 0: # pyright: ignore[reportPossiblyUnboundVariable]
             newInnerSpacing = (event.x - self.eventRegistersLeft.dragIndex*self.plotSolver.GetWidth() - (1+groupIndex)*self.plotSolver.GetSpacing() - origin.X) // (sum([(len(groups[k])-1) for k in range(0,groupIndex)])+rectangleInGroupIndex) # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]

@@ -172,7 +172,7 @@ class VariableCandlesticChart(VariableChart):
         return self.candles[index].GetWickTop()
 
 class VariableLineChart(VariableChart):
-    def __init__(self, width : int, initialValues : list[int], pointNames : list[str] = [], xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialValues : list[float], pointNames : list[str] = [], xCoordinate : int = 0, yCoordinate : int = 0):
         super().__init__(width, 0, xCoordinate, yCoordinate)
         #can not handle only one point
         self.lines : list[VariableLine] = []
