@@ -27,6 +27,7 @@ class LineChartEventHandler(EventHandler):
         super().__init__(plotMetadata)
         self.plotSolver: LineChartSolver = solver
         self.canvasHeight : int = None # pyright: ignore[reportAttributeAccessIssue]
+        self.mode = "value"
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = LineChartDataViewer(textWindow)
@@ -40,11 +41,31 @@ class LineChartEventHandler(EventHandler):
         #ToDo
         return
     
+    def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
+        super().initializeDefaultRightClickMenu(menu)
+        self.defaultMenu.add_command(label="Change mode", command=self._changeMode)
+
+
+    def _changeMode(self):
+        if self.mode == "value":
+            self.mode = "width"
+        else:
+            self.mode = "value"
+        
+
+
     ########################
     # Left click handeling #
     ########################
 
     def on_left_down(self, event: tk.Event) -> None:
+        if self._isNearOrigin(event):
+                self._clickedOnOrigin(event)
+                return
+        elif self._isNearTopOfYAxis(event):
+                self._clickedOnTopOfAxis(event)
+                return
+
         lines = self.plotSolver.GetLineData()
         for index, line in enumerate(lines):
             point : ValuePoint2D = line.leftEnd
@@ -63,44 +84,88 @@ class LineChartEventHandler(EventHandler):
         self.eventRegistersLeft.reset()
     
     def _clickedOnLineEnd(self, event: tk.Event, index: int, leftEdge: bool):
-        self.eventRegistersLeft.eventType = "left" if leftEdge else "right"
+        eventType : str = None # pyright: ignore[reportAssignmentType]
+        if self.mode == "value":
+            eventType = "left" if leftEdge else "right"
+        else:
+            eventType = "width"
+        self.eventRegistersLeft.eventType = eventType
         self.eventRegistersLeft.dragIndex = index
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x,event.y)
+    
+    def _clickedOnOrigin(self, event: tk.Event):
+        self.eventRegistersLeft.eventType = "origin"
+    
+    def _clickedOnTopOfAxis(self, event: tk.Event):
+        self.eventRegistersLeft.eventType = "axisTop"
 
     #######################
     # Mouse move handling #
     #######################
 
     def on_mouse_move(self, event: tk.Event) -> None:
-        print("checkpoint 0")
         if self.eventRegistersLeft.eventType is None:
             return
-        
-        print("checkpoint 1")
         
         origin = self.plotSolver.GetOrigin()
 
         if self.eventRegistersLeft.eventType == "left" or self.eventRegistersLeft.eventType == "right":
             pointIndex = _lineIndexToPointIndex(self.eventRegistersLeft.dragIndex,self.eventRegistersLeft.eventType == "left")
             self.plotSolver.ChangeHeight(pointIndex,self.canvasHeight - event.y - origin.Y)
+            
+        
+        elif self.eventRegistersLeft.eventType == "width":
+            newWidth = (event.x - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
+            if newWidth >= 5:
+                self.plotSolver.ChangeWidth(newWidth)
+
+        elif self.eventRegistersLeft.eventType == "origin":
+            self.plotSolver.ChangeOrigin(event.x, self.canvasHeight - event.y)
+            print("Origin: ", origin)
+        
+        elif self.eventRegistersLeft.eventType == "axisTop":  
+            newHeight = self.canvasHeight - event.y - origin.Y
+            if newHeight > 10:
+                self.plotSolver.ChangeAxisHeight(int(newHeight))
+        
         
         self._updateCanvas()
         self._updateDataView()
 
     
     def check_cursor(self, event: tk.Event) -> None:
+        if self._isNearOrigin(event):
+            self.canvas.config(cursor="fleur")
+            return
+        elif self._isNearTopOfYAxis(event):
+            self.canvas.config(cursor="sb_v_double_arrow")
+            return
+
         lines = self.plotSolver.GetLineData()
         for index, line in enumerate(lines):
             point : ValuePoint2D = line.leftEnd
             if self._isNearLineEnd(event,point):
-                self.canvas.config(cursor="cross")
+                if self.mode == "value":
+                    self.canvas.config(cursor="cross")
+                else:
+                    self.canvas.config(cursor="sb_h_double_arrow") 
                 return
             if (index == len(lines)-1):
                 point : ValuePoint2D = line.rightEnd
                 if self._isNearLineEnd(event,point):
-                    self.canvas.config(cursor="cross")
+                    if self.mode == "value":
+                        self.canvas.config(cursor="cross")
+                    else:
+                        self.canvas.config(cursor="sb_h_double_arrow") 
                     return
         self.canvas.config(cursor="arrow")
+    
+
+    ########################
+    # Right mouse handling #
+    ########################
+    def on_right_up(self, event: tk.Event):
+        return
     
     
     ##################################
@@ -109,7 +174,14 @@ class LineChartEventHandler(EventHandler):
 
     def _isNearLineEnd(self,event: tk.Event, point: ValuePoint2D)->bool:
         origin = self.plotSolver.GetOrigin()
-        xLeft, yLeft = point.X, self.canvasHeight - (point.Y + origin.Y)
-        
+        xLeft, yLeft = point.X, self.canvasHeight - (point.Y)
         return isNear(xLeft,event.x) and isNear(yLeft,event.y)
-
+    
+    def _isNearOrigin(self, event: tk.Event):
+        origin = self.plotSolver.GetOrigin()
+        return isNear(event.x, origin.X) and isNear(event.y, self.canvasHeight - origin.Y)
+    
+    def _isNearTopOfYAxis(self,event: tk.Event):
+        topNormalized = self.canvasHeight - self.plotSolver.GetAxisHeight() - self.plotSolver.GetOrigin().Y
+        return isNear(event.y, topNormalized, 10) and isNear(event.x, self.plotSolver.GetOrigin().X, 10)
+    

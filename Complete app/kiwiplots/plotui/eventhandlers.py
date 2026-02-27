@@ -53,7 +53,7 @@ class EventHandler(ABC):
         self.drawer : CanvasDrawer = None                                                                               # type: ignore
         self.dataViewer : DataViewer = None                                                                             # type: ignore
         self.plotSolver : ChartSolver = None                                                                            # type: ignore
-        self.plotMetada = plotMetadata                           #ToDo  typing
+        self.plotMetadata = plotMetadata                           #ToDo  typing
         self.eventRegistersLeft : EventHandler.EventRegistersLeftButton = EventHandler.EventRegistersLeftButton()
         self.eventRegistersRight : EventHandler.EventRegistersRightButton = EventHandler.EventRegistersRightButton()
     
@@ -71,7 +71,7 @@ class EventHandler(ABC):
         """
         Redraws the plot on the canvas using the current solver state.
         """
-        self.drawer.draw(self.plotMetada,self.plotSolver) 
+        self.drawer.draw(self.plotMetadata,self.plotSolver) 
     
     def _updateDataView(self):
         """
@@ -79,7 +79,7 @@ class EventHandler(ABC):
         
         Highlights the data element currently being edited if any.
         """
-        self.dataViewer.write(self.plotMetada, self.plotSolver, self.eventRegistersLeft.dragIndex, self.eventRegistersLeft.eventType) # type: ignore
+        self.dataViewer.write(self.plotMetadata, self.plotSolver, self.eventRegistersLeft.dragIndex, self.eventRegistersLeft.eventType) # type: ignore
     
     def _changeTitle(self):
         """
@@ -89,7 +89,7 @@ class EventHandler(ABC):
         if newTitle is None:
             return
         else:
-            self.plotMetada.title = newTitle
+            self.plotMetadata.title = newTitle
             self._updateCanvas()
 
     

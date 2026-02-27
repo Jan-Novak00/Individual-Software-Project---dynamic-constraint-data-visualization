@@ -169,8 +169,8 @@ class LineChartCanvasDrawer(CanvasDrawer):
         lines = solver.GetLineData()
         origin = solver.GetOrigin()
         for line in lines:
-            x1, y1 = line.leftEnd.X, self.canvasHeight - (line.leftEnd.Y + origin.Y)
-            x2, y2 = line.rightEnd.X, self.canvasHeight - (line.rightEnd.Y + origin.Y)
+            x1, y1 = line.leftEnd.X, self.canvasHeight - (line.leftEnd.Y )
+            x2, y2 = line.rightEnd.X, self.canvasHeight - (line.rightEnd.Y )
             
             self.canvas.create_line(x1,y1,x2,y2, width = 1)
             self.canvas.create_oval(
@@ -195,9 +195,10 @@ class LineChartCanvasDrawer(CanvasDrawer):
         origin = solver.GetOrigin()
         y = solver.GetAxisHeight()
 
-        yValues = [line.leftEnd.Y for line in lines]+[line.rightEnd.Y for line in lines]
-        #maximum: float = max(yValues)
-        minimum: float = min(yValues+[0])
+        #yValues = [line.leftEnd.Y+plotMetadata.xAxisValue for line in lines]+[line.rightEnd.Y+plotMetadata.xAxisValue for line in lines]
+        minimum: float = 0                #min(yValues)
+        #if minimum > plotMetadata.xAxisValue:
+        #    minimum = plotMetadata.xAxisValue
 
         self._drawAxes(solver.GetAxisHeight(),int(lines[-1].rightEnd.X),origin,plotMetadata.heightScaleFactor,int(minimum),plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
         self._drawLines(solver)

@@ -70,7 +70,7 @@ class ChartSolver(ABC):
         self.solver.suggestValue(self.variableChart.yAxisHeight, newHeight)
         self.Solve()
     
-    def ChangeWidth(self, width : int):
+    def ChangeWidth(self, width : float):
         self.solver.suggestValue(self.variableChart.width, width)
         self.Solve()
     

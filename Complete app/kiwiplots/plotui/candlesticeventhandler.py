@@ -89,6 +89,14 @@ class CandlesticEventHandler(EventHandler):
         self.eventRegistersLeft.originalSpacing = self.plotSolver.GetSpacing()
     
     def on_left_down(self, event: tk.Event) -> None:
+
+        if self._isNearOrigin(event):
+                self._clickedOnOrigin(event)
+                return
+        elif self._isNearTopOfYAxis(event):
+                self._clickedOnTopOfAxis(event)
+                return
+
         for index, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
             if self._isNearMaximum(event, candle):
                 print(f"maximum {index}")
@@ -97,9 +105,6 @@ class CandlesticEventHandler(EventHandler):
             elif self._isNearMinimum(event, candle):
                 print(f"minimum {index}")
                 self._clickedOnMinimum(event, index, candle)
-                break
-            elif self._isNearTopOfYAxis(event):
-                self._clickedOnTopOfAxis(event)
                 break
             elif self._isNearClosingEdge(event, candle):
                 print(f"closing edge {index}")
@@ -174,6 +179,13 @@ class CandlesticEventHandler(EventHandler):
         """
         Changes cursor according to its position.
         """
+        if self._isNearOrigin(event):
+            self.canvas.config(cursor="fleur")
+            return
+        elif self._isNearTopOfYAxis(event):
+            self.canvas.config(cursor="sb_v_double_arrow")
+            return
+
         for idx, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
             if self._isNearMaximum(event,candle):
                 self.canvas.config(cursor="cross")
@@ -193,12 +205,7 @@ class CandlesticEventHandler(EventHandler):
             elif self._isNearOpeningEdge(event, candle):
                 self.canvas.config(cursor="sb_v_double_arrow")
                 return
-            elif self._isNearOrigin(event):
-                self.canvas.config(cursor="fleur")
-                return
-            elif self._isNearTopOfYAxis(event):
-                self.canvas.config(cursor="sb_v_double_arrow")
-                return
+            
 
         self.canvas.config(cursor="arrow")
     

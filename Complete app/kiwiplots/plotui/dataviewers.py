@@ -58,7 +58,7 @@ class CandlesticDataViewer(DataViewer):
             openingValue = candle.openingCorner.Y/scaleFactor + xAxisValue
             closingValue = candle.closingCorner.Y/scaleFactor + xAxisValue
             maximumValue = candle.wickTop.Y/scaleFactor + xAxisValue
-            minimumValue = candle.wickBottom.Y/scaleFactor + xAxisValue
+            minimumValue = candle.wickBottom.Y/scaleFactor + xAxisValue/scaleFactor
             
             string = f"{candle.name}:\n\topening = {openingValue:.4f},\n\tclosing = {closingValue:.4f},\n\tmin = {minimumValue:.4f},\n\tmax = {maximumValue:.4f}\n\n"
             if valueEdited and i == changedIndex:
@@ -121,16 +121,19 @@ class HistogramDataViewer(DataViewer):
 
 class LineChartDataViewer(DataViewer):
     def write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, changedStatus: str)->None:
+        print("Scale factor",plotMetadata.heightScaleFactor)
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
         self.dataWindow.tag_configure("changing_Value", foreground="red")
         valueEdited = False #
         lines = solver.GetLineData()
+        origin = solver.GetOrigin()
         for i in range(len(lines)-1,-1,-1):
             line = lines[i]
-            value = line.leftEnd.Y if i != len(lines)-1 else line.rightEnd.Y
+            value = (line.leftEnd.Y if i != len(lines)-1 else line.rightEnd.Y) - origin.Y
             label = line.leftEnd.name if i != len(lines)-1 else line.rightEnd.name
-            trueValue = value/plotMetadata.heightScaleFactor
+            print("value of",i,"is",value)
+            trueValue = value/plotMetadata.heightScaleFactor + plotMetadata.xAxisValue
             valueString = ""
             if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
                 valueString = f"{trueValue:.4g}"
