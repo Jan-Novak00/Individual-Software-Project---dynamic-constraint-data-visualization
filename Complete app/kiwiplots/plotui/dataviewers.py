@@ -141,7 +141,7 @@ class LineChartDataViewer(DataViewer):
             else:
                 valueString = str(trueValue)
             if valueEdited and i == changedIndex:
-                self.dataWindow.insert("1.0",f"{label},{valueString}\n", "changing_Value")
+                self.dataWindow.insert("1.0",f"{label} = {valueString}\n", "changing_Value")
             else:
-                self.dataWindow.insert("1.0",f"{label},{valueString}\n")
+                self.dataWindow.insert("1.0",f"{label} = {valueString}\n")
         self.dataWindow.config(state="disabled")
