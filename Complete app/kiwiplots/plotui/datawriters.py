@@ -50,3 +50,18 @@ class HistogramDataWriter(DataWriter):
                 height = rec.GetHeight()
                 value = height/plotMetadata.heightScaleFactor
                 output.write(f"{rec.leftBottom.secondaryName},{rec.rightTop.secondaryName},{value}\n")
+
+class LineChartDataWriter(DataWriter):
+    def write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, file: str):
+        with open(file,"w") as output:
+            lines = solver.GetLineData()
+            origin = solver.GetOrigin()
+            points = [line.leftEnd for line in lines] + [lines[-1].rightEnd]
+            for i,point in enumerate(points):
+                value = point.Y - origin.Y
+                label = point.name
+                trueValue = value/plotMetadata.heightScaleFactor + plotMetadata.xAxisValue
+                output.write(label)
+                output.write(",")
+                output.write(str(trueValue))
+                output.write("\n")

@@ -177,13 +177,16 @@ class VariableLineChart(VariableChart):
         #can not handle only one point ToDo
         self.pointNames : list[str] = pointNames
         self.lines : list[VariableLine] = []
+
+        self.padding = Variable("Padding left")
+
         indexA = 0
         indexB = 1                                                                                                            
         for pointA, pointB in list(pairwise(initialValues)):
             self.lines.append(VariableLine(self.width, self.origin.Y, pointA, pointB, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) # ToDo add names
-            indexA += indexB
+            indexA = indexB
             indexB += 1
-        self.leftMostPointConstraint : Constraint = ((self.lines[0].leftEnd.X == self.origin.X)|"required") # less coupling please
+        self.leftMostPointConstraint : Constraint = ((self.lines[0].leftEnd.X == self.origin.X + self.padding)|"required") # less coupling please
 
         self.continuityConstraints : list[Constraint] = self._getContinuityConstraints()
     
@@ -206,5 +209,8 @@ class VariableLineChart(VariableChart):
     def Value(self):
         return [line.Value() for line in self.lines]
     
-    def GetHeightList(self): # better less couplet implementation required
+    def GetHeightList(self): # better less coupled implementation required
         return [line.leftHeight for line in self.lines] + [self.lines[-1].rightHeight]
+
+    def GetPadding(self):
+        return self.padding

@@ -140,9 +140,14 @@ class LineChartEventHandler(EventHandler):
                 print("HERE")
                 offByOneErrorNullifier = 1
 
-            newWidth = (event.x - origin.X)/(self.eventRegistersLeft.dragIndex+offByOneErrorNullifier) # type: ignore
+            newWidth = (event.x - origin.X - self.plotSolver.GetPadding())/(self.eventRegistersLeft.dragIndex+offByOneErrorNullifier)
             if newWidth >= 5:
                 self.plotSolver.ChangeWidth(newWidth)
+        
+        elif self.eventRegistersLeft.eventType == "width" and self.eventRegistersLeft.dragIndex == 0:
+            newPadding = event.x - origin.X
+            if newPadding >= 0:
+                self.plotSolver.ChangePadding(newPadding)
 
         elif self.eventRegistersLeft.eventType == "origin":
             self.plotSolver.ChangeOrigin(event.x, self.canvasHeight - event.y)
@@ -174,7 +179,9 @@ class LineChartEventHandler(EventHandler):
                     self.canvas.config(cursor="cross")
                 else:
                     if index != 0:
-                        self.canvas.config(cursor="sb_h_double_arrow") 
+                        self.canvas.config(cursor="sb_h_double_arrow")
+                    else:
+                        self.canvas.config(cursor="hand2")
                 return
             if (index == len(lines)-1):
                 point : ValuePoint2D = line.rightEnd
@@ -183,7 +190,9 @@ class LineChartEventHandler(EventHandler):
                         self.canvas.config(cursor="cross")
                     else:
                         if index != 0:
-                            self.canvas.config(cursor="sb_h_double_arrow") 
+                            self.canvas.config(cursor="sb_h_double_arrow")
+                        else:
+                            self.canvas.config(cursor="hand2")
                     return
         self.canvas.config(cursor="arrow")
     
@@ -191,6 +200,7 @@ class LineChartEventHandler(EventHandler):
     ########################
     # Right mouse handling #
     ########################
+
     def on_right_up(self, event: tk.Event):
         return
     

@@ -248,12 +248,13 @@ class CandlestickChartSolver(ChartSolver):
         return self.variableChart.GetName(candleIndex)
 
 class LineChartSolver(ChartSolver):
-    def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0, padding : float = 0):
         self.initialWidth : int = width
         self.initialValues : list[float] = initialValues
         self.initialPointNames : list[str] = pointNames
         self.initialxCoordinate = xCoordinate
         self.initialyCoordinate = yCoordinate
+        self.initialPadding = padding
         super().__init__()
         self.variableChart : VariableLineChart = self.variableChart
         
@@ -272,6 +273,7 @@ class LineChartSolver(ChartSolver):
         self.solver.addEditVariable(self.variableChart.origin.X, "strong")
         self.solver.addEditVariable(self.variableChart.origin.Y, "strong")
         self.solver.addEditVariable(self.variableChart.yAxisHeight, "strong")
+        self.solver.addEditVariable(self.variableChart.GetPadding(), "strong")
         for line in chart.lines:
             self.solver.addEditVariable(line.leftHeight, "strong")
             self.solver.addEditVariable(line.rightHeight, "medium")
@@ -282,6 +284,7 @@ class LineChartSolver(ChartSolver):
         self.solver.suggestValue(chart.width, self.initialWidth)
         self.solver.suggestValue(chart.origin.X, self.initialxCoordinate)
         self.solver.suggestValue(chart.origin.Y,self.initialyCoordinate)
+        self.solver.suggestValue(chart.GetPadding(),self.initialPadding)
         valuePairs = list(pairwise(self.initialValues))
         for i in range(len(chart.lines)):
             line = chart.lines[i]
@@ -296,4 +299,11 @@ class LineChartSolver(ChartSolver):
         print(f"Height changed for point {pointIndex} to {height}.")
         self.solver.suggestValue(self.variableChart.GetHeightList()[pointIndex], height)
         self.Solve()
+    
+    def ChangePadding(self, newPadding: float):
+        self.solver.suggestValue(self.variableChart.GetPadding(),newPadding)
+        self.Solve()
+    
+    def GetPadding(self):
+        return self.variableChart.GetPadding().value()
             
