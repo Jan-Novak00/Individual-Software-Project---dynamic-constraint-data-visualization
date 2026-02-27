@@ -19,6 +19,13 @@ def _lineIndexToPointIndex(lineIndex: int, isLeft: bool):
 
 
 class LineChartEventHandler(EventHandler):
+
+    class LineChartEventRegisterLeftButton(EventHandler.EventRegistersLeftButton):
+        def reset(self):
+            super().reset()
+            self.lineEndParity : str = None # pyright: ignore[reportAttributeAccessIssue] # left or right 
+
+
     ###################
     # Initialization #
     ###################
@@ -29,6 +36,7 @@ class LineChartEventHandler(EventHandler):
         self.canvasHeight : int = None # pyright: ignore[reportAttributeAccessIssue]
         self.mode = "value"
         self.plotMetadata : LineChartMetadata = self.plotMetadata
+        self.eventRegistersLeft : LineChartEventHandler.LineChartEventRegisterLeftButton =  LineChartEventHandler.LineChartEventRegisterLeftButton()
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = LineChartDataViewer(textWindow)
@@ -99,7 +107,8 @@ class LineChartEventHandler(EventHandler):
             eventType = "left" if leftEdge else "right"
         else:
             eventType = "width"
-        self.eventRegistersLeft.eventType = eventType
+        self.eventRegistersLeft.eventType = "value" if self.mode == "value" else "width"
+        self.eventRegistersLeft.lineEndParity = "left" if leftEdge else "right"
         self.eventRegistersLeft.dragIndex = index
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x,event.y)
     
@@ -118,14 +127,20 @@ class LineChartEventHandler(EventHandler):
             return
         
         origin = self.plotSolver.GetOrigin()
+        lines = self.plotSolver.GetLineData()
 
-        if self.eventRegistersLeft.eventType == "left" or self.eventRegistersLeft.eventType == "right":
-            pointIndex = _lineIndexToPointIndex(self.eventRegistersLeft.dragIndex,self.eventRegistersLeft.eventType == "left")
+        if self.eventRegistersLeft.eventType == "value":
+            pointIndex = _lineIndexToPointIndex(self.eventRegistersLeft.dragIndex,self.eventRegistersLeft.lineEndParity == "left")
             self.plotSolver.ChangeHeight(pointIndex,self.canvasHeight - event.y - origin.Y)
             
         
-        elif self.eventRegistersLeft.eventType == "width":
-            newWidth = (event.x - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
+        elif self.eventRegistersLeft.eventType == "width" and self.eventRegistersLeft.dragIndex != 0:
+            offByOneErrorNullifier = 0
+            if (self.eventRegistersLeft.lineEndParity == "right") and (self.eventRegistersLeft.dragIndex == len(lines)-1):
+                print("HERE")
+                offByOneErrorNullifier = 1
+
+            newWidth = (event.x - origin.X)/(self.eventRegistersLeft.dragIndex+offByOneErrorNullifier) # type: ignore
             if newWidth >= 5:
                 self.plotSolver.ChangeWidth(newWidth)
 
@@ -158,7 +173,8 @@ class LineChartEventHandler(EventHandler):
                 if self.mode == "value":
                     self.canvas.config(cursor="cross")
                 else:
-                    self.canvas.config(cursor="sb_h_double_arrow") 
+                    if index != 0:
+                        self.canvas.config(cursor="sb_h_double_arrow") 
                 return
             if (index == len(lines)-1):
                 point : ValuePoint2D = line.rightEnd
@@ -166,7 +182,8 @@ class LineChartEventHandler(EventHandler):
                     if self.mode == "value":
                         self.canvas.config(cursor="cross")
                     else:
-                        self.canvas.config(cursor="sb_h_double_arrow") 
+                        if index != 0:
+                            self.canvas.config(cursor="sb_h_double_arrow") 
                     return
         self.canvas.config(cursor="arrow")
     
