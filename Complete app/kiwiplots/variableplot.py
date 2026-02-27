@@ -172,14 +172,17 @@ class VariableCandlesticChart(VariableChart):
         return self.candles[index].GetWickTop()
 
 class VariableLineChart(VariableChart):
-    def __init__(self, width : int, initialValues : list[float], pointNames : list[str] = [], xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
         super().__init__(width, 0, xCoordinate, yCoordinate)
-        #can not handle only one point
+        #can not handle only one point ToDo
+        self.pointNames : list[str] = pointNames
         self.lines : list[VariableLine] = []
-        name = 0                                                                                                                #tmp
+        indexA = 0
+        indexB = 1                                                                                                            
         for pointA, pointB in list(pairwise(initialValues)):
-            self.lines.append(VariableLine(self.width, self.origin.Y, pointA, pointB, f"line{name}:left", f"line{name}:right")) # ToDo add names
-            name += 1
+            self.lines.append(VariableLine(self.width, self.origin.Y, pointA, pointB, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) # ToDo add names
+            indexA += indexB
+            indexB += 1
         self.leftMostPointConstraint : Constraint = ((self.lines[0].leftEnd.X == self.origin.X)|"required") # less coupling please
 
         self.continuityConstraints : list[Constraint] = self._getContinuityConstraints()

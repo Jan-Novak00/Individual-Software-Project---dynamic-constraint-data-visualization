@@ -220,7 +220,7 @@ class CandlesticEventHandler(EventHandler):
             for index, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
                 if self._isInsideOfCandle(event, candle):
                     self.eventRegistersRight.rectangleIndexToChange = index
-                    self.elementMenu.post(event.x_root, event.y_root) # problem here
+                    self.elementMenu.post(event.x_root, event.y_root) 
                     return
             super().on_right_down(event)
     

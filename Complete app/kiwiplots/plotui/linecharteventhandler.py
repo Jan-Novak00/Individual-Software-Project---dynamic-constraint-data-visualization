@@ -28,6 +28,7 @@ class LineChartEventHandler(EventHandler):
         self.plotSolver: LineChartSolver = solver
         self.canvasHeight : int = None # pyright: ignore[reportAttributeAccessIssue]
         self.mode = "value"
+        self.plotMetadata : LineChartMetadata = self.plotMetadata
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = LineChartDataViewer(textWindow)
@@ -38,7 +39,8 @@ class LineChartEventHandler(EventHandler):
         self.drawer = LineChartCanvasDrawer(canvas, width, height)
     
     def initializeRightClickMenu(self, menu: tk.Menu) -> None:
-        #ToDo
+        self.elementMenu = menu
+        self.elementMenu.add_command(label="Change color", command=self._changeColor)
         return
     
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
@@ -47,10 +49,18 @@ class LineChartEventHandler(EventHandler):
 
 
     def _changeMode(self):
+        print("CLICK")
         if self.mode == "value":
             self.mode = "width"
         else:
             self.mode = "value"
+    
+    def _changeColor(self):
+        color = colorchooser.askcolor(title="Choose different color")
+        if color[1] == None:
+            return
+        self.plotMetadata.color = color[1] # pyright: ignore[reportAttributeAccessIssue]
+        self._updateCanvas()
         
 
 
@@ -167,6 +177,21 @@ class LineChartEventHandler(EventHandler):
     def on_right_up(self, event: tk.Event):
         return
     
+    def on_right_down(self, event: tk.Event) -> None:
+        lines = self.plotSolver.GetLineData()
+        for index, line in enumerate(lines):
+            point : ValuePoint2D = line.leftEnd
+            if self._isNearLineEnd(event,point):
+                self.eventRegistersRight.rectangleIndexToChange = index
+                self.elementMenu.post(event.x_root, event.y_root)
+                return
+            if (index == len(lines)-1):
+                point : ValuePoint2D = line.rightEnd
+                if self._isNearLineEnd(event,point):
+                    self.eventRegistersRight.rectangleIndexToChange = index
+                    self.elementMenu.post(event.x_root, event.y_root)
+                    return
+        self.defaultMenu.post(event.x_root,event.y_root)
     
     ##################################
     # Predicates for locating events #

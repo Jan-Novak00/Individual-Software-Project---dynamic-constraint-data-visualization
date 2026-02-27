@@ -164,25 +164,28 @@ class HistogramCanvasDrawer(BarChartCanvasDrawer):
             self.canvas.create_text(x2,y1 + 10, text=rec.rightTop.secondaryName)
 
 class LineChartCanvasDrawer(CanvasDrawer):
-    def _drawLines(self, solver: LineChartSolver):
+    def _drawLines(self, plotMetadata: LineChartMetadata, solver: LineChartSolver):
         RADIUS : int = 4
         lines = solver.GetLineData()
         origin = solver.GetOrigin()
-        for line in lines:
+        for index, line in enumerate(lines):
             x1, y1 = line.leftEnd.X, self.canvasHeight - (line.leftEnd.Y )
-            x2, y2 = line.rightEnd.X, self.canvasHeight - (line.rightEnd.Y )
+            x2, y2 = line.rightEnd.X, self.canvasHeight - (line.rightEnd.Y)
             
             self.canvas.create_line(x1,y1,x2,y2, width = 1)
             self.canvas.create_oval(
             x1 - RADIUS, y1 - RADIUS,
             x1 + RADIUS, y1 + RADIUS,
-            fill="black")
+            fill=plotMetadata.color) # pyright: ignore[reportArgumentType]
 
             self.canvas.create_oval(
             x2 - RADIUS, y2 - RADIUS,
             x2 + RADIUS, y2 + RADIUS,
-            fill="black"
+            fill=plotMetadata.color # pyright: ignore[reportArgumentType]
             )
+            self.canvas.create_text(x1,self.canvasHeight - (origin.Y)+10,text=line.leftEnd.name)
+            if index == len(lines) - 1:
+                self.canvas.create_text(x2,self.canvasHeight - (origin.Y)+10,text=line.rightEnd.name)
 
             #text ToDo
 
@@ -201,5 +204,5 @@ class LineChartCanvasDrawer(CanvasDrawer):
         #    minimum = plotMetadata.xAxisValue
 
         self._drawAxes(solver.GetAxisHeight(),int(lines[-1].rightEnd.X),origin,plotMetadata.heightScaleFactor,int(minimum),plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
-        self._drawLines(solver)
+        self._drawLines(plotMetadata,solver)
         pass

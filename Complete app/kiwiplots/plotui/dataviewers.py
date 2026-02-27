@@ -128,18 +128,18 @@ class LineChartDataViewer(DataViewer):
         valueEdited = False #
         lines = solver.GetLineData()
         origin = solver.GetOrigin()
-        for i in range(len(lines)-1,-1,-1):
-            line = lines[i]
-            value = (line.leftEnd.Y if i != len(lines)-1 else line.rightEnd.Y) - origin.Y
-            label = line.leftEnd.name if i != len(lines)-1 else line.rightEnd.name
-            print("value of",i,"is",value)
+        points = [line.leftEnd for line in lines] + [lines[-1].rightEnd]
+        points.reverse()
+
+        for i,point in enumerate(points):
+            value = point.Y - origin.Y
+            label = point.name
             trueValue = value/plotMetadata.heightScaleFactor + plotMetadata.xAxisValue
             valueString = ""
             if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
                 valueString = f"{trueValue:.4g}"
             else:
                 valueString = str(trueValue)
-            
             if valueEdited and i == changedIndex:
                 self.dataWindow.insert("1.0",f"{label},{valueString}\n", "changing_Value")
             else:

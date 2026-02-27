@@ -248,7 +248,7 @@ class CandlestickChartSolver(ChartSolver):
         return self.variableChart.GetName(candleIndex)
 
 class LineChartSolver(ChartSolver):
-    def __init__(self, width : int, initialValues : list[float], pointNames : list[str] = [], xCoordinate : int = 0, yCoordinate : int = 0):
+    def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
         self.initialWidth : int = width
         self.initialValues : list[float] = initialValues
         self.initialPointNames : list[str] = pointNames

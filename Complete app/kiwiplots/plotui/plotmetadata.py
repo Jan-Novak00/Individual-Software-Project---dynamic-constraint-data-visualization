@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Union
 
 class PlotMetadata(ABC):
     """
@@ -67,5 +68,6 @@ class LineChartMetadata(PlotMetadata):
     `xAxisValue` may represent the data value at the x-origin. Use this
     class with renderers that draw lines connecting data points.
     """
-    def __init__(self, title: str, heightScaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
+    def __init__(self, title: str, color: Union[str,int], heightScaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
         super().__init__(title, heightScaleFactor, xAxisValue, xAxisLabel, yAxisLabel)
+        self.color : Union[str,int] = color
