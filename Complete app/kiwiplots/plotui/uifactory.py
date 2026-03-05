@@ -20,6 +20,20 @@ class UIFactory:
 
     @staticmethod
     def _calculateScaleFactor(values: list[float],height: int)->float:
+        """
+        Compute a vertical scale factor to fit numeric values into a plot height.
+
+        The function returns 1 when values already fall within a comfortable
+        portion of the available height; otherwise it scales values so their
+        maximum maps to approximately 80% of the provided `height`.
+
+        Args:
+            values (list[float]): Sequence of data values to be plotted.
+            height (int): Pixel height of the plot area.
+
+        Returns:
+            float: Scale factor to multiply raw values by to convert to pixels.
+        """
         scaleFactor : float = 1
         maxValue = max(values,default=1)
         if not (height*0.3 <= maxValue <= height*0.7):
@@ -156,6 +170,25 @@ class UIFactory:
                         plotWidth: int,
                         plotHeight: int
                         )->UICore:
+        """
+        Create a full bar chart UI component.
+
+        Builds `BarChartMetadata`, a `BarChartSolver`, picture drawer, data writer
+        and event handler and returns a configured `UICore` for displaying the
+        bar chart.
+
+        Args:
+            title (str): Chart title.
+            xAxisLabel (str): X-axis label.
+            yAxisLabel (str): Y-axis label.
+            initialValues (list[list[float]]): Grouped numeric values for the bars.
+            rectangleNames (list[list[str]]): Labels for individual bars within groups.
+            plotWidth (int): Width of the plot area in pixels.
+            plotHeight (int): Height of the plot area in pixels.
+
+        Returns:
+            UICore: Configured UI component for the bar chart.
+        """
         metadata : BarChartMetadata = UIFactory._createBarChartMetadata(title, xAxisLabel, yAxisLabel, initialValues, plotHeight)
         solver : ChartSolver = UIFactory._createBarChartSolver(metadata,initialValues,rectangleNames)
         pictureDrawer : PictureDrawer = BarChartPictureDrawer()
@@ -165,6 +198,19 @@ class UIFactory:
     
     @staticmethod
     def _createBarChartMetadata(title: str, xAxisLabel: str, yAxisLabel: str, initialValues: list[list[float]], plotHeight: int):
+        """
+        Produce `BarChartMetadata` with a scale factor computed from all rectangle groups.
+
+        Args:
+            title (str): Chart title.
+            xAxisLabel (str): Label for the x-axis.
+            yAxisLabel (str): Label for the y-axis.
+            initialValues (list[list[float]]): Grouped bar values.
+            plotHeight (int): Pixel height of the plotting area.
+
+        Returns:
+            BarChartMetadata: Metadata instance with computed height scale.
+        """
         allValues : list[float] = []
         for group in initialValues:
             for value in group:
@@ -173,6 +219,22 @@ class UIFactory:
     
     @staticmethod
     def _createBarChartSolver(metadata: BarChartMetadata, initialValues: list[list[float]], rectangleNames : list[list[str]], initialSpacing : int = INITIAL_SPACING, initialInnerSpacing : int = INITIAL_INNER_SPACING)->BarChartSolver:
+        """
+        Create a `BarChartSolver` from grouped values and names.
+
+        Rescales each numeric value using the metadata's height scale factor and
+        initializes a `BarChartSolver` with layout parameters.
+
+        Args:
+            metadata (BarChartMetadata): Chart metadata including scale factor.
+            initialValues (list[list[float]]): Grouped numeric values.
+            rectangleNames (list[list[str]]): Labels per bar.
+            initialSpacing (int): Spacing between groups of bars.
+            initialInnerSpacing (int): Spacing between bars within a group.
+
+        Returns:
+            BarChartSolver: Solver configured with rescaled integer bar heights.
+        """
         rescaledGroupValues : list[list[int]] = []
         for group in initialValues:
             rescaledGroupValues.append([int(metadata.heightScaleFactor*value) for value in group])
@@ -188,6 +250,25 @@ class UIFactory:
                         intervals: list[tuple[float,float]],
                         plotWidth: int,
                         plotHeight: int):
+        """
+        Create a histogram UI component.
+
+        Prepares `HistogramMetadata` (including per-interval width scales), a
+        `BarChartSolver` adapted for histogram rendering, and related UI pieces
+        and returns `UICore` instance.
+
+        Args:
+            title (str): Histogram title.
+            xAxisLabel (str): Label for the x-axis.
+            yAxisLabel (str): Label for the y-axis.
+            initialValues (list[float]): Values to be binned into intervals.
+            intervals (list[tuple[float,float]]): List of (start, end) tuples for bins.
+            plotWidth (int): Pixel width of the plot.
+            plotHeight (int): Pixel height of the plot.
+
+        Returns:
+            UICore: Configured histogram UI component.
+        """
         metadata : HistogramMetadata = UIFactory._createHistogramMetadata(title,xAxisLabel,yAxisLabel,initialValues,intervals,plotHeight)
         solver : ChartSolver = UIFactory._createHistogramSolver(metadata, initialValues, intervals)
         pictureDrawer : PictureDrawer = HistorgramPictureDrawer()
@@ -198,12 +279,41 @@ class UIFactory:
 
     @staticmethod
     def _createHistogramMetadata(title: str, xAxisLabel: str, yAxisLabel: str, initialValues : list[float], intervals: list[tuple[float,float]], plotHeight: int)-> HistogramMetadata:
+        """
+        Build `HistogramMetadata` including height and per-interval width scales.
+
+        Computes the height scale using the provided values and constructs a
+        nested list of width scale factors for the provided `intervals`.
+
+        Args:
+            title (str): Histogram title.
+            xAxisLabel (str): X-axis label.
+            yAxisLabel (str): Y-axis label.
+            initialValues (list[float]): Values to use when computing height scale.
+            intervals (list[tuple[float,float]]): Bins defined by (start, end) tuples.
+            plotHeight (int): Pixel height of the plotting area.
+
+        Returns:
+            HistogramMetadata: Metadata with height and width scale information.
+        """
         heightScaleFactor : float = UIFactory._calculateScaleFactor(initialValues,plotHeight)
         widthScales = [UIFactory._createScalesForIntervalGroup(intervals)]
         return HistogramMetadata(title, heightScaleFactor, widthScales, xAxisLabel, yAxisLabel)
 
     @staticmethod
     def _createScalesForIntervalGroup(intervals : list[tuple[float,float]])->list[float]:
+        """
+        Compute relative width scale factors for a group of histogram intervals.
+
+        The smallest positive interval length maps to scale 1.0; other
+        intervals are scaled relative to that minimum length.
+
+        Args:
+            intervals (list[tuple[float,float]]): List of (start, end) bin ranges.
+
+        Returns:
+            list[float]: Scale factors proportional to interval lengths.
+        """
         intervalLengths : list[float] = [interval[1]-interval[0] for interval in intervals]
         minimum = min([length for length in intervalLengths if length > 0], default=1)
         scales = [length/minimum for length in intervalLengths]
@@ -211,6 +321,21 @@ class UIFactory:
 
     @staticmethod
     def _createHistogramSolver(metadata: HistogramMetadata, initialValues: list[float], intervals: list[tuple[float,float]]) -> BarChartSolver:
+        """
+        Create a `BarChartSolver` configured for histogram rendering.
+
+        This function reuses the bar chart solver interface to represent
+        histogram bars, then sets interval ranges on the solver so it can
+        position and size bins correctly.
+
+        Args:
+            metadata (HistogramMetadata): Metadata including width scales.
+            initialValues (list[float]): Values binned into intervals.
+            intervals (list[tuple[float,float]]): Bin ranges.
+
+        Returns:
+            BarChartSolver: Solver prepared for histogram visualization.
+        """
         solver: BarChartSolver = UIFactory._createBarChartSolver(metadata,[initialValues],[["" for _ in initialValues]],INITIAL_PADDING,0)
         solver.SetIntervalValues(intervals) # pyright: ignore[reportArgumentType]
         return solver

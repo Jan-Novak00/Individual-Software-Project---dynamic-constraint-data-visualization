@@ -11,7 +11,7 @@ from tkinter import colorchooser
 
 class CandlesticEventHandler(EventHandler):
     ###################
-    # Inicialization #
+    # Initialization #
     ###################
 
     def __init__(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver) -> None:
@@ -19,15 +19,15 @@ class CandlesticEventHandler(EventHandler):
         self.plotSolver : CandlestickChartSolver = solver  # type: ignore
         self.canvasHeight : int = None # type: ignore
     
-    def inicializeDataView(self, textWindow: tk.Text):
+    def initializeDataView(self, textWindow: tk.Text):
         self.dataViewer = CandlesticDataViewer(textWindow)
     
-    def inicializeCanvas(self, canvas: tk.Canvas, width: int, height : int):
+    def initializeCanvas(self, canvas: tk.Canvas, width: int, height : int):
         self.canvas = canvas
         self.canvasHeight = height
         self.drawer = CandlesticCanvasDrawer(canvas, width, height)
     
-    def inicializeRightClickMenu(self, menu: tk.Menu) -> None:
+    def initializeRightClickMenu(self, menu: tk.Menu) -> None:
         self.elementMenu = menu
         self.elementMenu.add_command(label="Change positive color", command=self._changePositiveColor)
         self.elementMenu.add_command(label="Change negative color", command=self._changeNegativeColor)
@@ -40,27 +40,27 @@ class CandlesticEventHandler(EventHandler):
     ########################
     
     def _clickedOnMaximum(self, event: tk.Event, candleIndex : int, candle : ValueCandle):
-        self.eventRegistersLeft.dragEdge = "maximum"
+        self.eventRegistersLeft.eventType = "maximum"
         self.eventRegistersLeft.dragIndex = candleIndex
 
     def _clickedOnMinimum(self, event: tk.Event, candleIndex : int, candle : ValueCandle):
-        self.eventRegistersLeft.dragEdge = "minimum"
+        self.eventRegistersLeft.eventType = "minimum"
         self.eventRegistersLeft.dragIndex = candleIndex
     
     def _clickedOnOrigin(self, event: tk.Event):
-        self.eventRegistersLeft.dragEdge = "origin"
+        self.eventRegistersLeft.eventType = "origin"
     
     def _clickedOnTopOfAxis(self, event: tk.Event):
-        self.eventRegistersLeft.dragEdge = "axisTop"
+        self.eventRegistersLeft.eventType = "axisTop"
     def _clickedOnOpeningEdge(self, event: tk.Event, candleIndex : int, candle : ValueCandle):
-        self.eventRegistersLeft.dragEdge = "opening"
+        self.eventRegistersLeft.eventType = "opening"
         self.eventRegistersLeft.dragIndex = candleIndex 
     
     def _clickedOnClosingEdge(self, event: tk.Event, candleIndex: int, candle: ValueCandle):
         """
         Registers that the user clicked on a top edge of some rectangle
         """
-        self.eventRegistersLeft.dragEdge = "closing"
+        self.eventRegistersLeft.eventType = "closing"
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = candleIndex
         self.eventRegistersLeft.originalHeight = candle.closingCorner.Y - candle.openingCorner.Y
@@ -69,7 +69,7 @@ class CandlesticEventHandler(EventHandler):
         """
         Registers that the user clicked on a right edge of some rectangle
         """
-        self.eventRegistersLeft.dragEdge = 'right'
+        self.eventRegistersLeft.eventType = 'right'
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = candleIndex
         
@@ -81,7 +81,7 @@ class CandlesticEventHandler(EventHandler):
         """
         Registers that the user clicked on a left edge of some rectangle
         """
-        self.eventRegistersLeft.dragEdge = "left"
+        self.eventRegistersLeft.eventType = "left"
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = candleIndex
         
@@ -89,6 +89,14 @@ class CandlesticEventHandler(EventHandler):
         self.eventRegistersLeft.originalSpacing = self.plotSolver.GetSpacing()
     
     def on_left_down(self, event: tk.Event) -> None:
+
+        if self._isNearOrigin(event):
+                self._clickedOnOrigin(event)
+                return
+        elif self._isNearTopOfYAxis(event):
+                self._clickedOnTopOfAxis(event)
+                return
+
         for index, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
             if self._isNearMaximum(event, candle):
                 print(f"maximum {index}")
@@ -97,9 +105,6 @@ class CandlesticEventHandler(EventHandler):
             elif self._isNearMinimum(event, candle):
                 print(f"minimum {index}")
                 self._clickedOnMinimum(event, index, candle)
-                break
-            elif self._isNearTopOfYAxis(event):
-                self._clickedOnTopOfAxis(event)
                 break
             elif self._isNearClosingEdge(event, candle):
                 print(f"closing edge {index}")
@@ -128,44 +133,44 @@ class CandlesticEventHandler(EventHandler):
     #######################
 
     def on_mouse_move(self, event: tk.Event):
-        if self.eventRegistersLeft.dragEdge is None:
+        if self.eventRegistersLeft.eventType is None:
             return
         
         origin = self.plotSolver.GetOrigin()
 
-        if self.eventRegistersLeft.dragEdge == "right":
+        if self.eventRegistersLeft.eventType == "right":
             newWidth = (event.x - (self.eventRegistersLeft.dragIndex+1)*self.plotSolver.GetSpacing() - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
             if newWidth >= 5:
                 self.plotSolver.ChangeWidth(newWidth) # type: ignore
             pass
         
-        elif self.eventRegistersLeft.dragEdge == "left":
+        elif self.eventRegistersLeft.eventType == "left":
             newSpacing = (event.x - self.eventRegistersLeft.dragIndex*self.plotSolver.GetWidth() - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
             if newSpacing >=0:
                 self.plotSolver.ChangeSpacing(newSpacing) # type: ignore
             pass
 
-        elif self.eventRegistersLeft.dragEdge == "closing":
+        elif self.eventRegistersLeft.eventType == "closing":
             dy = self.eventRegistersLeft.dragStart.Y - event.y  
             newHeight = self.eventRegistersLeft.originalHeight + dy
             self.plotSolver.ChangeHeight(self.eventRegistersLeft.dragIndex, newHeight) # type: ignore
         
-        elif self.eventRegistersLeft.dragEdge == "opening":
+        elif self.eventRegistersLeft.eventType == "opening":
             self.plotSolver.ChangeOpening(self.eventRegistersLeft.dragIndex, self.canvasHeight - event.y - origin.Y) # type: ignore
         
-        elif self.eventRegistersLeft.dragEdge == "minimum":
+        elif self.eventRegistersLeft.eventType == "minimum":
             self.plotSolver.ChangeMinimum(self.eventRegistersLeft.dragIndex, self.canvasHeight - event.y - origin.Y) # type: ignore
         
-        elif self.eventRegistersLeft.dragEdge == "maximum":
+        elif self.eventRegistersLeft.eventType == "maximum":
             self.plotSolver.ChangeMaximum(self.eventRegistersLeft.dragIndex, self.canvasHeight - event.y - origin.Y) # type: ignore
         
-        elif self.eventRegistersLeft.dragEdge == "origin":
+        elif self.eventRegistersLeft.eventType == "origin":
             self.plotSolver.ChangeOrigin(event.x, self.canvasHeight - event.y)
         
-        elif self.eventRegistersLeft.dragEdge == "axisTop":  
+        elif self.eventRegistersLeft.eventType == "axisTop":  
             newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 10:
-                self.plotSolver.ChangeAxisHeight(newHeight)
+                self.plotSolver.ChangeAxisHeight(int(newHeight))
         
         self._updateCanvas()
         self._updateDataView()
@@ -174,6 +179,13 @@ class CandlesticEventHandler(EventHandler):
         """
         Changes cursor according to its position.
         """
+        if self._isNearOrigin(event):
+            self.canvas.config(cursor="fleur")
+            return
+        elif self._isNearTopOfYAxis(event):
+            self.canvas.config(cursor="sb_v_double_arrow")
+            return
+
         for idx, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
             if self._isNearMaximum(event,candle):
                 self.canvas.config(cursor="cross")
@@ -193,16 +205,10 @@ class CandlesticEventHandler(EventHandler):
             elif self._isNearOpeningEdge(event, candle):
                 self.canvas.config(cursor="sb_v_double_arrow")
                 return
-            elif self._isNearOrigin(event):
-                self.canvas.config(cursor="fleur")
-                return
-            elif self._isNearTopOfYAxis(event):
-                self.canvas.config(cursor="sb_v_double_arrow")
-                return
+            
 
         self.canvas.config(cursor="arrow")
     
-
     ########################
     # Right mouse handling #
     ########################
@@ -214,7 +220,7 @@ class CandlesticEventHandler(EventHandler):
             for index, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
                 if self._isInsideOfCandle(event, candle):
                     self.eventRegistersRight.rectangleIndexToChange = index
-                    self.elementMenu.post(event.x_root, event.y_root) # problem here
+                    self.elementMenu.post(event.x_root, event.y_root) 
                     return
             super().on_right_down(event)
     

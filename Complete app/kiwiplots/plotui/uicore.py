@@ -40,7 +40,7 @@ class UICore:
         self.plotMetadata : PlotMetadata = plotMetadata 
 
 
-    def inicializeUIElements(self):
+    def initializeUIElements(self):
         """
         Creates and initializes all UI elements including canvas, buttons, and text windows.
         """
@@ -51,14 +51,17 @@ class UICore:
         self.canvas = tk.Canvas(self.frame, width=self.plotWidth, height=self.plotHeight, bg="white")
         self.canvas.pack()
 
-        self.savePictureButton = tk.Button(self.frame, text="Save as png", command=self.on_savePictureButton_click)
-        self.savePictureButton.pack(pady=5)
+        self.buttonFrame = tk.Frame(self.frame)
+        self.buttonFrame.pack(pady=5)
+
+        self.savePictureButton = tk.Button(self.buttonFrame, text="Save as png", command=self.on_savePictureButton_click)
+        self.saveDataButton = tk.Button(self.buttonFrame, text="Save data as csv", command=self.on_saveDataButton_click)
+        self.savePictureButton.pack(side=tk.LEFT, padx=5)
+        self.saveDataButton.pack(side=tk.LEFT, padx=5)
 
         self.dataWindow = tk.Text(self.frame, height=20, width=40)
         self.dataWindow.pack()
 
-        self.saveDataButton = tk.Button(self.frame, text="Save data as csv", command=self.on_saveDataButton_click)
-        self.saveDataButton.pack(pady=5)
 
         self.defaultMenu = tk.Menu(self.frame,tearoff=0)
         self.elementMenu = tk.Menu(self.frame,tearoff=0)
@@ -67,10 +70,10 @@ class UICore:
         """
         Initializes all event handlers with their respective UI components.
         """
-        self.canvasHandler.inicializeCanvas(self.canvas, self.plotWidth, self.plotHeight)
-        self.canvasHandler.inicializeDataView(self.dataWindow)
-        self.canvasHandler.inicializeDefaultRightClickMenu(self.defaultMenu)
-        self.canvasHandler.inicializeRightClickMenu(self.elementMenu)
+        self.canvasHandler.initializeCanvas(self.canvas, self.plotWidth, self.plotHeight)
+        self.canvasHandler.initializeDataView(self.dataWindow)
+        self.canvasHandler.initializeDefaultRightClickMenu(self.defaultMenu)
+        self.canvasHandler.initializeRightClickMenu(self.elementMenu)
     
     
     def on_saveDataButton_click(self):
@@ -115,7 +118,7 @@ class UICore:
         
         Sets up all UI elements, handlers, and starts the event loop.
         """
-        self.inicializeUIElements()
+        self.initializeUIElements()
         self.inicializeHandlers()
 
         self.canvasHandler.UpdateUI() #initial draw

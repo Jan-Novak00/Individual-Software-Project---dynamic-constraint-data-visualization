@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Union
 
 class PlotMetadata(ABC):
     """
@@ -7,7 +8,7 @@ class PlotMetadata(ABC):
     Contains information such as scale factor and axis values used to convert
     pixel dimensions into data dimensions.
     """
-    def __init__(self, title: str, heightScaleFactor: float, xAxisValue: float):
+    def __init__(self, title: str, heightScaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
         """
         Initializes PlotMetadata with scale and axis information.
         
@@ -18,24 +19,55 @@ class PlotMetadata(ABC):
         self.heightScaleFactor : float = heightScaleFactor
         self.xAxisValue : float = xAxisValue
         self.title = title
+        self.xAxisLabel : str = xAxisLabel
+        self.yAxisLabel : str = yAxisLabel
 
 
 
 class CandlesticPlotMetadata(PlotMetadata):
+    """
+    Metadata for candlestick plots.
+
+    Inherits common scale and axis information from `PlotMetadata` and is
+    intended for use with candlestick renderers that require title,
+    height scaling and axis labels. No additional attributes are added by
+    this subclass — it exists for semantic clarity and potential future extension.
+    """
     def __init__(self, title: str, heightScaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
-        self.heightScaleFactor : float = heightScaleFactor
-        self.xAxisValue : float = xAxisValue
-        self.xAxisLabel : str = xAxisLabel
-        self.yAxisLabel : str = yAxisLabel
-        self.title: str = title
+        super().__init__(title, heightScaleFactor, xAxisValue, xAxisLabel, yAxisLabel)
 
 class BarChartMetadata(PlotMetadata):
+    """
+    Metadata for bar chart plots.
+
+    Provides the shared `PlotMetadata` fields but defaults the
+    `xAxisValue` to 0 since bar charts commonly align bars to integer
+    bucket indices rather than a continuous x-origin value.
+    """
     def __init__(self, title: str, heightScaleFactor: float, xAxisLabel : str, yAxisLabel : str):
-        super().__init__(title, heightScaleFactor, 0)
-        self.xAxisLabel : str = xAxisLabel
-        self.yAxisLabel : str = yAxisLabel
+        super().__init__(title, heightScaleFactor, 0, xAxisLabel, yAxisLabel)
 
 class HistogramMetadata(BarChartMetadata):
+    """
+    Metadata for histogram plots.
+
+    Extends `BarChartMetadata` with an additional `widthScaleFactor` field
+    that stores scaling information for interval groups (bins). The
+    `intervalGropsScaleFactors` parameter is expected to be a nested list
+    of floats describing widths or scaling per interval group (histograms ALWAYS have just one interval group - multiple groups are supported only for interoperability with bar chart infrastructure).
+    """
     def __init__(self, title: str, heightScaleFactor: float, intervalGropsScaleFactors: list[list[float]], xAxisLabel : str, yAxisLabel : str):
         super().__init__(title,heightScaleFactor,xAxisLabel,yAxisLabel)
         self.widthScaleFactor: list[list[float]] = intervalGropsScaleFactors
+
+class LineChartMetadata(PlotMetadata):
+    """
+    Metadata for line chart plots.
+
+    Carries scale and axis labels for continuous line plots where the
+    `xAxisValue` may represent the data value at the x-origin. Use this
+    class with renderers that draw lines connecting data points.
+    """
+    def __init__(self, title: str, color: Union[str,int], heightScaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
+        super().__init__(title, heightScaleFactor, xAxisValue, xAxisLabel, yAxisLabel)
+        self.color : Union[str,int] = color

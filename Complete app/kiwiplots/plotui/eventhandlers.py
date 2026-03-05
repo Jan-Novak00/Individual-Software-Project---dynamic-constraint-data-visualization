@@ -24,7 +24,7 @@ class EventHandler(ABC):
             self.reset()
 
         def reset(self)-> None:
-            self.dragEdge : str = None                # which edge is being dragged                 # type: ignore
+            self.eventType : str = None                # which edge is being dragged                 # type: ignore
             self.dragStart = ValuePoint2D(0,0)  # where draging started
             self.dragIndex : int = None               # index of plot element which is being dragged #type: ignore
             self.originalLeftX : float = None           #                 #ToDo redundant?         #type: ignore
@@ -53,7 +53,7 @@ class EventHandler(ABC):
         self.drawer : CanvasDrawer = None                                                                               # type: ignore
         self.dataViewer : DataViewer = None                                                                             # type: ignore
         self.plotSolver : ChartSolver = None                                                                            # type: ignore
-        self.plotMetada = plotMetadata                           #ToDo  typing
+        self.plotMetadata = plotMetadata                           #ToDo  typing
         self.eventRegistersLeft : EventHandler.EventRegistersLeftButton = EventHandler.EventRegistersLeftButton()
         self.eventRegistersRight : EventHandler.EventRegistersRightButton = EventHandler.EventRegistersRightButton()
     
@@ -71,7 +71,7 @@ class EventHandler(ABC):
         """
         Redraws the plot on the canvas using the current solver state.
         """
-        self.drawer.draw(self.plotMetada,self.plotSolver) 
+        self.drawer.draw(self.plotMetadata,self.plotSolver) 
     
     def _updateDataView(self):
         """
@@ -79,7 +79,7 @@ class EventHandler(ABC):
         
         Highlights the data element currently being edited if any.
         """
-        self.dataViewer.write(self.plotMetada, self.plotSolver, self.eventRegistersLeft.dragIndex, self.eventRegistersLeft.dragEdge) # type: ignore
+        self.dataViewer.write(self.plotMetadata, self.plotSolver, self.eventRegistersLeft.dragIndex, self.eventRegistersLeft.eventType) # type: ignore
     
     def _changeTitle(self):
         """
@@ -89,7 +89,7 @@ class EventHandler(ABC):
         if newTitle is None:
             return
         else:
-            self.plotMetada.title = newTitle
+            self.plotMetadata.title = newTitle
             self._updateCanvas()
 
     
@@ -159,7 +159,7 @@ class EventHandler(ABC):
         """
         raise NotImplementedError("Method CanvasHandler.check_cursor must be declared in subclass")
     
-    def inicializeDataView(self, textWindow: tk.Text)->None:
+    def initializeDataView(self, textWindow: tk.Text)->None:
         """
         Initializes the data viewer component with a text window.
         
@@ -170,7 +170,7 @@ class EventHandler(ABC):
         """
         raise NotImplementedError("Method CanvasHandler.inicializeDataView must be declared in subclass")
     
-    def inicializeCanvas(self, canvas: tk.Canvas, width:int, height: int)->None:
+    def initializeCanvas(self, canvas: tk.Canvas, width:int, height: int)->None:
         """
         Initializes the canvas drawer with the plot canvas and dimensions.
         
@@ -183,7 +183,7 @@ class EventHandler(ABC):
         """
         raise NotImplementedError("Method CanvasHandler.inicializeCanvas must be declared in subclass")
     
-    def inicializeDefaultRightClickMenu(self, menu: tk.Menu)->None:
+    def initializeDefaultRightClickMenu(self, menu: tk.Menu)->None:
         """
         Initializes the default right-click context menu.
         
@@ -195,7 +195,7 @@ class EventHandler(ABC):
         self.defaultMenu = menu
         self.defaultMenu.add_command(label = "Change title", command=self._changeTitle)
     
-    def inicializeRightClickMenu(self, menu: tk.Menu)->None:
+    def initializeRightClickMenu(self, menu: tk.Menu)->None:
         """
         Initializes the element-specific right-click context menu.
         

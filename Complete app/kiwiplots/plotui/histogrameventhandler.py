@@ -16,10 +16,10 @@ class HistogramEventHandler(BarChartEventHandler):
     def __init__(self, plotMetadata: HistogramMetadata, solver: BarChartSolver):
         super().__init__(plotMetadata, solver)
 
-    def inicializeDataView(self, textWindow: tk.Text) -> None:
+    def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = HistogramDataViewer(textWindow)
     
-    def inicializeCanvas(self, canvas: tk.Canvas, width: int, height: int) -> None:
+    def initializeCanvas(self, canvas: tk.Canvas, width: int, height: int) -> None:
         self.canvas = canvas
         self.canvasHeight = height
         self.drawer = HistogramCanvasDrawer(canvas,width,height)
@@ -31,14 +31,14 @@ class HistogramEventHandler(BarChartEventHandler):
         groupIndex = self._indexToGroupIndex(rectangleIndex)
         if groupIndex[1] != 0:
             return
-        self.eventRegistersLeft.dragEdge = "leftMost"
+        self.eventRegistersLeft.eventType = "leftMost"
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = rectangleIndex
         
         self.eventRegistersLeft.originalLeftX = rectangle.leftBottom.X
         self.eventRegistersLeft.originalSpacing = self.plotSolver.GetSpacing()
 
-    def inicializeRightClickMenu(self, menu: tk.Menu) -> None:
+    def initializeRightClickMenu(self, menu: tk.Menu) -> None:
         self.elementMenu = menu
         self.elementMenu.add_command(label="Change color", command=self._changeColor)
 

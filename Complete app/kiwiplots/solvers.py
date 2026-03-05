@@ -1,8 +1,10 @@
 from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
-from .variableplot import VariableChart, VariableBarChart, VariableCandlesticChart
+from .variableplot import *
 from kiwisolver import Variable, Constraint, Solver
 from typing import Union
 from abc import ABC, abstractmethod
+import itertools as it
+from .utils import *
 
 class ChartSolver(ABC):
     """
@@ -68,7 +70,7 @@ class ChartSolver(ABC):
         self.solver.suggestValue(self.variableChart.yAxisHeight, newHeight)
         self.Solve()
     
-    def ChangeWidth(self, width : int):
+    def ChangeWidth(self, width : float):
         self.solver.suggestValue(self.variableChart.width, width)
         self.Solve()
     
@@ -76,7 +78,6 @@ class ChartSolver(ABC):
         self.solver.suggestValue(self.variableChart.spacing, spacing)
         self.Solve()
     
-
 
 class BarChartSolver(ChartSolver):
     """
@@ -160,8 +161,6 @@ class BarChartSolver(ChartSolver):
     
     def ChangeWidth(self, width):
         super().ChangeWidth(width)
-
-
 
 class CandlestickChartSolver(ChartSolver):
     """
@@ -247,3 +246,64 @@ class CandlestickChartSolver(ChartSolver):
     
     def GetName(self, candleIndex : int):
         return self.variableChart.GetName(candleIndex)
+
+class LineChartSolver(ChartSolver):
+    def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0, padding : float = 0):
+        self.initialWidth : int = width
+        self.initialValues : list[float] = initialValues
+        self.initialPointNames : list[str] = pointNames
+        self.initialxCoordinate = xCoordinate
+        self.initialyCoordinate = yCoordinate
+        self.initialPadding = padding
+        super().__init__()
+        self.variableChart : VariableLineChart = self.variableChart
+        
+
+    def _initializeVariableChart(self):
+        return VariableLineChart(self.initialWidth,self.initialValues, self.initialPointNames, self.initialxCoordinate, self.initialyCoordinate)
+    
+    def _setConstraints(self):
+        constraints : set[Constraint] = set(self.variableChart.GetAllConstraints())
+        for constraint in constraints:
+            self.solver.addConstraint(constraint)
+    
+    def _addEditVariables(self):
+        chart : VariableLineChart = self.variableChart
+        self.solver.addEditVariable(self.variableChart.width, "strong")
+        self.solver.addEditVariable(self.variableChart.origin.X, "strong")
+        self.solver.addEditVariable(self.variableChart.origin.Y, "strong")
+        self.solver.addEditVariable(self.variableChart.yAxisHeight, "strong")
+        self.solver.addEditVariable(self.variableChart.GetPadding(), "strong")
+        for line in chart.lines:
+            self.solver.addEditVariable(line.leftHeight, "strong")
+            self.solver.addEditVariable(line.rightHeight, "medium")
+    
+    def _initialSuggest(self):
+        chart : VariableLineChart = self.variableChart
+        self.solver.suggestValue(self.variableChart.yAxisHeight, max(self.initialValues)+10)
+        self.solver.suggestValue(chart.width, self.initialWidth)
+        self.solver.suggestValue(chart.origin.X, self.initialxCoordinate)
+        self.solver.suggestValue(chart.origin.Y,self.initialyCoordinate)
+        self.solver.suggestValue(chart.GetPadding(),self.initialPadding)
+        valuePairs = list(pairwise(self.initialValues))
+        for i in range(len(chart.lines)):
+            line = chart.lines[i]
+            values = valuePairs[i]
+            self.solver.suggestValue(line.leftHeight, values[0])
+            self.solver.suggestValue(line.rightHeight,values[1])
+
+    def GetLineData(self):
+        return [line.Value() for line in self.variableChart.lines]
+    
+    def ChangeHeight(self, pointIndex: int, height: float):
+        print(f"Height changed for point {pointIndex} to {height}.")
+        self.solver.suggestValue(self.variableChart.GetHeightList()[pointIndex], height)
+        self.Solve()
+    
+    def ChangePadding(self, newPadding: float):
+        self.solver.suggestValue(self.variableChart.GetPadding(),newPadding)
+        self.Solve()
+    
+    def GetPadding(self):
+        return self.variableChart.GetPadding().value()
+            

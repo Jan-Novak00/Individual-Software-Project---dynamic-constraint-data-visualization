@@ -58,7 +58,7 @@ class CandlesticDataViewer(DataViewer):
             openingValue = candle.openingCorner.Y/scaleFactor + xAxisValue
             closingValue = candle.closingCorner.Y/scaleFactor + xAxisValue
             maximumValue = candle.wickTop.Y/scaleFactor + xAxisValue
-            minimumValue = candle.wickBottom.Y/scaleFactor + xAxisValue
+            minimumValue = candle.wickBottom.Y/scaleFactor + xAxisValue/scaleFactor
             
             string = f"{candle.name}:\n\topening = {openingValue:.4f},\n\tclosing = {closingValue:.4f},\n\tmin = {minimumValue:.4f},\n\tmax = {maximumValue:.4f}\n\n"
             if valueEdited and i == changedIndex:
@@ -117,4 +117,31 @@ class HistogramDataViewer(DataViewer):
                 self.dataWindow.insert("1.0",f"({rec.leftBottom.secondaryName}, {rec.rightTop.secondaryName}) = {valueString}\n", "changing_Value")
             else:
                 self.dataWindow.insert("1.0",f"({rec.leftBottom.secondaryName}, {rec.rightTop.secondaryName}) = {valueString}\n")
+        self.dataWindow.config(state="disabled")
+
+class LineChartDataViewer(DataViewer):
+    def write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, changedStatus: str)->None:
+        print("Scale factor",plotMetadata.heightScaleFactor)
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        valueEdited = False #
+        lines = solver.GetLineData()
+        origin = solver.GetOrigin()
+        points = [line.leftEnd for line in lines] + [lines[-1].rightEnd]
+        points.reverse()
+
+        for i,point in enumerate(points):
+            value = point.Y - origin.Y
+            label = point.name
+            trueValue = value/plotMetadata.heightScaleFactor + plotMetadata.xAxisValue
+            valueString = ""
+            if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
+                valueString = f"{trueValue:.4g}"
+            else:
+                valueString = str(trueValue)
+            if valueEdited and i == changedIndex:
+                self.dataWindow.insert("1.0",f"{label} = {valueString}\n", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"{label} = {valueString}\n")
         self.dataWindow.config(state="disabled")

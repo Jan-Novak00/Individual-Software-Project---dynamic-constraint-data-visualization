@@ -107,13 +107,13 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         """
         self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)
-        self._drawCandles(solver)
-
         origin = solver.GetOrigin()
         candles = solver.GetCandleData()
         
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
-        self._drawAxes(solver.GetAxisHeight(), candles[-1].rightTop.X, origin, plotMetadata.heightScaleFactor, min(0, lowestWickHeight), plotMetadata.xAxisLabel, plotMetadata.yAxisLabel, plotMetadata.xAxisValue)  
+        self._drawAxes(solver.GetAxisHeight(), int(candles[-1].rightTop.X), origin, plotMetadata.heightScaleFactor, int(min(0, lowestWickHeight)), plotMetadata.xAxisLabel, plotMetadata.yAxisLabel, plotMetadata.xAxisValue)  
+        
+        self._drawCandles(solver)
 
 class BarChartCanvasDrawer(CanvasDrawer):
     def _drawRectangles(self, solver: BarChartSolver): 
@@ -145,8 +145,7 @@ class BarChartCanvasDrawer(CanvasDrawer):
         #highestRectangleHeight = max([rec.rightTop.Y - origin.Y for rec in rectangles])
         y = solver.GetAxisHeight()
 
-        self._drawAxes(solver.GetAxisHeight(), rectangles[-1].rightTop.X, origin, plotMetadata.heightScaleFactor,0,plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
-
+        self._drawAxes(solver.GetAxisHeight(), int(rectangles[-1].rightTop.X), origin, plotMetadata.heightScaleFactor,0,plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
 
 class HistogramCanvasDrawer(BarChartCanvasDrawer):
     def _drawRectangles(self, solver: BarChartSolver): 
@@ -163,3 +162,47 @@ class HistogramCanvasDrawer(BarChartCanvasDrawer):
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black") # pyright: ignore[reportArgumentType]
             self.canvas.create_text(x1,y1 + 10, text=rec.leftBottom.secondaryName)
             self.canvas.create_text(x2,y1 + 10, text=rec.rightTop.secondaryName)
+
+class LineChartCanvasDrawer(CanvasDrawer):
+    def _drawLines(self, plotMetadata: LineChartMetadata, solver: LineChartSolver):
+        RADIUS : int = 4
+        lines = solver.GetLineData()
+        origin = solver.GetOrigin()
+        for index, line in enumerate(lines):
+            x1, y1 = line.leftEnd.X, self.canvasHeight - (line.leftEnd.Y )
+            x2, y2 = line.rightEnd.X, self.canvasHeight - (line.rightEnd.Y)
+            
+            self.canvas.create_line(x1,y1,x2,y2, width = 1)
+            self.canvas.create_oval(
+            x1 - RADIUS, y1 - RADIUS,
+            x1 + RADIUS, y1 + RADIUS,
+            fill=plotMetadata.color) # pyright: ignore[reportArgumentType]
+
+            self.canvas.create_oval(
+            x2 - RADIUS, y2 - RADIUS,
+            x2 + RADIUS, y2 + RADIUS,
+            fill=plotMetadata.color # pyright: ignore[reportArgumentType]
+            )
+            self.canvas.create_text(x1,self.canvasHeight - (origin.Y)+10,text=line.leftEnd.name)
+            if index == len(lines) - 1:
+                self.canvas.create_text(x2,self.canvasHeight - (origin.Y)+10,text=line.rightEnd.name)
+
+            #text ToDo
+
+
+    def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver)->None:
+        self.canvas.delete("all")
+        self._writePlotTitle(plotMetadata.title)
+        lines = solver.GetLineData()
+
+        origin = solver.GetOrigin()
+        y = solver.GetAxisHeight()
+
+        #yValues = [line.leftEnd.Y+plotMetadata.xAxisValue for line in lines]+[line.rightEnd.Y+plotMetadata.xAxisValue for line in lines]
+        minimum: float = 0                #min(yValues)
+        #if minimum > plotMetadata.xAxisValue:
+        #    minimum = plotMetadata.xAxisValue
+
+        self._drawAxes(solver.GetAxisHeight(),int(lines[-1].rightEnd.X),origin,plotMetadata.heightScaleFactor,int(minimum),plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
+        self._drawLines(plotMetadata,solver)
+        pass

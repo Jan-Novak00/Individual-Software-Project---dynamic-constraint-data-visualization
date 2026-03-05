@@ -1,7 +1,9 @@
-from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValuePoint2D
+from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValuePoint2D, VariableLine, ValueLine
 from kiwisolver import Variable, Constraint
 from typing import Union
 from abc import ABC, abstractmethod
+from .utils import *
+
 
 MINIMAL_WIDTH : float = 10
 
@@ -168,3 +170,47 @@ class VariableCandlesticChart(VariableChart):
     
     def GetWickTop(self, index : int) -> VariablePoint2D:
         return self.candles[index].GetWickTop()
+
+class VariableLineChart(VariableChart):
+    def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
+        super().__init__(width, 0, xCoordinate, yCoordinate)
+        #can not handle only one point ToDo
+        self.pointNames : list[str] = pointNames
+        self.lines : list[VariableLine] = []
+
+        self.padding = Variable("Padding left")
+
+        indexA = 0
+        indexB = 1                                                                                                            
+        for pointA, pointB in list(pairwise(initialValues)):
+            self.lines.append(VariableLine(self.width, self.origin.Y, pointA, pointB, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) # ToDo add names
+            indexA = indexB
+            indexB += 1
+        self.leftMostPointConstraint : Constraint = ((self.lines[0].leftEnd.X == self.origin.X + self.padding)|"required") # less coupling please
+
+        self.continuityConstraints : list[Constraint] = self._getContinuityConstraints()
+    
+    def _getContinuityConstraints(self):
+        result : list[Constraint] = []
+        for lineA, lineB in list(pairwise(self.lines)):
+            result.append(((lineA.rightEnd.X == lineB.leftEnd.X) | "required"))
+            result.append(((lineA.rightEnd.Y == lineB.leftEnd.Y) | "required"))
+        return result
+    
+    def _getAllLineConstraints(self) -> list[Constraint]:
+        result : list[Constraint] = []
+        for line in self.lines:
+            result.extend(line.GetAllConstraints())
+        return result
+
+    def GetAllConstraints(self):
+        return self.continuityConstraints + [self.leftMostPointConstraint] + self._getAllLineConstraints()
+
+    def Value(self):
+        return [line.Value() for line in self.lines]
+    
+    def GetHeightList(self): # better less coupled implementation required
+        return [line.leftHeight for line in self.lines] + [self.lines[-1].rightHeight]
+
+    def GetPadding(self):
+        return self.padding
