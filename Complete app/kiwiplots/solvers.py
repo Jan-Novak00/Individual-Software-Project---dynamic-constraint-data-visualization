@@ -206,7 +206,42 @@ class CandlestickChartSolver(ChartSolver):
 
     def _setConstraints(self):
         for constraint in self.variableChart.GetAllConstraints():
-            self.solver.addConstraint(constraint)
+            if self.solver.hasConstraint(constraint):
+                continue
+            try:
+                self.solver.addConstraint(constraint)
+            except Exception as e:
+                print(constraint,"Exception type: ",type(e),"incompatible with:", e)
+                pass
+    
+    def AddCandle(self, opening: float, closing: float, min: float, max: float, name: str)->None: #test #added
+        print("Adding candle checkpoint 2")
+        candles = self.GetCandleData()
+        newCandle = self.variableChart.AddCandle(opening,closing,min,max,name)
+
+        print("Adding candle checkpoint 3")
+        self.initialMinimum = [candle.wickBottom.Y for candle in candles] + [min]
+        self.initialMaximum = [candle.wickTop.Y for candle in candles] + [max]
+        self.initialOpening = [candle.openingCorner.Y for candle in candles] + [opening]
+        
+        self.solver.reset()
+        self._addEditVariables()
+
+        #self.solver.addEditVariable(newCandle.height,"strong")
+        #self.solver.addEditVariable(newCandle.wickBottom.Y,"strong")
+        #self.solver.addEditVariable(newCandle.wickTop.Y,"strong")
+        #self.solver.addEditVariable(newCandle.openingCorner.Y,"strong")
+
+        #self.solver.suggestValue(newCandle.wickBottom.Y,min)
+        #self.solver.suggestValue(newCandle.wickTop.Y,max)
+        #self.solver.suggestValue(newCandle.openingCorner.Y, opening)
+
+        
+        self._setConstraints()
+        self._initialSuggest()
+
+        print("Adding candle checkpoint 4")
+        self.Solve()
     
     def ChangeHeight(self, candleIndex : int, height : int):
         self.solver.suggestValue(self.variableChart.GetHeightVariable(candleIndex), height)

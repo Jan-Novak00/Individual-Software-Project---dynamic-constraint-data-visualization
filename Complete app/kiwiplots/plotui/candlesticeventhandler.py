@@ -34,6 +34,16 @@ class CandlesticEventHandler(EventHandler):
         self.elementMenu.add_command(label="Change name", command=self._changeName)
         self.elementMenu.add_command(label="Switch name visibility", command=self._switchNameVisibility)
     
+    def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
+        super().initializeDefaultRightClickMenu(menu)
+        menu.add_command(label="Add candle TEST",command=self._addCandleTEST)
+    
+    def _addCandleTEST(self):
+        print("Adding candle checkpoint 1")
+        self.plotSolver.AddCandle(20,30,15,40,"TEST")
+        print("Candle added succesfully ?")
+        self.UpdateUI()
+    
     
     ########################
     # Left click handeling #

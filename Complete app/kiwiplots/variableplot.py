@@ -103,6 +103,7 @@ class VariableBarChart(VariableChart):
     def GetHeightVariable(self,groupIndex : int, rectangleIndex : int) -> Variable:
         return self.groups[groupIndex].GetHeightVariable(rectangleIndex)
     
+    
 class VariableCandlesticChart(VariableChart):
     """
     VariableChart version for candlestick chart
@@ -112,7 +113,7 @@ class VariableCandlesticChart(VariableChart):
 
         self.candles = [VariableCandle(self.width, initialClosing[i] - initialOpening[i], initialOpening[i], initialMinimum[i], initialMaximum[i],names[i]) for i in range(len(initialOpening))]
         
-        self.leftMostCandleConstriant : Constraint = (self.candles[0].openingCorner.X >= self.origin.X) | "required"
+        self._setLeftMostConstraint()
 
         self._createCandleSpacingConstraints()
 
@@ -121,6 +122,9 @@ class VariableCandlesticChart(VariableChart):
         for index in range(1, len(self.candles)):
             self.candles[index].SetSpacingConstraint((self.candles[index-1].closingCorner.X + self.spacing == self.candles[index].openingCorner.X) | "required")
     
+    def _setLeftMostConstraint(self):
+        self.leftMostCandleConstriant : Constraint = (self.candles[0].openingCorner.X >= self.origin.X) | "required"
+
     def Value(self):
         return [candle.Value() for candle in self.candles]
     
@@ -135,6 +139,25 @@ class VariableCandlesticChart(VariableChart):
 
     def _getGlobalShapeConstraints(self)-> list[Constraint]:
         return [self.widthValueConstraint, self.spacingValueConstraint]
+    
+    def AddCandle(self, opening: float, closing: float, min: float, max: float, name: str, index: int = -1): # pyright: ignore[reportArgumentType]
+        
+        positiveColor = "green"
+        negativeColor = "red"
+
+        if len(self.candles) != 0:
+            positiveColor, negativeColor = self.candles[0].positiveColor, self.candles[0].negativeColor
+        
+        candle = VariableCandle(self.width,closing-opening,opening,min,max,name,positiveColor,negativeColor) # pyright: ignore[reportArgumentType]
+        try:
+            self.candles.insert(index,candle)
+        except:
+            raise Exception(f"Candle inserted to invalid index.\nindex = {index}\nmax index = {len(self.candles)-1}")
+        
+        self._setLeftMostConstraint()
+        self._createCandleSpacingConstraints()
+        return candle
+
 
     def GetAllConstraints(self)-> list[Constraint]:
         return self._getCandleConstraints() + self._getPositionConstraints() + self._getGlobalShapeConstraints()

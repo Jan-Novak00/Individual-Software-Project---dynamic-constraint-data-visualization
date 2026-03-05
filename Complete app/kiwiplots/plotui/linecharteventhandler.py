@@ -32,11 +32,11 @@ class LineChartEventHandler(EventHandler):
     
     def __init__(self, plotMetadata: LineChartMetadata, solver: LineChartSolver):
         super().__init__(plotMetadata)
-        self.plotSolver: LineChartSolver = solver
+        self.plotSolver: LineChartSolver = solver # pyright: ignore[reportIncompatibleVariableOverride]
         self.canvasHeight : int = None # pyright: ignore[reportAttributeAccessIssue]
         self.mode = "value"
         self.plotMetadata : LineChartMetadata = self.plotMetadata
-        self.eventRegistersLeft : LineChartEventHandler.LineChartEventRegisterLeftButton =  LineChartEventHandler.LineChartEventRegisterLeftButton()
+        self.eventRegistersLeft : LineChartEventHandler.LineChartEventRegisterLeftButton =  LineChartEventHandler.LineChartEventRegisterLeftButton() # pyright: ignore[reportIncompatibleVariableOverride]
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = LineChartDataViewer(textWindow)
