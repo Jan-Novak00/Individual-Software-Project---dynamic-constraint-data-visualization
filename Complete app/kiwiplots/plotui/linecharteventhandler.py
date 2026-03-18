@@ -10,7 +10,7 @@ from kiwiplots.plotelement import ValueLine, ValuePoint2D
 from tkinter import simpledialog
 from tkinter import colorchooser
 
-def _lineIndexToPointIndex(lineIndex: int, isLeft: bool):
+def LineIndexToPointIndex(lineIndex: int, isLeft: bool):
         if isLeft:
             return lineIndex
         else:
@@ -24,7 +24,6 @@ class LineChartEventHandler(EventHandler):
         def reset(self):
             super().reset()
             self.lineEndParity : str = None # pyright: ignore[reportAttributeAccessIssue] # left or right 
-
 
     ###################
     # Initialization #
@@ -69,8 +68,6 @@ class LineChartEventHandler(EventHandler):
             return
         self.plotMetadata.color = color[1] # pyright: ignore[reportAttributeAccessIssue]
         self._updateCanvas()
-        
-
 
     ########################
     # Left click handeling #
@@ -84,29 +81,19 @@ class LineChartEventHandler(EventHandler):
                 self._clickedOnTopOfAxis(event)
                 return
 
-        lines = self.plotSolver.GetLineData()
-        for index, line in enumerate(lines):
-            point : ValuePoint2D = line.leftEnd
+        points = self.plotSolver.GetPoints()
+        for index, point in enumerate(points):
             if self._isNearLineEnd(event,point):
-                print(f"point ({point.X}, {point.Y}) at line with index {index}.")
-                self._clickedOnLineEnd(event,index,True)
-                return
-            if (index == len(lines)-1):
-                point : ValuePoint2D = line.rightEnd
-                if self._isNearLineEnd(event,point):
-                    print(f"point ({point.X}, {point.Y}) at line with index {index}.")
-                    self._clickedOnLineEnd(event,index,False)
-                    return
+                print(f"Clicked point ({point.X}, {point.Y}) at line with index {index}.")
+                self._clickedOnLineEnd(event, index, index == 0)
+
+        return
+
     
     def on_left_up(self, event: tk.Event) -> None:
         self.eventRegistersLeft.reset()
     
     def _clickedOnLineEnd(self, event: tk.Event, index: int, leftEdge: bool):
-        eventType : str = None # pyright: ignore[reportAssignmentType]
-        if self.mode == "value":
-            eventType = "left" if leftEdge else "right"
-        else:
-            eventType = "width"
         self.eventRegistersLeft.eventType = "value" if self.mode == "value" else "width"
         self.eventRegistersLeft.lineEndParity = "left" if leftEdge else "right"
         self.eventRegistersLeft.dragIndex = index
@@ -127,20 +114,15 @@ class LineChartEventHandler(EventHandler):
             return
         
         origin = self.plotSolver.GetOrigin()
-        lines = self.plotSolver.GetLineData()
 
         if self.eventRegistersLeft.eventType == "value":
-            pointIndex = _lineIndexToPointIndex(self.eventRegistersLeft.dragIndex,self.eventRegistersLeft.lineEndParity == "left")
+            pointIndex = self.eventRegistersLeft.dragIndex
             self.plotSolver.ChangeHeight(pointIndex,self.canvasHeight - event.y - origin.Y)
             
         
         elif self.eventRegistersLeft.eventType == "width" and self.eventRegistersLeft.dragIndex != 0:
-            offByOneErrorNullifier = 0
-            if (self.eventRegistersLeft.lineEndParity == "right") and (self.eventRegistersLeft.dragIndex == len(lines)-1):
-                print("HERE")
-                offByOneErrorNullifier = 1
 
-            newWidth = (event.x - origin.X - self.plotSolver.GetPadding())/(self.eventRegistersLeft.dragIndex+offByOneErrorNullifier)
+            newWidth = (event.x - origin.X - self.plotSolver.GetPadding())/(self.eventRegistersLeft.dragIndex)
             if newWidth >= 5:
                 self.plotSolver.ChangeWidth(newWidth)
         
@@ -170,32 +152,21 @@ class LineChartEventHandler(EventHandler):
         elif self._isNearTopOfYAxis(event):
             self.canvas.config(cursor="sb_v_double_arrow")
             return
-
-        lines = self.plotSolver.GetLineData()
-        for index, line in enumerate(lines):
-            point : ValuePoint2D = line.leftEnd
+        
+        points = self.plotSolver.GetPoints()
+        for index, point in enumerate(points):
             if self._isNearLineEnd(event,point):
                 if self.mode == "value":
                     self.canvas.config(cursor="cross")
                 else:
-                    if index != 0:
-                        self.canvas.config(cursor="sb_h_double_arrow")
-                    else:
+                    if index == 0:
                         self.canvas.config(cursor="hand2")
-                return
-            if (index == len(lines)-1):
-                point : ValuePoint2D = line.rightEnd
-                if self._isNearLineEnd(event,point):
-                    if self.mode == "value":
-                        self.canvas.config(cursor="cross")
                     else:
-                        if index != 0:
-                            self.canvas.config(cursor="sb_h_double_arrow")
-                        else:
-                            self.canvas.config(cursor="hand2")
-                    return
+                        self.canvas.config(cursor="sb_h_double_arrow")
+                return
+
+
         self.canvas.config(cursor="arrow")
-    
 
     ########################
     # Right mouse handling #

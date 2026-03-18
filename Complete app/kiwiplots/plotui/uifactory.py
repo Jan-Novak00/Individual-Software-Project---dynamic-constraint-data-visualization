@@ -10,14 +10,14 @@ from .picturedrawers import *
 from .datawriters import *
 from numpy import abs
 
-INITIAL_WIDTH : int   = 10
+INITIAL_WIDTH : int   = 50
 INITIAL_SPACING : int = 15
 INITIAL_INNER_SPACING = 10
 INITIAL_ORIGIN_X : int = 50
 INITIAL_ORIGIN_Y : int = 30
 INITIAL_PADDING : int = 10
 INITIAL_COLOR : Union[str,int] = "blue"
-INITIAL_PADDING : int = 0
+INITIAL_PADDING : int = 10
 
 class UIFactory:
 

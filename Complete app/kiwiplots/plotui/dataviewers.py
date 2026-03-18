@@ -121,7 +121,6 @@ class HistogramDataViewer(DataViewer):
 
 class LineChartDataViewer(DataViewer):
     def write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, changedStatus: str)->None:
-        print("Scale factor",plotMetadata.heightScaleFactor)
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
         self.dataWindow.tag_configure("changing_Value", foreground="red")
