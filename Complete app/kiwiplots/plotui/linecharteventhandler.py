@@ -114,17 +114,20 @@ class LineChartEventHandler(EventHandler):
             return
         
         origin = self.plotSolver.GetOrigin()
+        points = self.plotSolver.GetPoints()
 
         if self.eventRegistersLeft.eventType == "value":
             pointIndex = self.eventRegistersLeft.dragIndex
             self.plotSolver.ChangeHeight(pointIndex,self.canvasHeight - event.y - origin.Y)
-            
+
         
         elif self.eventRegistersLeft.eventType == "width" and self.eventRegistersLeft.dragIndex != 0:
-
-            newWidth = (event.x - origin.X - self.plotSolver.GetPadding())/(self.eventRegistersLeft.dragIndex)
+            #newWidth = (event.x - origin.X - self.plotSolver.GetPadding())/(self.eventRegistersLeft.dragIndex)
+            previousPoint = points[self.eventRegistersLeft.dragIndex - 1]
+            newWidth = event.x - origin.X - self.plotSolver.GetPadding()
             if newWidth >= 5:
-                self.plotSolver.ChangeWidth(newWidth)
+                #self.plotSolver.ChangeWidth(newWidth)
+                self.plotSolver.ChangeX(self.eventRegistersLeft.dragIndex, newWidth)
         
         elif self.eventRegistersLeft.eventType == "width" and self.eventRegistersLeft.dragIndex == 0:
             newPadding = event.x - origin.X

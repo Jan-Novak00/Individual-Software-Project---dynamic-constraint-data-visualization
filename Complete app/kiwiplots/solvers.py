@@ -312,4 +312,20 @@ class LineChartSolver(ChartSolver):
     
     def GetPadding(self):
         return self.variableChart.GetPadding().value()
+
+    def ChangeX(self, pointIndex: int, newX: float):
+        lineIndex = pointIndex if pointIndex == 0 else pointIndex - 1
+        var = None
+        if pointIndex == 0:
+            var = self.variableChart.lines[lineIndex].leftEnd.X
+            print(var.name())
+            self.solver.addEditVariable(var,"strong")
+            self.solver.suggestValue(var, newX)
+        else:
+            var = self.variableChart.lines[lineIndex].rightEnd.X
+            print(var.name())
+            self.solver.addEditVariable(var,1e+8)
+            self.solver.suggestValue(var, newX)
+        self.Solve()
+        self.solver.removeEditVariable(var)
             
