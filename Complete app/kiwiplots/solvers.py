@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 import itertools as it
 from .utils import *
 
+ALMOST_REQUIRED = 5e+8
+
 class ChartSolver(ABC):
     """
     Encapsulates Solver instance and VariableChart instance.
@@ -35,6 +37,16 @@ class ChartSolver(ABC):
     @abstractmethod
     def _setConstraints(self):
         raise NotImplementedError("Method must be declared in subclass")
+
+    def switchEditVariableLock(self, variable: Variable, locked: bool, defaultStrength = "strong"):
+        value = variable.value()
+        locked = not locked
+        strength = defaultStrength if not locked else ALMOST_REQUIRED
+        if self.solver.hasEditVariable(variable):
+            self.solver.removeEditVariable(variable)
+        self.solver.addEditVariable(variable,strength) # pyright: ignore[reportArgumentType]
+        self.solver.suggestValue(variable,value)
+        return locked
 
     def Solve(self):
         """
@@ -360,11 +372,11 @@ class LineChartSolver(ChartSolver):
             if (not self.solver.hasEditVariable(var)):
                 self.solver.addEditVariable(var,1e+8)
             self.solver.suggestValue(var, newX)
-        self._switchOriginLock()
-        self._switchPaddingLock()
+        originLock = self.switchEditVariableLock(self.variableChart.origin.X, False)
+        paddingLock = self.switchEditVariableLock(self.variableChart.padding, False)
         self.Solve()
         self.solver.removeEditVariable(var)
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
-        self._switchPaddingLock()
-        self._switchOriginLock()
-            
+        self.switchEditVariableLock(self.variableChart.padding,paddingLock)
+        self.switchEditVariableLock(self.variableChart.origin.X,originLock)
+
