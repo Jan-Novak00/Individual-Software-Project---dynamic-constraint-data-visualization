@@ -173,6 +173,11 @@ class BarChartSolver(ChartSolver):
     
     def ChangeWidth(self, width):
         super().ChangeWidth(width)
+    
+    def ChangeWidthX(self,rectangleIndex : int, newX : float):
+        pass
+        #TODO
+
 
 class CandlestickChartSolver(ChartSolver):
     """
@@ -326,52 +331,15 @@ class LineChartSolver(ChartSolver):
     
     def GetPadding(self):
         return self.variableChart.GetPadding().value()
-    
-    def _switchOriginLock(self):
-        ox, oy = self.variableChart.origin.X, self.variableChart.origin.Y
-        value = self.GetOrigin()
-        strength = "strong"
-        if (not self.originLocked):
-            self.originLocked = True
-            strength = 5e+8
-        else:
-            self.originLocked = False
-        
-        if self.solver.hasEditVariable(ox):
-                self.solver.removeEditVariable(ox)
-        self.solver.addEditVariable(ox,strength)
-        self.solver.suggestValue(ox,value.X)
-    
-    def _switchPaddingLock(self):
-        value = self.GetPadding()
-        var = self.variableChart.padding
-        strength = "strong"
-        if (not self.paddingLock):
-            self.paddingLock = True
-            strength = 5e+8
-        else:
-            self.paddingLock = False
-        
-        if self.solver.hasEditVariable(var):
-            self.solver.removeEditVariable(var)
-        self.solver.addEditVariable(var,strength)
-        self.solver.suggestValue(var,value)
 
     def ChangeX(self, pointIndex: int, newX: float):
         lineIndex = pointIndex if pointIndex == 0 else pointIndex - 1
-        var = None
-        if pointIndex == 0:
-            var = self.variableChart.lines[lineIndex].leftEnd.X
-            print(var.name())
-            if (not self.solver.hasEditVariable(var)):
-                self.solver.addEditVariable(var,"strong")
-            self.solver.suggestValue(var, newX)
-        else:
-            var = self.variableChart.lines[lineIndex].rightEnd.X
-            print(var.name())
-            if (not self.solver.hasEditVariable(var)):
-                self.solver.addEditVariable(var,1e+8)
-            self.solver.suggestValue(var, newX)
+        var = self.variableChart.lines[lineIndex].leftEnd.X if pointIndex == 0 else self.variableChart.lines[lineIndex].rightEnd.X
+        strength = "strong" if pointIndex == 0 else 1e+8 # magic number = stronger than strong
+        if (not self.solver.hasEditVariable(var)):
+                self.solver.addEditVariable(var,strength)
+        self.solver.suggestValue(var, newX)
+        
         originLock = self.switchEditVariableLock(self.variableChart.origin.X, False)
         paddingLock = self.switchEditVariableLock(self.variableChart.padding, False)
         self.Solve()
