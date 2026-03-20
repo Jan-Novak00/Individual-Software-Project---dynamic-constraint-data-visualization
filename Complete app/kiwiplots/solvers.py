@@ -257,6 +257,8 @@ class LineChartSolver(ChartSolver):
         self.initialPadding = padding
         super().__init__()
         self.variableChart : VariableLineChart = self.variableChart
+        self.originLocked = False
+        self.paddingLock = False
         
 
     def _initializeVariableChart(self):
@@ -312,6 +314,36 @@ class LineChartSolver(ChartSolver):
     
     def GetPadding(self):
         return self.variableChart.GetPadding().value()
+    
+    def _switchOriginLock(self):
+        ox, oy = self.variableChart.origin.X, self.variableChart.origin.Y
+        value = self.GetOrigin()
+        strength = "strong"
+        if (not self.originLocked):
+            self.originLocked = True
+            strength = 5e+8
+        else:
+            self.originLocked = False
+        
+        if self.solver.hasEditVariable(ox):
+                self.solver.removeEditVariable(ox)
+        self.solver.addEditVariable(ox,strength)
+        self.solver.suggestValue(ox,value.X)
+    
+    def _switchPaddingLock(self):
+        value = self.GetPadding()
+        var = self.variableChart.padding
+        strength = "strong"
+        if (not self.paddingLock):
+            self.paddingLock = True
+            strength = 5e+8
+        else:
+            self.paddingLock = False
+        
+        if self.solver.hasEditVariable(var):
+            self.solver.removeEditVariable(var)
+        self.solver.addEditVariable(var,strength)
+        self.solver.suggestValue(var,value)
 
     def ChangeX(self, pointIndex: int, newX: float):
         lineIndex = pointIndex if pointIndex == 0 else pointIndex - 1
@@ -319,13 +351,20 @@ class LineChartSolver(ChartSolver):
         if pointIndex == 0:
             var = self.variableChart.lines[lineIndex].leftEnd.X
             print(var.name())
-            self.solver.addEditVariable(var,"strong")
+            if (not self.solver.hasEditVariable(var)):
+                self.solver.addEditVariable(var,"strong")
             self.solver.suggestValue(var, newX)
         else:
             var = self.variableChart.lines[lineIndex].rightEnd.X
             print(var.name())
-            self.solver.addEditVariable(var,1e+8)
+            if (not self.solver.hasEditVariable(var)):
+                self.solver.addEditVariable(var,1e+8)
             self.solver.suggestValue(var, newX)
+        self._switchOriginLock()
+        self._switchPaddingLock()
         self.Solve()
         self.solver.removeEditVariable(var)
+        self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
+        self._switchPaddingLock()
+        self._switchOriginLock()
             

@@ -204,7 +204,7 @@ class VariableLineChart(VariableChart):
         return result
 
     def GetAllConstraints(self):
-        return self.continuityConstraints + [self.leftMostPointConstraint] + self._getAllLineConstraints()
+        return self.continuityConstraints + [self.leftMostPointConstraint, (self.width >= 5) | "required", (self.padding >= 0) | "required"] + self._getAllLineConstraints()
 
     def Value(self):
         return [line.Value() for line in self.lines]
