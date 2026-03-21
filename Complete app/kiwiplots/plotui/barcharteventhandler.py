@@ -163,9 +163,10 @@ class BarChartEventHandler(EventHandler):
             groupIndex, rectangleInGroupIndex = groupDragIndex[0], groupDragIndex[1]
 
         if self.eventRegistersLeft.eventType == "right":
-            newWidth = self._getNewWidth(event, groupIndex, rectangleInGroupIndex, groups, origin) # pyright: ignore[reportArgumentType, reportPossiblyUnboundVariable]
-            if newWidth > 10:
-                self.plotSolver.ChangeWidth(newWidth)  # pyright: ignore[reportArgumentType]
+            #newWidth = self._getNewWidth(event, groupIndex, rectangleInGroupIndex, groups, origin) # pyright: ignore[reportArgumentType, reportPossiblyUnboundVariable]
+            #if newWidth > 10:
+            #    self.plotSolver.ChangeWidth(newWidth)  # pyright: ignore[reportArgumentType]
+            self.plotSolver.ChangeWidthX(groupIndex,rectangleInGroupIndex, event.x)
 
         elif self.eventRegistersLeft.eventType == "axisTop":  
             newHeight = self.canvasHeight - event.y - origin.Y
@@ -181,17 +182,19 @@ class BarChartEventHandler(EventHandler):
             self._updateDataView()
 
         elif self.eventRegistersLeft.eventType == "leftMost":
-            if self.eventRegistersLeft.dragIndex == 0:
-                newSpacing = event.x - origin.X
-            else:
-                newSpacing = (event.x - sum([groups[i][-1].rightTop.X - groups[i][0].leftBottom.X for i in range(0,groupIndex)]) - origin.X) // (1+groupIndex)   # pyright: ignore[reportPossiblyUnboundVariable, reportOptionalSubscript]
-            if newSpacing > 0:
-                self.plotSolver.ChangeSpacing(int(newSpacing))
+            #if self.eventRegistersLeft.dragIndex == 0:
+                #newSpacing = event.x - origin.X
+            #else:
+                #newSpacing = (event.x - sum([groups[i][-1].rightTop.X - groups[i][0].leftBottom.X for i in range(0,groupIndex)]) - origin.X) // (1+groupIndex)   # pyright: ignore[reportPossiblyUnboundVariable, reportOptionalSubscript]
+            #if newSpacing > 0:
+                #self.plotSolver.ChangeSpacing(int(newSpacing))
+            self.plotSolver.ChangeSpacingX(groupIndex,rectangleInGroupIndex, event.x)
         
         elif self.eventRegistersLeft.eventType == "leftMiddle" and rectangleInGroupIndex > 0: # pyright: ignore[reportPossiblyUnboundVariable]
-            newInnerSpacing = (event.x - self.eventRegistersLeft.dragIndex*self.plotSolver.GetWidth() - (1+groupIndex)*self.plotSolver.GetSpacing() - origin.X) // (sum([(len(groups[k])-1) for k in range(0,groupIndex)])+rectangleInGroupIndex) # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
-            if newInnerSpacing > 0:
-                self.plotSolver.ChangeInnerSpacing(newInnerSpacing)  # pyright: ignore[reportArgumentType]
+            #newInnerSpacing = (event.x - self.eventRegistersLeft.dragIndex*self.plotSolver.GetWidth() - (1+groupIndex)*self.plotSolver.GetSpacing() - origin.X) // (sum([(len(groups[k])-1) for k in range(0,groupIndex)])+rectangleInGroupIndex) # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
+            #if newInnerSpacing > 0:
+            #    self.plotSolver.ChangeInnerSpacing(newInnerSpacing)  # pyright: ignore[reportArgumentType]
+            self.plotSolver.ChangeInnerSpacingX(groupIndex,rectangleInGroupIndex, event.x)
 
         elif self.eventRegistersLeft.eventType == "origin": #done
             self.plotSolver.ChangeOrigin(event.x, self.canvasHeight - event.y)

@@ -10,7 +10,7 @@ from .picturedrawers import *
 from .datawriters import *
 from numpy import abs
 
-INITIAL_WIDTH : int   = 50
+INITIAL_WIDTH : int   = 100
 INITIAL_SPACING : int = 15
 INITIAL_INNER_SPACING = 10
 INITIAL_ORIGIN_X : int = 50

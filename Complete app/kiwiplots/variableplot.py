@@ -35,9 +35,6 @@ class VariableChart(ABC):
     def GetOrigin(self)-> ValuePoint2D:
         return self.origin.Value()
 
-
-
-
 class VariableBarChart(VariableChart):
     """
     VariableChart version for bar chart and histogram
@@ -92,11 +89,10 @@ class VariableBarChart(VariableChart):
         return [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
     
     def _getOriginConstraints(self) -> list[Constraint]:
-        return [self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
+        return [self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
 
     def GetAllConstraints(self)-> list[Constraint]:
         return self._getGroupConstraints() + self._getSpacingConstraints()+ self._getVerticalGroupAligmentConstraints() + self._getOriginConstraints()
-    
     def GetName(self, groupIndex : int, rectangleIndex : int):
         return self.groups[groupIndex].GetName(rectangleIndex)
     

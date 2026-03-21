@@ -5,6 +5,10 @@ from typing import Union
 from abc import ABC, abstractmethod
 import itertools as it
 from .utils import *
+import time
+from warnings import deprecated
+import faulthandler
+faulthandler.enable()
 
 ALMOST_REQUIRED = 5e+8
 
@@ -38,6 +42,7 @@ class ChartSolver(ABC):
     def _setConstraints(self):
         raise NotImplementedError("Method must be declared in subclass")
 
+    @deprecated("Use switchConstraintLock instead. This method somethimes does not work due to an internal error of kiwisolver.removeEditVariable")
     def switchEditVariableLock(self, variable: Variable, locked: bool, defaultStrength = "strong"):
         value = variable.value()
         locked = not locked
@@ -47,6 +52,15 @@ class ChartSolver(ABC):
         self.solver.addEditVariable(variable,strength) # pyright: ignore[reportArgumentType]
         self.solver.suggestValue(variable,value)
         return locked
+    
+    def switchConstraintLock(self, variable : Variable, constraint : Constraint = None): # pyright: ignore[reportArgumentType]
+        if not constraint:
+            newC = (variable == variable.value()) | "required"
+            self.solver.addConstraint(newC)
+            return newC
+        else:
+            self.solver.removeConstraint(constraint)
+            return None
 
     def Solve(self):
         """
@@ -132,6 +146,14 @@ class BarChartSolver(ChartSolver):
     
     def _initialSuggest(self):
         self.solver.suggestValue(self.variableChart.yAxisHeight, max(max(group) for group in self.initialHeights)+10)
+        self.solver.suggestValue(self.variableChart.origin.X, self.initialxCoordinate)
+        self.solver.suggestValue(self.variableChart.origin.Y, self.initialyCoordinate)
+    
+    def _refreshSuggestions(self):
+        self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
+        self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
+        self.solver.suggestValue(self.variableChart.innerSpacing, self.variableChart.innerSpacing.value())
+        self.solver.suggestValue(self.variableChart.origin.X, self.variableChart.origin.X.value())
         
     def SetIntervalValues(self, intervals: list[list[float,float]]):
         self.variableChart.SetIntervalValues(intervals)
@@ -154,7 +176,18 @@ class BarChartSolver(ChartSolver):
     
     def ChangeHeight(self, groupIndex: int, rectangleIndex: int, newHeight: int):
         self.solver.suggestValue(self.variableChart.GetHeightVariable(groupIndex, rectangleIndex), newHeight)
+        
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        innerSpacingConstrLock = self.switchConstraintLock(self.variableChart.innerSpacing)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+
         self.Solve()
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)  # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
     
     def ChangeInnerSpacing(self, newInnerSpacing: int):
         self.solver.suggestValue(self.variableChart.innerSpacing, newInnerSpacing)
@@ -174,9 +207,78 @@ class BarChartSolver(ChartSolver):
     def ChangeWidth(self, width):
         super().ChangeWidth(width)
     
-    def ChangeWidthX(self,rectangleIndex : int, newX : float):
-        pass
-        #TODO
+        
+    def ChangeWidthX(self,groupIndex: int, rectangleIndex : int, newX : float):
+        var = self.variableChart.groups[groupIndex].rectangles[rectangleIndex].rightTop.X
+        if self.solver.hasEditVariable(var):
+            self.solver.removeEditVariable(var)
+        self.solver.addEditVariable(var, 1e+8)
+        self.solver.suggestValue(var,newX)
+
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        innerSpacingConstrLock = self.switchConstraintLock(self.variableChart.innerSpacing)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+
+        self.Solve()
+        self.solver.removeEditVariable(var)
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)  # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
+        self._refreshSuggestions()
+
+    
+    def ChangeSpacingX(self,groupIndex: int, rectangleIndex : int, newX : float):
+        var = self.variableChart.groups[groupIndex].rectangles[rectangleIndex].leftBottom.X
+        if self.solver.hasEditVariable(var):
+            self.solver.removeEditVariable(var)
+        self.solver.addEditVariable(var, 1e+8)
+        self.solver.suggestValue(var,newX)
+
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        innerSpacingConstrLock = self.switchConstraintLock(self.variableChart.innerSpacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+
+        self.Solve()
+        self.solver.removeEditVariable(var)
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)  # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
+        self._refreshSuggestions()
+    
+    def ChangeInnerSpacingX(self,groupIndex: int, rectangleIndex : int, newX : float):
+        var = self.variableChart.groups[groupIndex].rectangles[rectangleIndex].leftBottom.X
+        if self.solver.hasEditVariable(var):
+            self.solver.removeEditVariable(var)
+        self.solver.addEditVariable(var, 1e+8)
+        self.solver.suggestValue(var,newX)
+
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+
+        self.Solve()
+        self.solver.removeEditVariable(var)
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
+        self._refreshSuggestions()
+    
+    def ChangeOrigin(self, newX: int, newY: int):
+        innerSpacingConstrLock = self.switchConstraintLock(self.variableChart.innerSpacing)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+        super().ChangeOrigin(newX, newY)
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
+        self._refreshSuggestions()
+    
+    def ChangeAxisHeight(self, newHeight: int):
+        super().ChangeAxisHeight(newHeight)
+        self._refreshSuggestions()
 
 
 class CandlestickChartSolver(ChartSolver):
@@ -321,7 +423,6 @@ class LineChartSolver(ChartSolver):
         return [lines[0].leftEnd] + [line.rightEnd for line in lines]
     
     def ChangeHeight(self, pointIndex: int, height: float):
-        print(f"Height changed for point {pointIndex} to {height}.")
         self.solver.suggestValue(self.variableChart.GetHeightList()[pointIndex], height)
         self.Solve()
     

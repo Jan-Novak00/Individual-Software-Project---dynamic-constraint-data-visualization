@@ -3,6 +3,7 @@ from tkinter import simpledialog
 from tkinter import messagebox
 from kiwiplots import *
 import csv
+import kiwisolver
 
 
 class MenuScreen:
@@ -507,5 +508,6 @@ class MenuScreen:
     
 
 if __name__ == "__main__":
+    print(kiwisolver.__version__)
     menu = MenuScreen()
     menu.View()
