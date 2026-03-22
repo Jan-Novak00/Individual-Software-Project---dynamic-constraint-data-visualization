@@ -53,14 +53,14 @@ class ChartSolver(ABC):
         self.solver.suggestValue(variable,value)
         return locked
     
-    def switchConstraintLock(self, variable : Variable, constraint : Constraint = None): # pyright: ignore[reportArgumentType]
+    def switchConstraintLock(self, variable : Variable, constraint : Constraint = None)->Constraint: # pyright: ignore[reportArgumentType]
         if not constraint:
             newC = (variable == variable.value()) | "required"
             self.solver.addConstraint(newC)
             return newC
         else:
             self.solver.removeConstraint(constraint)
-            return None
+            return None # pyright: ignore[reportReturnType]
 
     def Solve(self):
         """
@@ -441,11 +441,11 @@ class LineChartSolver(ChartSolver):
                 self.solver.addEditVariable(var,strength)
         self.solver.suggestValue(var, newX)
         
-        originLock = self.switchEditVariableLock(self.variableChart.origin.X, False)
-        paddingLock = self.switchEditVariableLock(self.variableChart.padding, False)
+        originLock = self.switchConstraintLock(self.variableChart.origin.X)
+        paddingLock = self.switchConstraintLock(self.variableChart.padding)
         self.Solve()
         self.solver.removeEditVariable(var)
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
-        self.switchEditVariableLock(self.variableChart.padding,paddingLock)
-        self.switchEditVariableLock(self.variableChart.origin.X,originLock)
+        self.switchConstraintLock(self.variableChart.padding,paddingLock)
+        self.switchConstraintLock(self.variableChart.origin.X,originLock)
 
