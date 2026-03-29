@@ -139,16 +139,18 @@ class CandlesticEventHandler(EventHandler):
         origin = self.plotSolver.GetOrigin()
 
         if self.eventRegistersLeft.eventType == "right":
-            newWidth = (event.x - (self.eventRegistersLeft.dragIndex+1)*self.plotSolver.GetSpacing() - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
-            if newWidth >= 5:
-                self.plotSolver.ChangeWidth(newWidth) # type: ignore
-            pass
+            #newWidth = (event.x - (self.eventRegistersLeft.dragIndex+1)*self.plotSolver.GetSpacing() - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
+            #if newWidth >= 5:
+            #    self.plotSolver.ChangeWidth(newWidth) # type: ignore
+            #pass
+            self.plotSolver.ChangeWidthX(self.eventRegistersLeft.dragIndex,event.x)
         
         elif self.eventRegistersLeft.eventType == "left":
-            newSpacing = (event.x - self.eventRegistersLeft.dragIndex*self.plotSolver.GetWidth() - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
-            if newSpacing >=0:
-                self.plotSolver.ChangeSpacing(newSpacing) # type: ignore
-            pass
+            #newSpacing = (event.x - self.eventRegistersLeft.dragIndex*self.plotSolver.GetWidth() - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
+            #if newSpacing >=0:
+            #    self.plotSolver.ChangeSpacing(newSpacing) # type: ignore
+            #pass
+            self.plotSolver.ChangeSpacingX(self.eventRegistersLeft.dragIndex,event.x)
 
         elif self.eventRegistersLeft.eventType == "closing":
             dy = self.eventRegistersLeft.dragStart.Y - event.y  

@@ -5,15 +5,18 @@ from .eventhandlers import EventHandler
 from .candlesticeventhandler import CandlesticEventHandler
 from .barcharteventhandler import BarChartEventHandler
 from .histogrameventhandler import HistogramEventHandler
+from .linecharteventhandler import LineChartEventHandler
 from .picturedrawers import *
 from .datawriters import *
 from numpy import abs
 
-INITIAL_WIDTH : int   = 10
+INITIAL_WIDTH : int   = 100
 INITIAL_SPACING : int = 15
 INITIAL_INNER_SPACING = 10
 INITIAL_ORIGIN_X : int = 50
 INITIAL_ORIGIN_Y : int = 30
+INITIAL_PADDING : int = 10
+INITIAL_COLOR : Union[str,int] = "blue"
 INITIAL_PADDING : int = 10
 
 class UIFactory:
@@ -35,13 +38,32 @@ class UIFactory:
             float: Scale factor to multiply raw values by to convert to pixels.
         """
         scaleFactor : float = 1
-        maxValue = max(values,default=1)
+        absValues = [abs(val) for val in values]
+        maxValue = max(absValues,default=1)
         if not (height*0.3 <= maxValue <= height*0.7):
             scaleFactor = height*0.8/maxValue
         return scaleFactor
+    
+    @staticmethod
+    def _rescaleList(inputList : list[float], scaleFactor : float, scaledXAxisValue: float = 0) -> list[int]:
+        """
+        Rescale a list of float values to integers using a scale factor and optional offset.
+
+        Applies the formula: int(value * scaleFactor - scaledXAxisValue) to each value
+        in the input list, converting them to pixel coordinates for plotting.
+
+        Args:
+            inputList (list[float]): List of float values to rescale.
+            scaleFactor (float): Factor to multiply each value by.
+            scaledXAxisValue (float, optional): Offset value to subtract after scaling. Defaults to 0.
+
+        Returns:
+            list[int]: List of rescaled integer values.
+        """
+        return [int(value*scaleFactor-scaledXAxisValue) for value in inputList]
 
     @staticmethod
-    def createCandlesticChart(title: str, 
+    def CreateCandlesticChart(title: str, 
                               xAxisLabel : str, 
                               yAxisLabel : str,
                               xAxisValue : float, 
@@ -146,23 +168,21 @@ class UIFactory:
                                     (width, spacing, origin coordinates)
         """
         
-        def rescaleList(inputList : list[float], scaleFactor : float, scaledXAxisValue: float) -> list[int]:
-            return [int(value*scaleFactor-scaledXAxisValue) for value in inputList]
         
         rescaledXAxisValue : float = metadata.xAxisValue*metadata.heightScaleFactor
 
         return CandlestickChartSolver(INITIAL_WIDTH,
-                                      rescaleList(initialOpening, metadata.heightScaleFactor,rescaledXAxisValue),
-                                      rescaleList(initialClosing, metadata.heightScaleFactor,rescaledXAxisValue),
-                                      rescaleList(initialMinimum, metadata.heightScaleFactor,rescaledXAxisValue),
-                                      rescaleList(initialMaximum, metadata.heightScaleFactor,rescaledXAxisValue),
+                                      UIFactory._rescaleList(initialOpening, metadata.heightScaleFactor,rescaledXAxisValue),
+                                      UIFactory._rescaleList(initialClosing, metadata.heightScaleFactor,rescaledXAxisValue),
+                                      UIFactory._rescaleList(initialMinimum, metadata.heightScaleFactor,rescaledXAxisValue),
+                                      UIFactory._rescaleList(initialMaximum, metadata.heightScaleFactor,rescaledXAxisValue),
                                       INITIAL_SPACING,
                                       names,
                                       INITIAL_ORIGIN_X,
                                       INITIAL_ORIGIN_Y)
 
     @staticmethod
-    def createBarChart( title: str, 
+    def CreateBarChart( title: str, 
                         xAxisLabel : str, 
                         yAxisLabel : str, 
                         initialValues : list[list[float]],
@@ -243,7 +263,7 @@ class UIFactory:
         
 
     @staticmethod
-    def createHistogram(title: str,
+    def CreateHistogram(title: str,
                         xAxisLabel: str,
                         yAxisLabel: str,
                         initialValues: list[float], 
@@ -339,3 +359,32 @@ class UIFactory:
         solver: BarChartSolver = UIFactory._createBarChartSolver(metadata,[initialValues],[["" for _ in initialValues]],INITIAL_PADDING,0)
         solver.SetIntervalValues(intervals) # pyright: ignore[reportArgumentType]
         return solver
+    
+    @staticmethod
+    def CreateLineChart(title: str, 
+                        xAxisLabel: str, 
+                        yAxisLabel: str, 
+                        xAxisValue : float, 
+                        initialValues: list[float], 
+                        names: list[str], 
+                        plotWidth: int,
+                        plotHeight: int
+                        )->UICore:
+        metadata : LineChartMetadata = UIFactory._createLineChartMetadata(title,xAxisValue,initialValues,xAxisLabel,yAxisLabel, plotHeight)
+        solver : LineChartSolver = UIFactory._createLineChartSolver(metadata, initialValues, names)
+        pictureDrawer : PictureDrawer = None # pyright: ignore[reportAssignmentType] #TODO
+        dataWriter : DataWriter = None # pyright: ignore[reportAssignmentType] #TODO
+        eventHandler : EventHandler = LineChartEventHandler(metadata, solver)
+        return UICore(metadata,solver,eventHandler,pictureDrawer,dataWriter,plotWidth,plotHeight)
+    
+    @staticmethod
+    def _createLineChartMetadata(title: str, xAxisValue : float, values : list[float], xAxisLabel : str, yAxisLabel : str, height : int)->LineChartMetadata:
+        heightScaleFactor : float = UIFactory._calculateScaleFactor(values,height)
+        return LineChartMetadata(title,INITIAL_COLOR,heightScaleFactor,xAxisValue,xAxisLabel,yAxisLabel)
+    
+    @staticmethod
+    def _createLineChartSolver(metadata : LineChartMetadata, initialValues : list[float], names : list[str]):
+        rescaledValues : list[int] = UIFactory._rescaleList(initialValues,metadata.heightScaleFactor,metadata.xAxisValue)
+        return LineChartSolver(INITIAL_WIDTH,rescaledValues,names,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y,INITIAL_PADDING) # pyright: ignore[reportArgumentType]
+        
+    
