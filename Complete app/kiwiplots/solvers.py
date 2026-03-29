@@ -323,6 +323,8 @@ class CandlestickChartSolver(ChartSolver):
 
     def _initialSuggest(self):
         self.solver.suggestValue(self.variableChart.yAxisHeight, max(self.initialMaximum))
+        self.solver.suggestValue(self.variableChart.origin.X, self.initialxCoordinate)
+        self.solver.suggestValue(self.variableChart.origin.Y, self.initialyCoordinate)
         for index, candle in enumerate(self.variableChart.candles):
             self.solver.suggestValue(candle.wickBottom.Y, self.initialMinimum[index])
             self.solver.suggestValue(candle.wickTop.Y, self.initialMaximum[index])

@@ -127,7 +127,7 @@ class VariableCandlesticChart(VariableChart):
         return result
     
     def _getPositionConstraints(self)-> list[Constraint]:
-        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftMostCandleConstriant]
+        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required",self.leftMostCandleConstriant] #,self.originXCoordinateConstraint,self.originYCoordinateConstraint,]
 
     def _getGlobalShapeConstraints(self)-> list[Constraint]:
         return [self.widthValueConstraint, self.spacingValueConstraint]
