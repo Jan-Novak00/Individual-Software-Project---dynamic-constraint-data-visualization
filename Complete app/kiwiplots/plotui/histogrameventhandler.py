@@ -10,9 +10,11 @@ from kiwiplots.plotelement import ValueRectangle, ValuePoint2D
 from tkinter import simpledialog
 from tkinter import colorchooser
 from .barcharteventhandler import BarChartEventHandler
-
+from enum import Enum
+from typing import TypeAlias
 class HistogramEventHandler(BarChartEventHandler):
 
+    LeftEvents: TypeAlias = BarChartEventHandler.BarEventRegistersLeftButton.BarLeftEvents
     def __init__(self, plotMetadata: HistogramMetadata, solver: BarChartSolver):
         super().__init__(plotMetadata, solver)
 
@@ -31,7 +33,7 @@ class HistogramEventHandler(BarChartEventHandler):
         groupIndex = self._indexToGroupIndex(rectangleIndex)
         if groupIndex[1] != 0:
             return
-        self.eventRegistersLeft.eventType = "leftMost"
+        self.eventRegistersLeft.eventType = self.LeftEvents.spacing
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = rectangleIndex
         
