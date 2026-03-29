@@ -277,7 +277,13 @@ class BarChartSolver(ChartSolver):
         self._refreshSuggestions()
     
     def ChangeAxisHeight(self, newHeight: int):
+        innerSpacingConstrLock = self.switchConstraintLock(self.variableChart.innerSpacing)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
         super().ChangeAxisHeight(newHeight)
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
         self._refreshSuggestions()
 
 
@@ -329,20 +335,52 @@ class CandlestickChartSolver(ChartSolver):
     
     def ChangeHeight(self, candleIndex : int, height : int):
         self.solver.suggestValue(self.variableChart.GetHeightVariable(candleIndex), height)
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+
         self.Solve()
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
     
     def ChangeMaximum(self, candleIndex : int, yValue : int):
         topOfCandle = max(self.variableChart.GetOpeningCorner(candleIndex).Y.value(), self.variableChart.GetClosingCorner(candleIndex).Y.value())
         self.solver.suggestValue(self.variableChart.GetWickTop(candleIndex).Y, yValue if (yValue >= topOfCandle) else topOfCandle)
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+
         self.Solve()
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
 
     def ChangeMinimum(self, candleIndex : int, yValue : int):
         self.solver.suggestValue(self.variableChart.GetWickBottom(candleIndex).Y, yValue)
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+
         self.Solve()
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
 
     def ChangeOpening(self, candleIndex: int, yValue : int):
         self.solver.suggestValue(self.variableChart.GetOpeningCorner(candleIndex).Y, yValue)
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+
         self.Solve()
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
     
     def SwitchNameVisibility(self, index : int):
         self.variableChart.SwitchNameVisibility(index)
@@ -365,6 +403,59 @@ class CandlestickChartSolver(ChartSolver):
     
     def GetName(self, candleIndex : int):
         return self.variableChart.GetName(candleIndex)
+    
+    def _refreshSuggestions(self):
+        self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
+        self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
+        self.solver.suggestValue(self.variableChart.origin.X, self.variableChart.origin.X.value())
+        
+    
+    def ChangeWidthX(self, candleIndex : int, newX : float)->None:
+        var = self.variableChart.candles[candleIndex].rightTop.X
+        if self.solver.hasEditVariable(var):
+            self.solver.removeEditVariable(var)
+        self.solver.addEditVariable(var, 1e+8)
+        self.solver.suggestValue(var,newX)
+
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+
+        self.Solve()
+        self.solver.removeEditVariable(var)
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
+        self._refreshSuggestions()
+    
+    def ChangeSpacingX(self,candleIndex: int, newX : float):
+        var = self.variableChart.candles[candleIndex].leftBottom.X
+        if self.solver.hasEditVariable(var):
+            self.solver.removeEditVariable(var)
+        self.solver.addEditVariable(var, 1e+8)
+        self.solver.suggestValue(var,newX)
+
+        originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+
+        self.Solve()
+        self.solver.removeEditVariable(var)
+
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
+        self._refreshSuggestions()
+    
+    def ChangeOrigin(self, newX: int, newY: int):
+        spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthConstrLock = self.switchConstraintLock(self.variableChart.width)
+        super().ChangeOrigin(newX, newY)
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
+        self._refreshSuggestions()
+    
+    def ChangeAxisHeight(self, newHeight: int):
+        super().ChangeAxisHeight(newHeight)
+        self._refreshSuggestions()
+
 
 class LineChartSolver(ChartSolver):
     def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0, padding : float = 0):
