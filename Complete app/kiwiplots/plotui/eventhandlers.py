@@ -24,7 +24,7 @@ class EventHandler(ABC):
             self.reset()
 
         def reset(self)-> None:
-            self.eventType : str = None                # which edge is being dragged                 # type: ignore
+            self.eventType = None                # which edge is being dragged                 
             self.dragStart = ValuePoint2D(0,0)  # where draging started
             self.dragIndex : int = None               # index of plot element which is being dragged #type: ignore
             self.originalLeftX : float = None           #                 #ToDo redundant?         #type: ignore
@@ -54,8 +54,8 @@ class EventHandler(ABC):
         self.dataViewer : DataViewer = None                                                                             # type: ignore
         self.plotSolver : ChartSolver = None                                                                            # type: ignore
         self.plotMetadata = plotMetadata                           #ToDo  typing
-        self.eventRegistersLeft : EventHandler.EventRegistersLeftButton = EventHandler.EventRegistersLeftButton()
-        self.eventRegistersRight : EventHandler.EventRegistersRightButton = EventHandler.EventRegistersRightButton()
+        #self.eventRegistersLeft : EventHandler.EventRegistersLeftButton = EventHandler.EventRegistersLeftButton()
+        #self.eventRegistersRight : EventHandler.EventRegistersRightButton = EventHandler.EventRegistersRightButton()
     
     def UpdateUI(self):
         """
