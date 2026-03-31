@@ -184,7 +184,7 @@ class VariableLineChart(VariableChart):
         self.continuityConstraints : list[Constraint] = self._getContinuityConstraints()
     
     def AddPoint(self, name: str):
-        print("--- solver.AddPoint method start ---")
+        print("--- chart.AddPoint method start ---")
         self.pointNames.append(name)
         lastLine = self.lines[-1]
         newLine = VariableLine(self.width, self.origin.Y,f"{self.pointNames[-2]}",f"{self.pointNames[-1]}")
@@ -192,8 +192,8 @@ class VariableLineChart(VariableChart):
         self.lines.append(newLine)
         self.continuityConstraints.append(xContinuityConstraint)
         self.continuityConstraints.append(yContinuityConstraint)
-        print("--- solver.AddPoint method end ---")
-        return newLine, [xContinuityConstraint, yContinuityConstraint] #TODO better return
+        print("--- chart.AddPoint method end ---")
+        return newLine, [xContinuityConstraint, yContinuityConstraint] + newLine.GetAllConstraints() #TODO better return
     
     def _getContinuityConstraints(self):
         result : list[Constraint] = []

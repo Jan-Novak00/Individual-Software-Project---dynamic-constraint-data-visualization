@@ -76,7 +76,8 @@ class LineChartEventHandler(EventHandler):
     
     def _addPointTEST(self):                                                               #addition TEST
         print("adding point to the graph")
-        self.plotSolver.AddPoint(value = 10, name = "new")
+        newValue = 10
+        self.plotSolver.AddPoint(value = newValue * self.plotMetadata.heightScaleFactor, name = "new")
         print("solver.AddPoint called and returned")
         print("updating UI")
         self.UpdateUI()
