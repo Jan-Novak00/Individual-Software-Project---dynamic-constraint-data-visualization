@@ -7,17 +7,49 @@ from .plotmath import isNear
 from .dataviewers import CandlesticDataViewer
 from kiwiplots.plotelement import ValueCandle, ValuePoint2D
 from tkinter import simpledialog
-from tkinter import colorchooser 
+from tkinter import colorchooser
+from enum import Enum
+from typing import TypeAlias
+
 
 class CandlesticEventHandler(EventHandler):
     ###################
     # Initialization #
     ###################
 
+    class CandleEventRegistersLeftButton(EventHandler.EventRegistersLeftButton):
+        class CandleLeftEvents(Enum):
+            nothing = 0
+            minimum = 1
+            maximum = 2
+            opening = 3
+            closing = 4
+            origin  = 5
+            axisTop = 6
+            width   = 7 #aka right
+            spacing = 8 #aka left
+            pass
+        
+        
+        def __init__(self):
+            super().__init__()
+            self.eventType: "CandlesticEventHandler.CandleEventRegistersLeftButton.CandleLeftEvents" = CandlesticEventHandler.CandleEventRegistersLeftButton.CandleLeftEvents.nothing
+        
+        def reset(self) -> None:
+            super().reset()
+            self.eventType = CandlesticEventHandler.CandleEventRegistersLeftButton.CandleLeftEvents.nothing
+    
+    class CandleEventRegistersRightButton(EventHandler.EventRegistersRightButton):
+        pass
+    
+    LeftEvents: TypeAlias = CandleEventRegistersLeftButton.CandleLeftEvents
+
     def __init__(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver) -> None:
         super().__init__(plotMetadata)
-        self.plotSolver : CandlestickChartSolver = solver  # type: ignore
-        self.canvasHeight : int = None # type: ignore
+        self.plotSolver : CandlestickChartSolver = solver
+        self.canvasHeight : int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.eventRegistersLeft : CandlesticEventHandler.CandleEventRegistersLeftButton = CandlesticEventHandler.CandleEventRegistersLeftButton()
+        self.eventRegistersRight : CandlesticEventHandler.CandleEventRegistersRightButton = CandlesticEventHandler.CandleEventRegistersRightButton()
     
     def initializeDataView(self, textWindow: tk.Text):
         self.dataViewer = CandlesticDataViewer(textWindow)
@@ -40,27 +72,27 @@ class CandlesticEventHandler(EventHandler):
     ########################
     
     def _clickedOnMaximum(self, event: tk.Event, candleIndex : int, candle : ValueCandle):
-        self.eventRegistersLeft.eventType = "maximum"
+        self.eventRegistersLeft.eventType = self.LeftEvents.maximum
         self.eventRegistersLeft.dragIndex = candleIndex
 
     def _clickedOnMinimum(self, event: tk.Event, candleIndex : int, candle : ValueCandle):
-        self.eventRegistersLeft.eventType = "minimum"
+        self.eventRegistersLeft.eventType = self.LeftEvents.minimum
         self.eventRegistersLeft.dragIndex = candleIndex
     
     def _clickedOnOrigin(self, event: tk.Event):
-        self.eventRegistersLeft.eventType = "origin"
+        self.eventRegistersLeft.eventType = self.LeftEvents.origin
     
     def _clickedOnTopOfAxis(self, event: tk.Event):
-        self.eventRegistersLeft.eventType = "axisTop"
+        self.eventRegistersLeft.eventType = self.LeftEvents.axisTop
     def _clickedOnOpeningEdge(self, event: tk.Event, candleIndex : int, candle : ValueCandle):
-        self.eventRegistersLeft.eventType = "opening"
+        self.eventRegistersLeft.eventType = self.LeftEvents.opening
         self.eventRegistersLeft.dragIndex = candleIndex 
     
     def _clickedOnClosingEdge(self, event: tk.Event, candleIndex: int, candle: ValueCandle):
         """
         Registers that the user clicked on a top edge of some rectangle
         """
-        self.eventRegistersLeft.eventType = "closing"
+        self.eventRegistersLeft.eventType = self.LeftEvents.closing
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = candleIndex
         self.eventRegistersLeft.originalHeight = candle.closingCorner.Y - candle.openingCorner.Y
@@ -69,19 +101,18 @@ class CandlesticEventHandler(EventHandler):
         """
         Registers that the user clicked on a right edge of some rectangle
         """
-        self.eventRegistersLeft.eventType = 'right'
+        self.eventRegistersLeft.eventType = self.LeftEvents.width
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = candleIndex
         
         self.originalCoordinates = candle.rightTop
-        #self.eventRegistersLeft.rightEdgeCursorOffset = event.x - candle.rightTop.X
         self.eventRegistersLeft.originalLeftX = candle.leftBottom.X
     
     def _clickedOnLeftEdge(self, event: tk.Event, candleIndex: int, candle: ValueCandle): 
         """
         Registers that the user clicked on a left edge of some rectangle
         """
-        self.eventRegistersLeft.eventType = "left"
+        self.eventRegistersLeft.eventType = self.LeftEvents.spacing
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = candleIndex
         
@@ -97,7 +128,7 @@ class CandlesticEventHandler(EventHandler):
                 self._clickedOnTopOfAxis(event)
                 return
 
-        for index, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
+        for index, candle in enumerate(self.plotSolver.GetCandleData()): 
             if self._isNearMaximum(event, candle):
                 print(f"maximum {index}")
                 self._clickedOnMaximum(event, index, candle)
@@ -138,38 +169,30 @@ class CandlesticEventHandler(EventHandler):
         
         origin = self.plotSolver.GetOrigin()
 
-        if self.eventRegistersLeft.eventType == "right":
-            #newWidth = (event.x - (self.eventRegistersLeft.dragIndex+1)*self.plotSolver.GetSpacing() - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
-            #if newWidth >= 5:
-            #    self.plotSolver.ChangeWidth(newWidth) # type: ignore
-            #pass
+        if self.eventRegistersLeft.eventType == self.LeftEvents.width:
             self.plotSolver.ChangeWidthX(self.eventRegistersLeft.dragIndex,event.x)
         
-        elif self.eventRegistersLeft.eventType == "left":
-            #newSpacing = (event.x - self.eventRegistersLeft.dragIndex*self.plotSolver.GetWidth() - origin.X)/(self.eventRegistersLeft.dragIndex+1) # type: ignore
-            #if newSpacing >=0:
-            #    self.plotSolver.ChangeSpacing(newSpacing) # type: ignore
-            #pass
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.spacing:
             self.plotSolver.ChangeSpacingX(self.eventRegistersLeft.dragIndex,event.x)
 
-        elif self.eventRegistersLeft.eventType == "closing":
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.closing:
             dy = self.eventRegistersLeft.dragStart.Y - event.y  
             newHeight = self.eventRegistersLeft.originalHeight + dy
-            self.plotSolver.ChangeHeight(self.eventRegistersLeft.dragIndex, newHeight) # type: ignore
+            self.plotSolver.ChangeHeight(self.eventRegistersLeft.dragIndex, newHeight)  # pyright: ignore[reportArgumentType]
         
-        elif self.eventRegistersLeft.eventType == "opening":
-            self.plotSolver.ChangeOpening(self.eventRegistersLeft.dragIndex, self.canvasHeight - event.y - origin.Y) # type: ignore
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.opening:
+            self.plotSolver.ChangeOpening(self.eventRegistersLeft.dragIndex, self.canvasHeight - event.y - origin.Y)  # pyright: ignore[reportArgumentType]
         
-        elif self.eventRegistersLeft.eventType == "minimum":
-            self.plotSolver.ChangeMinimum(self.eventRegistersLeft.dragIndex, self.canvasHeight - event.y - origin.Y) # type: ignore
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.minimum:
+            self.plotSolver.ChangeMinimum(self.eventRegistersLeft.dragIndex, self.canvasHeight - event.y - origin.Y)  # pyright: ignore[reportArgumentType]
         
-        elif self.eventRegistersLeft.eventType == "maximum":
-            self.plotSolver.ChangeMaximum(self.eventRegistersLeft.dragIndex, self.canvasHeight - event.y - origin.Y) # type: ignore
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.maximum:
+            self.plotSolver.ChangeMaximum(self.eventRegistersLeft.dragIndex, self.canvasHeight - event.y - origin.Y)  # pyright: ignore[reportArgumentType]
         
-        elif self.eventRegistersLeft.eventType == "origin":
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.origin:
             self.plotSolver.ChangeOrigin(event.x, self.canvasHeight - event.y)
         
-        elif self.eventRegistersLeft.eventType == "axisTop":  
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.axisTop:  
             newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 10:
                 self.plotSolver.ChangeAxisHeight(int(newHeight))
@@ -188,7 +211,7 @@ class CandlesticEventHandler(EventHandler):
             self.canvas.config(cursor="sb_v_double_arrow")
             return
 
-        for idx, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
+        for idx, candle in enumerate(self.plotSolver.GetCandleData()):
             if self._isNearMaximum(event,candle):
                 self.canvas.config(cursor="cross")
                 return
@@ -219,7 +242,7 @@ class CandlesticEventHandler(EventHandler):
         return
     
     def on_right_down(self, event: tk.Event):
-            for index, candle in enumerate(self.plotSolver.GetCandleData()): # type: ignore
+            for index, candle in enumerate(self.plotSolver.GetCandleData()):
                 if self._isInsideOfCandle(event, candle):
                     self.eventRegistersRight.rectangleIndexToChange = index
                     self.elementMenu.post(event.x_root, event.y_root) 

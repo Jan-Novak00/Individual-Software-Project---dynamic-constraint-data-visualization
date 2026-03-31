@@ -20,9 +20,6 @@ class VariableChart(ABC):
 
         self.origin: VariablePoint2D = VariablePoint2D("origin")
         self.yAxisHeight: Variable = Variable("axisTop")
-
-        self.originXCoordinateConstraint: Constraint = Constraint(self.origin.X - xCoordinate, "==", "strong")
-        self.originYCoordinateConstraint: Constraint = Constraint(self.origin.Y - yCoordinate, "==", "strong")
     
     @abstractmethod
     def GetAllConstraints(self)->list[Constraint]:
@@ -127,7 +124,7 @@ class VariableCandlesticChart(VariableChart):
         return result
     
     def _getPositionConstraints(self)-> list[Constraint]:
-        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", self.originXCoordinateConstraint,self.originYCoordinateConstraint,self.leftMostCandleConstriant]
+        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required",self.leftMostCandleConstriant]
 
     def _getGlobalShapeConstraints(self)-> list[Constraint]:
         return [self.widthValueConstraint, self.spacingValueConstraint]

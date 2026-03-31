@@ -9,8 +9,32 @@ from .dataviewers import BarChartDataViewer
 from kiwiplots.plotelement import ValueRectangle, ValuePoint2D
 from tkinter import simpledialog
 from tkinter import colorchooser
+from enum import Enum
+from typing import TypeAlias
 
 class BarChartEventHandler(EventHandler):
+    class BarEventRegistersLeftButton(EventHandler.EventRegistersLeftButton):
+        class BarLeftEvents(Enum):
+            nothing      = 0
+            height       = 1
+            origin       = 2
+            axisTop      = 3
+            width        = 4 #aka right
+            spacing      = 5 #aka leftMost
+            innerSpacing = 6
+        
+        def __init__(self):
+            super().__init__()
+            self.eventType: "BarChartEventHandler.BarEventRegistersLeftButton.BarLeftEvents" = BarChartEventHandler.BarEventRegistersLeftButton.BarLeftEvents.nothing
+        
+        def reset(self) -> None:
+            super().reset()
+            self.eventType = BarChartEventHandler.BarEventRegistersLeftButton.BarLeftEvents.nothing
+    
+    class BarEventRegistersRightButton(EventHandler.EventRegistersRightButton):
+        pass
+    
+    LeftEvents: TypeAlias = BarEventRegistersLeftButton.BarLeftEvents
 
     ###################
     # Inicialization #
@@ -21,6 +45,8 @@ class BarChartEventHandler(EventHandler):
         self.plotSolver : BarChartSolver = solver  # type: ignore
         self.canvasHeight : int = None # type: ignore
         self._createTranslationTable(solver.GetRectangleData()) # type: ignore
+        self.eventRegistersLeft : BarChartEventHandler.BarEventRegistersLeftButton = BarChartEventHandler.BarEventRegistersLeftButton()
+        self.eventRegistersRight : BarChartEventHandler.BarEventRegistersRightButton = BarChartEventHandler.BarEventRegistersRightButton()
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = BarChartDataViewer(textWindow)
@@ -71,18 +97,15 @@ class BarChartEventHandler(EventHandler):
         self.eventRegistersLeft.reset()
     
     def _clickedOnOrigin(self, event):
-        self.eventRegistersLeft.eventType = "origin"
+        self.eventRegistersLeft.eventType = self.LeftEvents.origin
         
     def _clickedOnRightEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle):
         """
         Registers that the user clicked on a right edge of some rectangle
         """
-        self.eventRegistersLeft.eventType = 'right'
+        self.eventRegistersLeft.eventType = self.LeftEvents.width
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = rectangleIndex
-        
-        #self.originalCoordinates = rectangle.rightTop
-        #self.rightEdgeCursorOffset = event.x - rectangle.rightTop.X
         self.eventRegistersLeft.originalLeftX = rectangle.leftBottom.X
     
     def _clickedOnLeftEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle): 
@@ -91,7 +114,7 @@ class BarChartEventHandler(EventHandler):
         """
         groupIndex = self._indexToGroupIndex(rectangleIndex)
 
-        self.eventRegistersLeft.eventType = "left" + ("Most" if groupIndex[1] == 0 else "Middle")
+        self.eventRegistersLeft.eventType = self.LeftEvents.spacing if groupIndex[1] == 0 else self.LeftEvents.innerSpacing #"left" + ("Most" if groupIndex[1] == 0 else "Middle")
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = rectangleIndex
         
@@ -102,13 +125,13 @@ class BarChartEventHandler(EventHandler):
         """
         Registers that the user clicked on a top edge of some rectangle
         """
-        self.eventRegistersLeft.eventType = "top"
+        self.eventRegistersLeft.eventType = self.LeftEvents.height
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
         self.eventRegistersLeft.dragIndex = rectangleIndex
         self.eventRegistersLeft.originalHeight = rectangle.rightTop.Y - rectangle.leftBottom.Y
     
     def _clickedOnTopOfAxis(self, event):
-        self.eventRegistersLeft.eventType = "axisTop"
+        self.eventRegistersLeft.eventType = self.LeftEvents.axisTop
 
     
     ########################
@@ -162,41 +185,29 @@ class BarChartEventHandler(EventHandler):
             groupDragIndex = self._indexToGroupIndex(self.eventRegistersLeft.dragIndex)
             groupIndex, rectangleInGroupIndex = groupDragIndex[0], groupDragIndex[1]
 
-        if self.eventRegistersLeft.eventType == "right":
-            #newWidth = self._getNewWidth(event, groupIndex, rectangleInGroupIndex, groups, origin) # pyright: ignore[reportArgumentType, reportPossiblyUnboundVariable]
-            #if newWidth > 10:
-            #    self.plotSolver.ChangeWidth(newWidth)  # pyright: ignore[reportArgumentType]
+        if self.eventRegistersLeft.eventType == self.LeftEvents.width:
             self.plotSolver.ChangeWidthX(groupIndex,rectangleInGroupIndex, event.x)
 
-        elif self.eventRegistersLeft.eventType == "axisTop":  
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.axisTop:  
             newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 10:
                 self.plotSolver.ChangeAxisHeight(int(newHeight))
 
 
-        elif self.eventRegistersLeft.eventType == "top":
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.height:
   
             newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 0:
                 self.plotSolver.ChangeHeight(groupIndex, rectangleInGroupIndex, int(newHeight)) # pyright: ignore[reportPossiblyUnboundVariable]
             self._updateDataView()
 
-        elif self.eventRegistersLeft.eventType == "leftMost":
-            #if self.eventRegistersLeft.dragIndex == 0:
-                #newSpacing = event.x - origin.X
-            #else:
-                #newSpacing = (event.x - sum([groups[i][-1].rightTop.X - groups[i][0].leftBottom.X for i in range(0,groupIndex)]) - origin.X) // (1+groupIndex)   # pyright: ignore[reportPossiblyUnboundVariable, reportOptionalSubscript]
-            #if newSpacing > 0:
-                #self.plotSolver.ChangeSpacing(int(newSpacing))
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.spacing:
             self.plotSolver.ChangeSpacingX(groupIndex,rectangleInGroupIndex, event.x)
         
-        elif self.eventRegistersLeft.eventType == "leftMiddle" and rectangleInGroupIndex > 0: # pyright: ignore[reportPossiblyUnboundVariable]
-            #newInnerSpacing = (event.x - self.eventRegistersLeft.dragIndex*self.plotSolver.GetWidth() - (1+groupIndex)*self.plotSolver.GetSpacing() - origin.X) // (sum([(len(groups[k])-1) for k in range(0,groupIndex)])+rectangleInGroupIndex) # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
-            #if newInnerSpacing > 0:
-            #    self.plotSolver.ChangeInnerSpacing(newInnerSpacing)  # pyright: ignore[reportArgumentType]
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.innerSpacing and rectangleInGroupIndex > 0: # pyright: ignore[reportPossiblyUnboundVariable]
             self.plotSolver.ChangeInnerSpacingX(groupIndex,rectangleInGroupIndex, event.x)
 
-        elif self.eventRegistersLeft.eventType == "origin": #done
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.origin: #done
             self.plotSolver.ChangeOrigin(event.x, self.canvasHeight - event.y)
         
         self._updateCanvas()
