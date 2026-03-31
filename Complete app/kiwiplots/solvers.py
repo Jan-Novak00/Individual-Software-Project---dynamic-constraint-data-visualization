@@ -549,4 +549,19 @@ class LineChartSolver(ChartSolver):
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
         self.switchConstraintLock(self.variableChart.padding,paddingLock)
         self.switchConstraintLock(self.variableChart.origin.X,originLock)
+    
+    def AddPoint(self, value: float, name: str):
+        print("--- solver.AddPoint method start ---")
+        lastPointValue = self.GetLineData()[-1].leftEnd.Y                                 #TODO nebude fungova pro prazdny
+        newLine, newConstraints = self.variableChart.AddPoint(name)
+        self.solver.addEditVariable(newLine.leftHeight, "strong")
+        self.solver.addEditVariable(newLine.rightHeight, "medium")
+        for constr in newConstraints:
+            self.solver.addConstraint(constr)
+        self.solver.suggestValue(newLine.leftHeight,lastPointValue)
+        self.solver.suggestValue(newLine.rightHeight,value)
+        print("new constraints added -> solving")
+        self.Solve()
+        print("--- solver.AddPoint method end ---")
+        pass
 

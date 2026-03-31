@@ -176,12 +176,24 @@ class VariableLineChart(VariableChart):
         indexA = 0
         indexB = 1                                                                                                            
         for pointA, pointB in list(pairwise(initialValues)):
-            self.lines.append(VariableLine(self.width, self.origin.Y, pointA, pointB, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) # ToDo add names
+            self.lines.append(VariableLine(self.width, self.origin.Y, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) # ToDo add names
             indexA = indexB
             indexB += 1
         self.leftMostPointConstraint : Constraint = ((self.lines[0].leftEnd.X == self.origin.X + self.padding)|"required") # less coupling please
 
         self.continuityConstraints : list[Constraint] = self._getContinuityConstraints()
+    
+    def AddPoint(self, name: str):
+        print("--- solver.AddPoint method start ---")
+        self.pointNames.append(name)
+        lastLine = self.lines[-1]
+        newLine = VariableLine(self.width, self.origin.Y,f"{self.pointNames[-2]}",f"{self.pointNames[-1]}")
+        xContinuityConstraint, yContinuityConstraint = ((lastLine.rightEnd.X == newLine.leftEnd.X) | "required"), ((lastLine.rightEnd.Y == newLine.leftEnd.Y) | "required")
+        self.lines.append(newLine)
+        self.continuityConstraints.append(xContinuityConstraint)
+        self.continuityConstraints.append(yContinuityConstraint)
+        print("--- solver.AddPoint method end ---")
+        return newLine, [xContinuityConstraint, yContinuityConstraint] #TODO better return
     
     def _getContinuityConstraints(self):
         result : list[Constraint] = []

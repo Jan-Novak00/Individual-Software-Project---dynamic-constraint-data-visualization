@@ -23,7 +23,10 @@ class LineChartEventHandler(EventHandler):
     class LineChartEventRegisterLeftButton(EventHandler.EventRegistersLeftButton):
         def reset(self):
             super().reset()
-            self.lineEndParity : str = None # pyright: ignore[reportAttributeAccessIssue] # left or right 
+            self.lineEndParity : str = None # pyright: ignore[reportAttributeAccessIssue] # left or right
+    
+    class LineChartEventRegistersRightButton(EventHandler.EventRegistersRightButton):
+        pass
 
     ###################
     # Initialization #
@@ -36,6 +39,7 @@ class LineChartEventHandler(EventHandler):
         self.mode = "value"
         self.plotMetadata : LineChartMetadata = self.plotMetadata
         self.eventRegistersLeft : LineChartEventHandler.LineChartEventRegisterLeftButton =  LineChartEventHandler.LineChartEventRegisterLeftButton()
+        self.eventRegistersRight : LineChartEventHandler.LineChartEventRegistersRightButton = LineChartEventHandler.LineChartEventRegistersRightButton()
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = LineChartDataViewer(textWindow)
@@ -53,6 +57,7 @@ class LineChartEventHandler(EventHandler):
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         super().initializeDefaultRightClickMenu(menu)
         self.defaultMenu.add_command(label="Change mode", command=self._changeMode)
+        self.defaultMenu.add_command(label="Add point test", command=self._addPointTEST)
 
 
     def _changeMode(self):
@@ -68,6 +73,14 @@ class LineChartEventHandler(EventHandler):
             return
         self.plotMetadata.color = color[1] # pyright: ignore[reportAttributeAccessIssue]
         self._updateCanvas()
+    
+    def _addPointTEST(self):                                                               #addition TEST
+        print("adding point to the graph")
+        self.plotSolver.AddPoint(value = 10, name = "new")
+        print("solver.AddPoint called and returned")
+        print("updating UI")
+        self.UpdateUI()
+        pass
 
     ########################
     # Left click handeling #

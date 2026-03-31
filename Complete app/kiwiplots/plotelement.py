@@ -301,7 +301,7 @@ class ValueLine:
         return f"<{self.leftEnd.name}>-<{self.rightEnd.name}>: ({self.leftEnd.X}, {self.leftEnd.Y})-({self.rightEnd.X}, {self.rightEnd.Y})"
 
 class VariableLine(VariableElement):
-    def __init__(self, width : Variable, xAxisHeight : Variable, leftHeight : float, rightHeight : float, leftName : str = "", rightName : str = ""):
+    def __init__(self, width : Variable, xAxisHeight : Variable, leftName : str = "", rightName : str = ""):
         self.width : Variable = width
         self.xAxisHeight : Variable = xAxisHeight
         self.leftHeight : Variable = Variable(f"{leftName}_height")
@@ -314,10 +314,6 @@ class VariableLine(VariableElement):
             ((self.xAxisHeight + self.leftHeight == self.leftEnd.Y) | "required"),
             ((self.xAxisHeight + self.rightHeight == self.rightEnd.Y) | "required")
         ]
-        #self.heightConstraints : list[Constraint] = [
-        #    ((self.leftHeight == float(leftHeight)) | "strong"),
-        #    ((self.rightHeight == float(rightHeight)) | "strong")
-        #]
     
     def GetAllConstraints(self):
         return self.verticalConstraints + [self.horizontalPositionConstraint] #+ self.heightConstraints
