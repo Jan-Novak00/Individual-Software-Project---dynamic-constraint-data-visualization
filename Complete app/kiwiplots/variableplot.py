@@ -166,6 +166,7 @@ class VariableCandlesticChart(VariableChart):
     
     def AddCandle(self,name: str):
         print("--- chart.AddCandle method start ---")
+        newCandle = VariableCandle(self.width,0,) #0 here for height is palceholder
         print("--- chart.AddCandle method end ---")
         pass
 

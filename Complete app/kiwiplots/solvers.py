@@ -148,6 +148,10 @@ class BarChartSolver(ChartSolver):
         self.solver.suggestValue(self.variableChart.yAxisHeight, max(max(group) for group in self.initialHeights)+10)
         self.solver.suggestValue(self.variableChart.origin.X, self.initialxCoordinate)
         self.solver.suggestValue(self.variableChart.origin.Y, self.initialyCoordinate)
+        for ig in range(len(self.variableChart.groups)):
+            group = self.variableChart.groups[ig]
+            for ir, rec in enumerate(group):
+                self.solver.suggestValue(rec.height,self.initialHeights[ig][ir]) # pyright: ignore[reportIndexIssue] #TODO type safety
     
     def _refreshSuggestions(self):
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
@@ -329,7 +333,6 @@ class CandlestickChartSolver(ChartSolver):
             self.solver.suggestValue(candle.wickBottom.Y, self.initialMinimum[index])
             self.solver.suggestValue(candle.wickTop.Y, self.initialMaximum[index])
             self.solver.suggestValue(candle.openingCorner.Y, self.initialOpening[index])
-            print("change")
             self.solver.suggestValue(candle.height, self.initialClosing[index]-self.initialOpening[index])
 
     def _initializeVariableChart(self) -> VariableChart:
