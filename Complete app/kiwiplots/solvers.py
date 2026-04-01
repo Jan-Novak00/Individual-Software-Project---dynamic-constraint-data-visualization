@@ -314,7 +314,29 @@ class BarChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.innerSpacing,innerSpacingLock)
         
         print("--- solver.AddGroup method end ---")
+    
+    def AddRectangle(self, name: str, groupIndex: int, recHeight: float):
+        print("--- solver.AddRectangle start ---")
+        height, constraintsToAdd, constraintsToRemove = self.variableChart.AddRectangle(groupIndex=groupIndex,name=name)
+        for constr in constraintsToRemove:
+            if self.solver.hasConstraint(constr):
+                self.solver.removeConstraint(constr)
+        for constr in constraintsToAdd:
+            self.solver.addConstraint(constr)
+        
+        self.solver.addEditVariable(height,"strong")
+        self.solver.suggestValue(height, recHeight)
 
+        widthLock = self.switchConstraintLock(self.variableChart.width)
+        spacingLock = self.switchConstraintLock(self.variableChart.spacing)
+        innerSpacingLock = self.switchConstraintLock(self.variableChart.innerSpacing)
+
+        self.Solve()
+
+        self.switchConstraintLock(self.variableChart.width, widthLock)
+        self.switchConstraintLock(self.variableChart.spacing, spacingLock)
+        self.switchConstraintLock(self.variableChart.innerSpacing,innerSpacingLock)
+        print("--- solver.AddRectangle end ---")
 
 class CandlestickChartSolver(ChartSolver):
     """

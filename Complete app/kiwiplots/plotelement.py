@@ -135,6 +135,7 @@ class VariableRectangleGroup(VariableElement):
     def __init__(self, rectangleWidth: Variable, heights: list[int], innerSpacing: Variable, names: list[str], color: str = "blue", widthScales : list[float] = None):
         self.rectangles = [VariableRectangle(rectangleWidth, height, names[i] if names is not None else "", color, (1 if widthScales is None else widthScales[i])) for i,height in enumerate(heights)]
         self.innerSpacing = innerSpacing
+        self.width = rectangleWidth
 
         for i in range(1,len(self.rectangles)):
             self.rectangles[i].SetSpacingConstraint((self.rectangles[i-1].rightTop.X + self.innerSpacing == self.rectangles[i].leftBottom.X) | "required")
@@ -194,6 +195,17 @@ class VariableRectangleGroup(VariableElement):
     
     def GetHeightVariable(self, rectangleIndex: int) -> Variable:
         return self.rectangles[rectangleIndex].GetHeightVariable()
+    
+    def AddRectangle(self, name: str):
+        print("--- rectangleGroup.AddRectangle start ---")
+        #Hint: this method can only be called on a group with at least one rectangle
+        newRectangle = VariableRectangle(self.width,0,name)
+        lastRectangle = self.rectangles[-1]
+        self.rectangles.append(newRectangle)
+        newRectangle.SetSpacingConstraint((lastRectangle.rightTop.X + self.innerSpacing == newRectangle.leftBottom.X) | "required")
+        self.rightMostX = newRectangle.rightTop.X
+        print("--- rectangleGroup.AddRectangle end ---")
+        pass
         
 class ValueCandle(ValueRectangle):
     """

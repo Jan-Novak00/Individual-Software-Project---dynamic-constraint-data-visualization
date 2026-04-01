@@ -70,6 +70,7 @@ class BarChartEventHandler(EventHandler):
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         super().initializeDefaultRightClickMenu(menu)
         self.defaultMenu.add_command(label="Add group TEST", command=self._addGroupTEST)
+        self.defaultMenu.add_command(label="Add rectangle to the first group", command=self._addRectangleTEST1)
     
     def _addGroupTEST(self):
         print("adding group!")
@@ -77,6 +78,14 @@ class BarChartEventHandler(EventHandler):
         print("updating UI")
         self.UpdateUI()
         print("group added")
+        print("reseting translation table")
+        self._createTranslationTable(self.plotSolver.GetRectangleData()) # pyright: ignore[reportArgumentType]
+    
+    def _addRectangleTEST1(self):
+        print("adding ractangle to the first group")
+        self.plotSolver.AddRectangle("new rec",0,5*self.plotMetadata.heightScaleFactor)
+        print("updating UI")
+        self.UpdateUI()
         print("reseting translation table")
         self._createTranslationTable(self.plotSolver.GetRectangleData()) # pyright: ignore[reportArgumentType]
 

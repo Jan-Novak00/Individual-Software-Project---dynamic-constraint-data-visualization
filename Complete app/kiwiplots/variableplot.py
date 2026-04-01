@@ -110,8 +110,17 @@ class VariableBarChart(VariableChart):
         print("--- chart.AddRectangle start ---")
         currentGroup = self.groups[groupIndex]
         nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
-        constraintsToRemove = []
+        constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
+        constraintsToAdd = []
+        currentGroup.AddRectangle(name)
+        if nextGroup != None:
+            nextGroup.SetSpacingConstraint((currentGroup.rightMostX + self.spacing == nextGroup.leftMostX)|"required")
+            constraintsToAdd.append(nextGroup.spacingConstraint)
+        newRec = currentGroup.rectangles[-1]
+        constraintsToAdd.extend(newRec.GetAllConstraints())
+        constraintsToAdd.append((currentGroup.rectangles[0].leftBottom.Y == newRec.leftBottom.Y)|"required")
         print("--- chart.AddRectangle end ---")
+        return newRec.height, constraintsToAdd, constraintsToRemove
 
 class VariableCandlesticChart(VariableChart):
     """
