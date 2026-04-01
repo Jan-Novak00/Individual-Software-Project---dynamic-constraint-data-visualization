@@ -473,6 +473,9 @@ class CandlestickChartSolver(ChartSolver):
     
     def AddCandle(self, name: str, opening: float, closing: float, minimum: float, maximum: float):
         print("--- solver.AddCandle method start ---")
+        spacingLock = self.switchConstraintLock(self.variableChart.spacing)
+        widthLock = self.switchConstraintLock(self.variableChart.width)
+
         newCandle, newConstraints = self.variableChart.AddCandle(name)
         for constr in newConstraints:
             self.solver.addConstraint(constr)
@@ -487,6 +490,9 @@ class CandlestickChartSolver(ChartSolver):
         self.solver.suggestValue(newCandle.wickTop.Y,maximum)
 
         self.Solve()
+        self.switchConstraintLock(self.variableChart.spacing,spacingLock)
+        self.switchConstraintLock(self.variableChart.width,widthLock)
+
         print("--- solver.AddCandle method end ---")
         pass
 
