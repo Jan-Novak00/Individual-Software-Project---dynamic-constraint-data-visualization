@@ -83,7 +83,7 @@ class VariableBarChart(VariableChart):
         return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required",self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint]
     
     def _getVerticalGroupAligmentConstraints(self) -> list[Constraint]:
-        return [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
+        return [(self.origin.Y == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
     
     def _getOriginConstraints(self) -> list[Constraint]:
         return [self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
@@ -104,9 +104,15 @@ class VariableBarChart(VariableChart):
         self.groups.append(newGroup)
         newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
         print("--- chart.AddGroup method end ---")
-        return newGroup, newGroup.GetAllConstraints() + [(lastGroup.bottomY == newGroup.bottomY) | "required"]
+        return newGroup, newGroup.GetAllConstraints() + [(self.origin.Y == newGroup.bottomY) | "required"]
 
-    
+    def AddRectangle(self,name: str, groupIndex: int):
+        print("--- chart.AddRectangle start ---")
+        currentGroup = self.groups[groupIndex]
+        nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
+        constraintsToRemove = []
+        print("--- chart.AddRectangle end ---")
+
 class VariableCandlesticChart(VariableChart):
     """
     VariableChart version for candlestick chart
