@@ -72,7 +72,7 @@ class VariableRectangle(VariableElement):
         self.leftBottom = VariablePoint2D(name+".leftBottom")
         self.rightTop = VariablePoint2D(name+".rightTop")
 
-        self.heightConstraint : Constraint = (self.height == float(height)) | "strong"
+        #self.heightConstraint : Constraint = (self.height == float(height)) | "strong"
         self.horizontalPositionConstraint : Constraint = ((self.leftBottom.X + self.width * self.widthScale == self.rightTop.X) | "required")
         self.verticalPositionConstraint : Constraint = ((self.leftBottom.Y + self.height == self.rightTop.Y) | "required")
 
@@ -91,7 +91,7 @@ class VariableRectangle(VariableElement):
         """
         Returns iterator over basic constraints.
         """
-        constraints = [self.heightConstraint]
+        constraints = []#[self.heightConstraint]
         if self.spacingConstraint is not None:
             constraints.append(self.spacingConstraint)
         if self.bottomLeftXPositionConstraint is not None:

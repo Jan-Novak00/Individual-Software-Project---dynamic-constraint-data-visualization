@@ -329,6 +329,8 @@ class CandlestickChartSolver(ChartSolver):
             self.solver.suggestValue(candle.wickBottom.Y, self.initialMinimum[index])
             self.solver.suggestValue(candle.wickTop.Y, self.initialMaximum[index])
             self.solver.suggestValue(candle.openingCorner.Y, self.initialOpening[index])
+            print("change")
+            self.solver.suggestValue(candle.height, self.initialClosing[index]-self.initialOpening[index])
 
     def _initializeVariableChart(self) -> VariableChart:
         return VariableCandlesticChart(self.initialWidth, self.initialOpening, self.initialClosing, self.initialMinimum, self.initialMaximum, self.initialSpacing, self.initialNames, self.initialxCoordinate,self.initialyCoordinate)

@@ -163,6 +163,11 @@ class VariableCandlesticChart(VariableChart):
     
     def GetWickTop(self, index : int) -> VariablePoint2D:
         return self.candles[index].GetWickTop()
+    
+    def AddCandle(self,name: str):
+        print("--- chart.AddCandle method start ---")
+        print("--- chart.AddCandle method end ---")
+        pass
 
 class VariableLineChart(VariableChart):
     def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
