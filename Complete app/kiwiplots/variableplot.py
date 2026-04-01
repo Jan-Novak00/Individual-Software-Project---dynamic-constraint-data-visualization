@@ -104,7 +104,7 @@ class VariableBarChart(VariableChart):
         self.groups.append(newGroup)
         newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
         print("--- chart.AddGroup method end ---")
-        return newGroup, newGroup.GetAllConstraints()
+        return newGroup, newGroup.GetAllConstraints() + [(lastGroup.bottomY == newGroup.bottomY) | "required"]
 
     
 class VariableCandlesticChart(VariableChart):

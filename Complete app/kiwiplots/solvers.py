@@ -303,7 +303,16 @@ class BarChartSolver(ChartSolver):
         self.solver.addEditVariable(newRectangle.height,"strong")
         self.solver.suggestValue(newRectangle.height, firstRectangleHeight)
 
+        widthLock = self.switchConstraintLock(self.variableChart.width)
+        spacingLock = self.switchConstraintLock(self.variableChart.spacing)
+        innerSpacingLock = self.switchConstraintLock(self.variableChart.innerSpacing)
+
         self.Solve()
+
+        self.switchConstraintLock(self.variableChart.width, widthLock)
+        self.switchConstraintLock(self.variableChart.spacing, spacingLock)
+        self.switchConstraintLock(self.variableChart.innerSpacing,innerSpacingLock)
+        
         print("--- solver.AddGroup method end ---")
 
 

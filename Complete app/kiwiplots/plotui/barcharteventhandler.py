@@ -61,9 +61,9 @@ class BarChartEventHandler(EventHandler):
         self.elementMenu.add_command(label="Change color", command=self._changeColor)
         self.elementMenu.add_command(label="Change name", command=self._changeName)
     
-    def _createTranslationTable(self, heights: Union[list[float], list[tuple[float, ...]]]): # ToDo better system required - will stop working once ability to change number of rectangles is added
+    def _createTranslationTable(self, groups : list[list]): # ToDo better system required - will stop working once ability to change number of rectangles is added
         self.translationTable = []
-        for groupIndex, group in enumerate(heights):
+        for groupIndex, group in enumerate(groups):
             for itemIndex in range(len(group)): # pyright: ignore[reportArgumentType]
                 self.translationTable.append((groupIndex,itemIndex))
     
@@ -77,6 +77,8 @@ class BarChartEventHandler(EventHandler):
         print("updating UI")
         self.UpdateUI()
         print("group added")
+        print("reseting translation table")
+        self._createTranslationTable(self.plotSolver.GetRectangleData()) # pyright: ignore[reportArgumentType]
 
     ########################
     # Left click handeling #
