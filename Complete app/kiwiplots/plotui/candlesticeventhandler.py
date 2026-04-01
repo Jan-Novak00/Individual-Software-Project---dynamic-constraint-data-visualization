@@ -10,6 +10,7 @@ from tkinter import simpledialog
 from tkinter import colorchooser
 from enum import Enum
 from typing import TypeAlias
+from tkinter import messagebox
 
 
 class CandlesticEventHandler(EventHandler):
@@ -69,6 +70,7 @@ class CandlesticEventHandler(EventHandler):
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         super().initializeDefaultRightClickMenu(menu)
         self.defaultMenu.add_command(label="Add candle TEST", command=self._addCandleTEST)
+        self.defaultMenu.add_command(label="Add candle", command=self._addCandle)
     
     def _addCandleTEST(self):
         print("adding candle!")
@@ -76,6 +78,67 @@ class CandlesticEventHandler(EventHandler):
         print("updating UI")
         self.UpdateUI()
         print("candle added")
+    
+    def _addCandle(self):
+        def createPopUp():
+            popup = tk.Toplevel()
+            popup.resizable(True, False)
+            popup.title("Add new candle")
+            tk.Label(popup, text="Name:").pack(anchor="w", padx=10, pady=(10,0))
+            nameEntry = tk.Entry(popup)
+            nameEntry.pack(fill="x", padx=10)
+            
+            tk.Label(popup, text="Opening:").pack(anchor="w", padx=10, pady=(10,0))
+            openingEntry = tk.Entry(popup)
+            openingEntry.pack(fill="x", padx=10)
+            tk.Label(popup, text="Closing:").pack(anchor="w", padx=10, pady=(10,0))
+            closingEntry = tk.Entry(popup)
+            closingEntry.pack(fill="x", padx=10)
+            tk.Label(popup, text="Minimum:").pack(anchor="w", padx=10, pady=(10,0))
+            minEntry = tk.Entry(popup)
+            minEntry.pack(fill="x", padx=10)
+            tk.Label(popup, text="Maximum:").pack(anchor="w", padx=10, pady=(10,0))
+            maxEntry = tk.Entry(popup)
+            maxEntry.pack(fill="x", padx=10)
+
+            name = None
+            opening = None
+            closing = None
+            minimum = None
+            maximum = None
+
+            def commit():
+                nonlocal name, opening, closing, minimum, maximum
+                name = nameEntry.get()
+                try:
+                    opening = float(openingEntry.get())
+                    closing = float(closingEntry.get())
+                    minimum = float(minEntry.get())
+                    maximum = float(maxEntry.get())
+                    if name == "":
+                        name = None
+                        raise ValueError
+                except ValueError:
+                    messagebox.showerror("Error","Invalid name or value.")
+                else:
+                    popup.destroy()
+            def cancel():
+                nonlocal name, opening, closing, minimum, maximum
+                name, opening, closing, minimum, maximum = None, None, None, None, None
+                popup.destroy()
+            buttonFrame = tk.Frame(popup)
+            buttonFrame.pack(pady=10)
+            tk.Button(buttonFrame, text="OK", command=commit).pack(side="left", padx=5)
+            tk.Button(buttonFrame, text="Cancel",command=cancel).pack(side="right", padx=5)
+            popup.grab_set()
+            self.canvas.wait_window(popup)
+            return name, opening, closing, minimum, maximum
+        name, opening, closing, minimum, maximum = createPopUp()
+        if name == None or opening == None or closing == None or minimum == None or maximum == None:
+            return
+        self.plotSolver.AddCandle(name=name,opening=opening* self.plotMetadata.heightScaleFactor,closing=closing* self.plotMetadata.heightScaleFactor,minimum=minimum* self.plotMetadata.heightScaleFactor,maximum=maximum* self.plotMetadata.heightScaleFactor)
+        self.UpdateUI()
+
     
     ########################
     # Left click handeling #
