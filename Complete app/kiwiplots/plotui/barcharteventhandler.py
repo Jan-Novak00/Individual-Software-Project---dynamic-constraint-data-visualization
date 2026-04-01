@@ -11,6 +11,7 @@ from tkinter import simpledialog
 from tkinter import colorchooser
 from enum import Enum
 from typing import TypeAlias
+from tkinter import messagebox
 
 class BarChartEventHandler(EventHandler):
     class BarEventRegistersLeftButton(EventHandler.EventRegistersLeftButton):
@@ -71,7 +72,55 @@ class BarChartEventHandler(EventHandler):
         super().initializeDefaultRightClickMenu(menu)
         self.defaultMenu.add_command(label="Add group TEST", command=self._addGroupTEST)
         self.defaultMenu.add_command(label="Add rectangle to the first group", command=self._addRectangleTEST1)
+        self.defaultMenu.add_command(label="Add rectangle group", command=self._addGroup)
     
+    def _addGroup(self):
+        def createPopUp():
+            popup = tk.Toplevel()
+            popup.resizable(True, False)
+            popup.title("Add new rectangle group")
+            tk.Label(popup, text="Name of the first rectangle:").pack(anchor="w", padx=10, pady=(10,0))
+            nameEntry = tk.Entry(popup)
+            nameEntry.pack(fill="x", padx=10)
+            tk.Label(popup, text="Value:").pack(anchor="w", padx=10, pady=(10,0))
+            valueEntry = tk.Entry(popup)
+            valueEntry.pack(fill="x", padx=10)
+
+            name = None
+            value = None
+
+            def commit():
+                    nonlocal name, value
+                    name = nameEntry.get()
+                    try:
+                        value = float(valueEntry.get())
+                        if name == "":
+                            name = None
+                            raise ValueError
+                    except ValueError:
+                        messagebox.showerror("Error","Invalid name or value.")
+                    else:
+                        popup.destroy()
+            def cancel():
+                nonlocal name, value
+                name, value = None, None
+                popup.destroy()
+            buttonFrame = tk.Frame(popup)
+            buttonFrame.pack(pady=10)
+            tk.Button(buttonFrame, text="OK", command=commit).pack(side="left", padx=5)
+            tk.Button(buttonFrame, text="Cancel",command=cancel).pack(side="right", padx=5)
+            popup.grab_set()
+            self.canvas.wait_window(popup)
+            return name, value
+        newName, newValue = createPopUp()
+        if newName == None or newValue == None:
+            return
+        self.plotSolver.AddGroup(newName,newValue * self.plotMetadata.heightScaleFactor)
+        self.UpdateUI()
+        self._createTranslationTable(self.plotSolver.GetRectangleData()) # pyright: ignore[reportArgumentType]
+    
+
+
     def _addGroupTEST(self):
         print("adding group!")
         self.plotSolver.AddGroup("newBar",5*self.plotMetadata.heightScaleFactor)
@@ -83,7 +132,7 @@ class BarChartEventHandler(EventHandler):
     
     def _addRectangleTEST1(self):
         print("adding ractangle to the first group")
-        self.plotSolver.AddRectangle("new rec",0,5*self.plotMetadata.heightScaleFactor)
+        self.plotSolver.AddRectangle("new rec",1,5*self.plotMetadata.heightScaleFactor)
         print("updating UI")
         self.UpdateUI()
         print("reseting translation table")

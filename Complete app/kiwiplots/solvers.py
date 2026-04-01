@@ -337,7 +337,7 @@ class BarChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.spacing, spacingLock)
         self.switchConstraintLock(self.variableChart.innerSpacing,innerSpacingLock)
         print("--- solver.AddRectangle end ---")
-
+    
 class CandlestickChartSolver(ChartSolver):
     """
     ChartSolver version for candlestick chart.
