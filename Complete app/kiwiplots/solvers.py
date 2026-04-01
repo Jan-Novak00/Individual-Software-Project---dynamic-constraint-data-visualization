@@ -291,6 +291,20 @@ class BarChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
         self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
         self._refreshSuggestions()
+    
+    def AddGroup(self, firstRectangleName: str, firstRectangleHeight: float):
+        print("--- solver.AddGroup method start ---")
+        newGroup, newConstraints = self.variableChart.AddGroup(firstRectangleName=firstRectangleName)
+        for constr in newConstraints:
+            self.solver.addConstraint(constr)
+
+        newRectangle = newGroup.rectangles[0]
+        
+        self.solver.addEditVariable(newRectangle.height,"strong")
+        self.solver.suggestValue(newRectangle.height, firstRectangleHeight)
+
+        self.Solve()
+        print("--- solver.AddGroup method end ---")
 
 
 class CandlestickChartSolver(ChartSolver):

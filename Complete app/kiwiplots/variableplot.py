@@ -90,11 +90,22 @@ class VariableBarChart(VariableChart):
 
     def GetAllConstraints(self)-> list[Constraint]:
         return self._getGroupConstraints() + self._getSpacingConstraints()+ self._getVerticalGroupAligmentConstraints() + self._getOriginConstraints()
+    
     def GetName(self, groupIndex : int, rectangleIndex : int):
         return self.groups[groupIndex].GetName(rectangleIndex)
     
     def GetHeightVariable(self,groupIndex : int, rectangleIndex : int) -> Variable:
         return self.groups[groupIndex].GetHeightVariable(rectangleIndex)
+    
+    def AddGroup(self,firstRectangleName : str):
+        print("--- chart.AddGroup method start ---")
+        lastGroup = self.groups[-1] #TODO first one
+        newGroup = VariableRectangleGroup(self.width, [0], self.innerSpacing, [firstRectangleName])
+        self.groups.append(newGroup)
+        newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
+        print("--- chart.AddGroup method end ---")
+        return newGroup, newGroup.GetAllConstraints()
+
     
 class VariableCandlesticChart(VariableChart):
     """

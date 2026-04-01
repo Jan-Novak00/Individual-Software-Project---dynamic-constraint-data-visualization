@@ -67,6 +67,17 @@ class BarChartEventHandler(EventHandler):
             for itemIndex in range(len(group)): # pyright: ignore[reportArgumentType]
                 self.translationTable.append((groupIndex,itemIndex))
     
+    def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
+        super().initializeDefaultRightClickMenu(menu)
+        self.defaultMenu.add_command(label="Add group TEST", command=self._addGroupTEST)
+    
+    def _addGroupTEST(self):
+        print("adding group!")
+        self.plotSolver.AddGroup("newBar",5*self.plotMetadata.heightScaleFactor)
+        print("updating UI")
+        self.UpdateUI()
+        print("group added")
+
     ########################
     # Left click handeling #
     ########################
