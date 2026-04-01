@@ -470,6 +470,25 @@ class CandlestickChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
         self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
         self._refreshSuggestions()
+    
+    def AddCandle(self, name: str, opening: float, closing: float, minimum: float, maximum: float):
+        print("--- solver.AddCandle method start ---")
+        newCandle, newConstraints = self.variableChart.AddCandle(name)
+        for constr in newConstraints:
+            self.solver.addConstraint(constr)
+        self.solver.addEditVariable(newCandle.height,"strong")
+        self.solver.addEditVariable(newCandle.openingCorner.Y,"strong")
+        self.solver.addEditVariable(newCandle.wickBottom.Y,"strong")
+        self.solver.addEditVariable(newCandle.wickTop.Y,"strong")
+
+        self.solver.suggestValue(newCandle.height, closing-opening)
+        self.solver.suggestValue(newCandle.openingCorner.Y, opening)
+        self.solver.suggestValue(newCandle.wickBottom.Y,minimum)
+        self.solver.suggestValue(newCandle.wickTop.Y,maximum)
+
+        self.Solve()
+        print("--- solver.AddCandle method end ---")
+        pass
 
 
 class LineChartSolver(ChartSolver):
@@ -557,9 +576,8 @@ class LineChartSolver(ChartSolver):
     
     def AddPoint(self, value: float, name: str): #NEW FUNCTION
         print("--- solver.AddPoint method start ---")
-        #lastPointValue = self.GetLineData()[-1].rightEnd.Y                                 #TODO nebude fungova pro prazdny
+                              #TODO nebude fungova pro prazdny
         lastPointValue = self.variableChart.lines[-1].rightHeight.value()
-        print("lastPointValue =", lastPointValue)
         newLine, newConstraints = self.variableChart.AddPoint(name)
         self.solver.addEditVariable(newLine.leftHeight, "strong")
         self.solver.addEditVariable(newLine.rightHeight, "medium")

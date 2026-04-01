@@ -13,10 +13,10 @@ class VariableChart(ABC):
     """
     def __init__(self, width : int, spacing : int, xCoordinate : int, yCoordinate : int):
         self.width = Variable("global_width")
-        self.widthValueConstraint : Constraint = ((self.width == width) | "strong")
+        self.widthValueConstraint : Constraint = ((self.width == width) | "strong") #TODO remove
 
         self.spacing = Variable("global_spacing")
-        self.spacingValueConstraint : Constraint = ((self.spacing == spacing) | "strong")
+        self.spacingValueConstraint : Constraint = ((self.spacing == spacing) | "strong") #TODO remove
 
         self.origin: VariablePoint2D = VariablePoint2D("origin")
         self.yAxisHeight: Variable = Variable("axisTop")
@@ -110,7 +110,7 @@ class VariableCandlesticChart(VariableChart):
         self._createCandleSpacingConstraints()
 
     def _createCandleSpacingConstraints(self):
-        self.candles[0].SetSpacingConstraint((self.candles[0].openingCorner.X - self.spacing == self.origin.X) | "required")
+        self.candles[0].SetSpacingConstraint((self.candles[0].openingCorner.X - self.spacing == self.origin.X) | "required") #TODO move spacing constraints out
         for index in range(1, len(self.candles)):
             self.candles[index].SetSpacingConstraint((self.candles[index-1].closingCorner.X + self.spacing == self.candles[index].openingCorner.X) | "required")
     
@@ -166,8 +166,12 @@ class VariableCandlesticChart(VariableChart):
     
     def AddCandle(self,name: str):
         print("--- chart.AddCandle method start ---")
-        newCandle = VariableCandle(self.width,0,) #0 here for height is palceholder
+        lastCandle = self.candles[-1]
+        newCandle = VariableCandle(self.width,0,0,0,0,name) #0 here for height is a placeholder
+        newCandle.SetSpacingConstraint((lastCandle.closingCorner.X + self.spacing == newCandle.openingCorner.X) | "required")
+        self.candles.append(newCandle)
         print("--- chart.AddCandle method end ---")
+        return newCandle, newCandle.GetAllConstraints()
         pass
 
 class VariableLineChart(VariableChart):
