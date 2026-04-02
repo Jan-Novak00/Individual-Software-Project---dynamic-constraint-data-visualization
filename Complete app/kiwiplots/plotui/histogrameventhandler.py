@@ -81,7 +81,9 @@ class HistogramEventHandler(BarChartEventHandler):
         newEnd, newValue = createPopUp()
         if newEnd == None or newValue == None:
             return
-        self.plotSolver.AddRectangle(endOfLastInterval,newEnd,newValue*self.plotMetadata.heightScaleFactor)#TODO width scale?
+        self.plotSolver.AddRectangle(endOfLastInterval,newEnd,newValue*self.plotMetadata.heightScaleFactor)
+        self.UpdateUI()
+        self._createTranslationTable(self.plotSolver.GetRectangleData()) # pyright: ignore[reportArgumentType]
 
 
 

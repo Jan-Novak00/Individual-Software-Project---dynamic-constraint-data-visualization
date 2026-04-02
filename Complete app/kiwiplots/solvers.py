@@ -659,6 +659,8 @@ class HistogramSolver(ChartSolver):
     def __init__(self,solver : BarChartSolver):
         # solver has to have set intervals #TODO
         self.innerSolver : BarChartSolver = solver
+        self.solver : Solver = solver.solver
+        self.variableChart : VariableBarChart = solver.variableChart
     
     def _initializeVariableChart(self) -> VariableChart:
         return None # pyright: ignore[reportReturnType]
@@ -708,19 +710,11 @@ class HistogramSolver(ChartSolver):
     def GetRectangleDataAsList(self):
         return self.innerSolver.GetRectangleDataAsList()
     
-    def GetInnerSpacing(self):
-        warnings.warn("GetInnerSpacing called on histogram!!!",category=RuntimeWarning,stacklevel=1)
-        return 0 #odebrat
-    
     def GetName(self, groupIndex: int, rectangleIndex: int):
         return self.innerSolver.GetName(groupIndex,rectangleIndex)
     
     def ChangeHeight(self, groupIndex: int, rectangleIndex: int, newHeight: int):
         self.innerSolver.ChangeHeight(groupIndex,rectangleIndex,newHeight)
-    
-    def ChangeInnerSpacing(self, newInnerSpacing: int):
-        warnings.warn("ChangeInnerSpacing called on histogram!!!",category=RuntimeWarning,stacklevel=1)
-        return
     
     def ChangeColor(self, groupIndex: int, rectangleIndex: int, newColor: str):
         self.innerSolver.ChangeColor(groupIndex,rectangleIndex,newColor)
@@ -734,12 +728,30 @@ class HistogramSolver(ChartSolver):
     def ChangeSpacingX(self,groupIndex: int, rectangleIndex : int, newX : float):
         self.innerSolver.ChangeSpacingX(groupIndex,rectangleIndex,newX)
     
-    def ChangeInnerSpacingX(self,groupIndex: int, rectangleIndex : int, newX : float):
-        warnings.warn("ChangeInnerSpacingX called on histogram!!!",category=RuntimeWarning,stacklevel=1)
-        return
-    
-    def AddRectangle(self,start: float, end: float, height: float):
+    def AddRectangle(self,start: float, end: float, recHeight: float):
+        
         print("--- solver.AddRectangle start ---")
-        print("TODO")
+        shoretestLength = self._getShortestIntervalLength()
+        widthScale = (end-start)/shoretestLength
+        height, constraintsToAdd, constraintsToRemove = self.innerSolver.variableChart.AddRectangleAsInterval(0,widthScale,start,end)
+        for constr in constraintsToRemove:
+            if self.solver.hasConstraint(constr):
+                self.solver.removeConstraint(constr)
+        for constr in constraintsToAdd:
+            self.solver.addConstraint(constr)
+        
+        self.solver.addEditVariable(height,"strong")
+        self.solver.suggestValue(height, recHeight)
+        widthLock = self.switchConstraintLock(self.variableChart.width)
+        spacingLock = self.switchConstraintLock(self.variableChart.spacing)
+        self.Solve()
+        self.switchConstraintLock(self.variableChart.width, widthLock)
+        self.switchConstraintLock(self.variableChart.spacing, spacingLock)
         print("--- solver.AddRectangle end ---")
         pass
+
+    def _getShortestIntervalLength(self):
+        rectangles = self.GetRectangleDataAsList()
+        val = min([abs(float(rec.rightTop.secondaryName) - abs(float(rec.leftBottom.secondaryName))) for rec in rectangles],default=1)
+        return val if val > 0 else 1
+   
