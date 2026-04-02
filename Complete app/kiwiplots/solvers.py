@@ -128,7 +128,7 @@ class BarChartSolver(ChartSolver):
         self.variableChart : VariableBarChart = self.variableChart
 
     def _initializeVariableChart(self) -> VariableChart:
-        return VariableBarChart(self.initialWidth, self.initialHeights, self.initialSpacing, self.initialInnerSpacing, self.initialRectangleNames, self.initialxCoordinate, self.initialyCoordinate, self.initialWidthScaleForGroups)
+        return VariableBarChart(self.initialRectangleNames, self.initialWidthScaleForGroups)
 
     def _setConstraints(self):
         barChartConstraints = set(self.variableChart.GetAllConstraints())
@@ -151,6 +151,9 @@ class BarChartSolver(ChartSolver):
         self.solver.suggestValue(self.variableChart.yAxisHeight, max(max(group) for group in self.initialHeights)+10)
         self.solver.suggestValue(self.variableChart.origin.X, self.initialxCoordinate)
         self.solver.suggestValue(self.variableChart.origin.Y, self.initialyCoordinate)
+        self.solver.suggestValue(self.variableChart.innerSpacing, self.initialInnerSpacing)
+        self.solver.suggestValue(self.variableChart.spacing,self.initialSpacing)
+        self.solver.suggestValue(self.variableChart.width,self.initialWidth)
         for ig in range(len(self.variableChart.groups)):
             group = self.variableChart.groups[ig]
             for ir, rec in enumerate(group):
@@ -370,6 +373,8 @@ class CandlestickChartSolver(ChartSolver):
         self.solver.suggestValue(self.variableChart.yAxisHeight, max(self.initialMaximum))
         self.solver.suggestValue(self.variableChart.origin.X, self.initialxCoordinate)
         self.solver.suggestValue(self.variableChart.origin.Y, self.initialyCoordinate)
+        self.solver.suggestValue(self.variableChart.width,self.initialWidth)
+        self.solver.suggestValue(self.variableChart.spacing,self.initialSpacing)
         for index, candle in enumerate(self.variableChart.candles):
             self.solver.suggestValue(candle.wickBottom.Y, self.initialMinimum[index])
             self.solver.suggestValue(candle.wickTop.Y, self.initialMaximum[index])
@@ -377,7 +382,7 @@ class CandlestickChartSolver(ChartSolver):
             self.solver.suggestValue(candle.height, self.initialClosing[index]-self.initialOpening[index])
 
     def _initializeVariableChart(self) -> VariableChart:
-        return VariableCandlesticChart(self.initialWidth, self.initialOpening, self.initialClosing, self.initialMinimum, self.initialMaximum, self.initialSpacing, self.initialNames, self.initialxCoordinate,self.initialyCoordinate)
+        return VariableCandlesticChart([self.initialOpening[i] - self.initialClosing[i] >= 0 for i in range(len(self.initialOpening))], self.initialNames)
 
     def _setConstraints(self):
         for constraint in self.variableChart.GetAllConstraints():
@@ -517,7 +522,7 @@ class CandlestickChartSolver(ChartSolver):
         spacingLock = self.switchConstraintLock(self.variableChart.spacing)
         widthLock = self.switchConstraintLock(self.variableChart.width)
 
-        newCandle, newConstraints = self.variableChart.AddCandle(name)
+        newCandle, newConstraints = self.variableChart.AddCandle(name, opening-closing >=0)
         for constr in newConstraints:
             self.solver.addConstraint(constr)
         self.solver.addEditVariable(newCandle.height,"strong")
@@ -553,7 +558,7 @@ class LineChartSolver(ChartSolver):
         
 
     def _initializeVariableChart(self):
-        return VariableLineChart(self.initialWidth,self.initialValues, self.initialPointNames, self.initialxCoordinate, self.initialyCoordinate)
+        return VariableLineChart(self.initialPointNames)
     
     def _setConstraints(self):
         constraints : set[Constraint] = set(self.variableChart.GetAllConstraints())
@@ -566,7 +571,7 @@ class LineChartSolver(ChartSolver):
         self.solver.addEditVariable(self.variableChart.origin.X, "strong")
         self.solver.addEditVariable(self.variableChart.origin.Y, "strong")
         self.solver.addEditVariable(self.variableChart.yAxisHeight, "strong")
-        self.solver.addEditVariable(self.variableChart.GetPadding(), "strong")
+        self.solver.addEditVariable(self.variableChart.padding, "strong")
         for line in chart.lines:
             self.solver.addEditVariable(line.leftHeight, "strong")
             self.solver.addEditVariable(line.rightHeight, "medium")
@@ -577,7 +582,7 @@ class LineChartSolver(ChartSolver):
         self.solver.suggestValue(chart.width, self.initialWidth)
         self.solver.suggestValue(chart.origin.X, self.initialxCoordinate)
         self.solver.suggestValue(chart.origin.Y,self.initialyCoordinate)
-        self.solver.suggestValue(chart.GetPadding(),self.initialPadding)
+        self.solver.suggestValue(chart.padding,self.initialPadding)
         valuePairs = list(pairwise(self.initialValues))
         for i in range(len(chart.lines)):
             line = chart.lines[i]
@@ -599,11 +604,11 @@ class LineChartSolver(ChartSolver):
         self.Solve()
     
     def ChangePadding(self, newPadding: float):
-        self.solver.suggestValue(self.variableChart.GetPadding(),newPadding)
+        self.solver.suggestValue(self.variableChart.padding,newPadding)
         self.Solve()
     
     def GetPadding(self):
-        return self.variableChart.GetPadding().value()
+        return self.variableChart.padding.value()
 
     def ChangeX(self, pointIndex: int, newX: float):
         lineIndex = pointIndex if pointIndex == 0 else pointIndex - 1

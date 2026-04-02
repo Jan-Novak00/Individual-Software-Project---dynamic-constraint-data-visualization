@@ -11,12 +11,10 @@ class VariableChart(ABC):
     """
     Encapsulates all variables of all plot elemenets
     """
-    def __init__(self, width : int, spacing : int, xCoordinate : int, yCoordinate : int):
+    def __init__(self):
         self.width = Variable("global_width")
-        self.widthValueConstraint : Constraint = ((self.width == width) | "strong") #TODO remove
 
         self.spacing = Variable("global_spacing")
-        self.spacingValueConstraint : Constraint = ((self.spacing == spacing) | "strong") #TODO remove
 
         self.origin: VariablePoint2D = VariablePoint2D("origin")
         self.yAxisHeight: Variable = Variable("axisTop")
@@ -36,14 +34,13 @@ class VariableBarChart(VariableChart):
     """
     VariableChart version for bar chart and histogram
     """
-    def __init__(self, width: int, initialHeights: list[list[int]], spacing: int, innerSpacing: int, rectangleNames : list[list[str]],xCoordinate: int = 0, yCoordinate: int = 0, widthScalesForGroups : list[list[float]] = None): # type: ignore
+    def __init__(self, rectangleNames : list[list[str]], widthScalesForGroups : list[list[float]] = None): # type: ignore
         
-        super().__init__(width, spacing, xCoordinate, yCoordinate)
+        super().__init__()
 
         self.innerSpacing = Variable("global_inner_spacing")
-        self.innerSpacingValueConstraint : Constraint = (self.innerSpacing == innerSpacing) | "strong"
         
-        self.groups : list[VariableRectangleGroup] = [VariableRectangleGroup(self.width,heights,self.innerSpacing, rectangleNames[i] if rectangleNames is not None else None, "blue" ,None if widthScalesForGroups is None else widthScalesForGroups[i]) for i, heights in enumerate(initialHeights)] # type: ignore
+        self.groups : list[VariableRectangleGroup] = [VariableRectangleGroup(self.width,self.innerSpacing, rectangleNames[i] if rectangleNames is not None else None, "blue" ,None if widthScalesForGroups is None else widthScalesForGroups[i]) for i, heights in enumerate(rectangleNames)] # type: ignore
         self._createGroupSpacingConstraints()
 
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
@@ -80,7 +77,7 @@ class VariableBarChart(VariableChart):
     
     def _getSpacingConstraints(self)-> list[Constraint]:
         global MINIMAL_WIDTH
-        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required",self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint]
+        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required"]
     
     def _getVerticalGroupAligmentConstraints(self) -> list[Constraint]:
         return [(self.origin.Y == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
@@ -100,7 +97,7 @@ class VariableBarChart(VariableChart):
     def AddGroup(self,firstRectangleName : str):
         print("--- chart.AddGroup method start ---")
         lastGroup = self.groups[-1] #TODO first one
-        newGroup = VariableRectangleGroup(self.width, [0], self.innerSpacing, [firstRectangleName])
+        newGroup = VariableRectangleGroup(self.width, self.innerSpacing, [firstRectangleName])
         self.groups.append(newGroup)
         newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
         print("--- chart.AddGroup method end ---")
@@ -144,10 +141,10 @@ class VariableCandlesticChart(VariableChart):
     """
     VariableChart version for candlestick chart
     """
-    def __init__(self, width : int, initialOpening : list[int], initialClosing : list[int], initialMinimum : list[int], initialMaximum : list[int], spacing : int, names : list[str],  xCoordinate : int = 0, yCoordinate : int = 0):
-        super().__init__(width, spacing, xCoordinate, yCoordinate)
+    def __init__(self, positivity : list[bool], names : list[str]):
+        super().__init__()
 
-        self.candles = [VariableCandle(self.width, initialClosing[i] - initialOpening[i], initialOpening[i], initialMinimum[i], initialMaximum[i],names[i]) for i in range(len(initialOpening))]
+        self.candles = [VariableCandle(self.width, positivity[i], names[i]) for i in range(len(names))]
         
         self.leftMostCandleConstriant : Constraint = (self.candles[0].openingCorner.X >= self.origin.X) | "required"
 
@@ -171,7 +168,7 @@ class VariableCandlesticChart(VariableChart):
         return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required",self.leftMostCandleConstriant]
 
     def _getGlobalShapeConstraints(self)-> list[Constraint]:
-        return [self.widthValueConstraint, self.spacingValueConstraint]
+        return []
 
     def GetAllConstraints(self)-> list[Constraint]:
         return self._getCandleConstraints() + self._getPositionConstraints() + self._getGlobalShapeConstraints()
@@ -208,10 +205,10 @@ class VariableCandlesticChart(VariableChart):
     def GetWickTop(self, index : int) -> VariablePoint2D:
         return self.candles[index].GetWickTop()
     
-    def AddCandle(self,name: str):
+    def AddCandle(self,name: str, isPositive: bool):
         print("--- chart.AddCandle method start ---")
         lastCandle = self.candles[-1]
-        newCandle = VariableCandle(self.width,0,0,0,0,name) #0 here for height is a placeholder
+        newCandle = VariableCandle(self.width,True,name) #0 here for height is a placeholder
         newCandle.SetSpacingConstraint((lastCandle.closingCorner.X + self.spacing == newCandle.openingCorner.X) | "required")
         self.candles.append(newCandle)
         print("--- chart.AddCandle method end ---")
@@ -219,8 +216,8 @@ class VariableCandlesticChart(VariableChart):
         pass
 
 class VariableLineChart(VariableChart):
-    def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
-        super().__init__(width, 0, xCoordinate, yCoordinate)
+    def __init__(self,pointNames : list[str]):
+        super().__init__()
         #can not handle only one point ToDo
         self.pointNames : list[str] = pointNames
         self.lines : list[VariableLine] = []
@@ -229,7 +226,7 @@ class VariableLineChart(VariableChart):
 
         indexA = 0
         indexB = 1                                                                                                            
-        for pointA, pointB in list(pairwise(initialValues)):
+        for pointA, pointB in list(pairwise(pointNames)):
             self.lines.append(VariableLine(self.width, self.origin.Y, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) # ToDo add names
             indexA = indexB
             indexB += 1
@@ -271,5 +268,3 @@ class VariableLineChart(VariableChart):
     def GetHeightList(self): # better less coupled implementation required
         return [line.leftHeight for line in self.lines] + [self.lines[-1].rightHeight]
 
-    def GetPadding(self):
-        return self.padding

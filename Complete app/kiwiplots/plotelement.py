@@ -63,7 +63,7 @@ class VariableRectangle(VariableElement):
         color - color of the ractangle
         widthScale - scale of the width. Resulting pixel width of the rectangle is widthScale*width.value()
     """
-    def __init__(self, width: Variable, height: int, name: str, color = "blue", widthScale : float = 1):
+    def __init__(self, width: Variable, name: str, color = "blue", widthScale : float = 1):
         self.height = Variable(f"{name}_height")
         self.width = width
         self.widthScale = widthScale
@@ -76,10 +76,10 @@ class VariableRectangle(VariableElement):
         self.horizontalPositionConstraint : Constraint = ((self.leftBottom.X + self.width * self.widthScale == self.rightTop.X) | "required")
         self.verticalPositionConstraint : Constraint = ((self.leftBottom.Y + self.height == self.rightTop.Y) | "required")
 
-        self.bottomLeftXPositionConstraint : Constraint = None
-        self.bottomLeftYPositionConstraint : Constraint = None
+        self.bottomLeftXPositionConstraint : Constraint = None # pyright: ignore[reportAttributeAccessIssue]
+        self.bottomLeftYPositionConstraint : Constraint = None # pyright: ignore[reportAttributeAccessIssue]
 
-        self.spacingConstraint : Constraint = None
+        self.spacingConstraint : Constraint = None # pyright: ignore[reportAttributeAccessIssue]
     
     def ChangeName(self, name: str) -> None:
         self.name = name
@@ -91,7 +91,7 @@ class VariableRectangle(VariableElement):
         """
         Returns iterator over basic constraints.
         """
-        constraints = []#[self.heightConstraint]
+        constraints = []
         if self.spacingConstraint is not None:
             constraints.append(self.spacingConstraint)
         if self.bottomLeftXPositionConstraint is not None:
@@ -132,8 +132,8 @@ class VariableRectangleGroup(VariableElement):
     """
     Represents a group of rectangles. Rectangles are separated by innerSpacing Variable, which is declared globaly.
     """
-    def __init__(self, rectangleWidth: Variable, heights: list[int], innerSpacing: Variable, names: list[str], color: str = "blue", widthScales : list[float] = None):
-        self.rectangles = [VariableRectangle(rectangleWidth, height, names[i] if names is not None else "", color, (1 if widthScales is None else widthScales[i])) for i,height in enumerate(heights)]
+    def __init__(self, rectangleWidth: Variable, innerSpacing: Variable, names: list[str], color: str = "blue", widthScales : list[float] = None): # pyright: ignore[reportArgumentType]
+        self.rectangles = [VariableRectangle(rectangleWidth, names[i] if names is not None else "", color, (1 if widthScales is None else widthScales[i])) for i in range(len(names))]
         self.innerSpacing = innerSpacing
         self.width = rectangleWidth
 
@@ -144,7 +144,7 @@ class VariableRectangleGroup(VariableElement):
         self.rightMostX : Variable = self.rectangles[-1].rightTop.X
         self.bottomY : Variable = self.rectangles[0].leftBottom.Y
 
-        self.spacingConstraint : Constraint = None
+        self.spacingConstraint : Constraint = None # pyright: ignore[reportAttributeAccessIssue]
     
     def __iter__(self):
         return iter(self.rectangles)
@@ -199,7 +199,7 @@ class VariableRectangleGroup(VariableElement):
     def AddRectangle(self, name: str, widthScale: float = 1):
         print("--- rectangleGroup.AddRectangle start ---")
         #Hint: this method can only be called on a group with at least one rectangle
-        newRectangle = VariableRectangle(width=self.width,height=0,name=name,widthScale=widthScale)
+        newRectangle = VariableRectangle(width=self.width,name=name,widthScale=widthScale)
         lastRectangle = self.rectangles[-1]
         self.rectangles.append(newRectangle)
         newRectangle.SetSpacingConstraint((lastRectangle.rightTop.X + self.innerSpacing == newRectangle.leftBottom.X) | "required")
@@ -237,9 +237,9 @@ class VariableCandle(VariableRectangle):
         negativeColor - color of the candle when it represents negative value
         widthScale - scale of the width. Resulting pixel width of the rectangle is widthScale*width.value()
     """    
-    def __init__(self, width: Variable, height: int, openingPosition: int, minPosition: int, maxPosition: int, name: str = "candle", positiveColor="green", negativeColor="red"):
+    def __init__(self, width: Variable, isPositive : bool, name: str = "candle", positiveColor="green", negativeColor="red"):
         
-        super().__init__(width, height, name, positiveColor if height >= 0 else negativeColor)
+        super().__init__(width, name, positiveColor if isPositive else negativeColor)
 
         self.openingCorner : VariablePoint2D = self.leftBottom
         self.closingCorner : VariablePoint2D = self.rightTop
@@ -249,14 +249,9 @@ class VariableCandle(VariableRectangle):
         
         self.wickXConstraint : Constraint = ((self.wickBottom.X == (self.leftBottom.X + self.rightTop.X)/2) | "required")
         self.straightWickConstraint : Constraint = ((self.wickBottom.X == self.wickTop.X) | "required")
-        
-        self.wickBottomConstraint : Constraint = ((self.wickBottom.Y == minPosition) | "weak")
-        self.wickTopConstraint : Constraint = ((self.wickTop.Y == maxPosition) | "weak")
 
         self.wickBottomTrueMinimumConstraints : list[Constraint] = [((self.wickBottom.Y <= self.closingCorner.Y) | "required"), ((self.wickBottom.Y <= self.openingCorner.Y) | "required")]
         self.wickTopTrueMaximumConstraints : list[Constraint] = [((self.wickTop.Y >= self.closingCorner.Y) | "required"), ((self.wickTop.Y >= self.openingCorner.Y) | "required")]
-
-        self.openingCornerConstraint : Constraint = ((self.openingCorner.Y == openingPosition) | "weak")
 
         self.positiveColor = positiveColor
         self.negativeColor = negativeColor
@@ -265,8 +260,6 @@ class VariableCandle(VariableRectangle):
     def _getShapeConstraints(self) -> list[Constraint]:
         result = super()._getShapeConstraints()
         result.extend([self.wickXConstraint, self.straightWickConstraint])
-        result.extend([self.wickBottomConstraint, self.wickTopConstraint])
-        result.append(self.openingCornerConstraint)
         return result
     
     def _getPositionConstraints(self) -> list[Constraint]:
