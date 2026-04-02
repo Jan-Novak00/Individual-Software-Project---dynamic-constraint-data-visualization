@@ -7,7 +7,7 @@ from .plotmetadata import LineChartMetadata
 from .plotmath import isNear
 from .dataviewers import *
 from kiwiplots.plotelement import ValueLine, ValuePoint2D
-from tkinter import simpledialog
+from tkinter import messagebox
 from tkinter import colorchooser
 
 def LineIndexToPointIndex(lineIndex: int, isLeft: bool):
@@ -23,7 +23,10 @@ class LineChartEventHandler(EventHandler):
     class LineChartEventRegisterLeftButton(EventHandler.EventRegistersLeftButton):
         def reset(self):
             super().reset()
-            self.lineEndParity : str = None # pyright: ignore[reportAttributeAccessIssue] # left or right 
+            self.lineEndParity : str = None # pyright: ignore[reportAttributeAccessIssue] # left or right
+    
+    class LineChartEventRegistersRightButton(EventHandler.EventRegistersRightButton):
+        pass
 
     ###################
     # Initialization #
@@ -36,6 +39,7 @@ class LineChartEventHandler(EventHandler):
         self.mode = "value"
         self.plotMetadata : LineChartMetadata = self.plotMetadata
         self.eventRegistersLeft : LineChartEventHandler.LineChartEventRegisterLeftButton =  LineChartEventHandler.LineChartEventRegisterLeftButton()
+        self.eventRegistersRight : LineChartEventHandler.LineChartEventRegistersRightButton = LineChartEventHandler.LineChartEventRegistersRightButton()
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = LineChartDataViewer(textWindow)
@@ -53,6 +57,8 @@ class LineChartEventHandler(EventHandler):
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         super().initializeDefaultRightClickMenu(menu)
         self.defaultMenu.add_command(label="Change mode", command=self._changeMode)
+        self.defaultMenu.add_command(label="Add point test", command=self._addPointTEST)
+        self.defaultMenu.add_command(label="Add point", command=self._addPoint)
 
 
     def _changeMode(self):
@@ -68,6 +74,59 @@ class LineChartEventHandler(EventHandler):
             return
         self.plotMetadata.color = color[1] # pyright: ignore[reportAttributeAccessIssue]
         self._updateCanvas()
+    
+    def _addPointTEST(self):                                                               #addition TEST
+        print("adding point to the graph")
+        newValue = 10
+        self.plotSolver.AddPoint(value = newValue * self.plotMetadata.heightScaleFactor, name = "new")
+        print("solver.AddPoint called and returned")
+        print("updating UI")
+        self.UpdateUI()
+        pass
+
+    def _addPoint(self):
+        def createPopUp():
+            popup = tk.Toplevel()
+            popup.resizable(True, False)
+            popup.title("Add new point")
+            tk.Label(popup, text="Name:").pack(anchor="w", padx=10, pady=(10,0))
+            nameEntry = tk.Entry(popup)
+            nameEntry.pack(fill="x", padx=10)
+            tk.Label(popup, text="Value:").pack(anchor="w", padx=10, pady=(10,0))
+            valueEntry = tk.Entry(popup)
+            valueEntry.pack(fill="x", padx=10)
+
+            name = None
+            value = None
+
+            def commit():
+                nonlocal name, value
+                name = nameEntry.get()
+                try:
+                    value = float(valueEntry.get())
+                    if name == "":
+                        name = None
+                        raise ValueError
+                except ValueError:
+                    messagebox.showerror("Error","Invalid name or value.")
+                else:
+                    popup.destroy()
+            def cancel():
+                nonlocal name, value
+                name, value = None, None
+                popup.destroy()
+            buttonFrame = tk.Frame(popup)
+            buttonFrame.pack(pady=10)
+            tk.Button(buttonFrame, text="OK", command=commit).pack(side="left", padx=5)
+            tk.Button(buttonFrame, text="Cancel",command=cancel).pack(side="right", padx=5)
+            popup.grab_set()
+            self.canvas.wait_window(popup)
+            return name, value
+        newName, newValue = createPopUp()
+        if newName == None or newValue == None:
+            return
+        self.plotSolver.AddPoint(value = newValue * self.plotMetadata.heightScaleFactor, name = newName) # pyright: ignore[reportArgumentType, reportOperatorIssue]
+        self.UpdateUI()
 
     ########################
     # Left click handeling #

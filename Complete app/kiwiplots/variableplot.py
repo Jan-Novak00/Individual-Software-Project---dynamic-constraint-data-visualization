@@ -13,10 +13,10 @@ class VariableChart(ABC):
     """
     def __init__(self, width : int, spacing : int, xCoordinate : int, yCoordinate : int):
         self.width = Variable("global_width")
-        self.widthValueConstraint : Constraint = ((self.width == width) | "strong")
+        self.widthValueConstraint : Constraint = ((self.width == width) | "strong") #TODO remove
 
         self.spacing = Variable("global_spacing")
-        self.spacingValueConstraint : Constraint = ((self.spacing == spacing) | "strong")
+        self.spacingValueConstraint : Constraint = ((self.spacing == spacing) | "strong") #TODO remove
 
         self.origin: VariablePoint2D = VariablePoint2D("origin")
         self.yAxisHeight: Variable = Variable("axisTop")
@@ -49,7 +49,7 @@ class VariableBarChart(VariableChart):
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
     
-    def SetIntervalValues(self, intervals: list[list[float,float]]): # type: ignore
+    def SetIntervalValues(self, intervals: list[tuple[float,float]]): # type: ignore
         """
         Sets interval scales for histogram.
         """
@@ -83,19 +83,63 @@ class VariableBarChart(VariableChart):
         return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required",self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint]
     
     def _getVerticalGroupAligmentConstraints(self) -> list[Constraint]:
-        return [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
+        return [(self.origin.Y == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
     
     def _getOriginConstraints(self) -> list[Constraint]:
         return [self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
 
     def GetAllConstraints(self)-> list[Constraint]:
         return self._getGroupConstraints() + self._getSpacingConstraints()+ self._getVerticalGroupAligmentConstraints() + self._getOriginConstraints()
+    
     def GetName(self, groupIndex : int, rectangleIndex : int):
         return self.groups[groupIndex].GetName(rectangleIndex)
     
     def GetHeightVariable(self,groupIndex : int, rectangleIndex : int) -> Variable:
         return self.groups[groupIndex].GetHeightVariable(rectangleIndex)
     
+    def AddGroup(self,firstRectangleName : str):
+        print("--- chart.AddGroup method start ---")
+        lastGroup = self.groups[-1] #TODO first one
+        newGroup = VariableRectangleGroup(self.width, [0], self.innerSpacing, [firstRectangleName])
+        self.groups.append(newGroup)
+        newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
+        print("--- chart.AddGroup method end ---")
+        return newGroup, newGroup.GetAllConstraints() + [(self.origin.Y == newGroup.bottomY) | "required"]
+
+    def AddRectangle(self,name: str, groupIndex: int):
+        print("--- chart.AddRectangle start ---")
+        currentGroup = self.groups[groupIndex]
+        nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
+        constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
+        constraintsToAdd = []
+        currentGroup.AddRectangle(name)
+        if nextGroup != None:
+            nextGroup.SetSpacingConstraint((currentGroup.rightMostX + self.spacing == nextGroup.leftMostX)|"required")
+            constraintsToAdd.append(nextGroup.spacingConstraint)
+        newRec = currentGroup.rectangles[-1]
+        constraintsToAdd.extend(newRec.GetAllConstraints())
+        constraintsToAdd.append((currentGroup.rectangles[0].leftBottom.Y == newRec.leftBottom.Y)|"required")
+        print("--- chart.AddRectangle end ---")
+        return newRec.height, constraintsToAdd, constraintsToRemove
+    
+    def AddRectangleAsInterval(self,groupIndex: int, widthScale: float, intervalStart: float, intervalEnd: float):
+        print("--- chart.AddRectangleAsInterval start ---")
+        currentGroup = self.groups[groupIndex]
+        nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
+        constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
+        constraintsToAdd = []
+        newRectangle = currentGroup.AddRectangle("",widthScale)
+        newRectangle.leftBottom.secondaryName = f"{intervalStart}" #TODO better bitte
+        newRectangle.rightTop.secondaryName = f"{intervalEnd}"
+        if nextGroup != None:
+            nextGroup.SetSpacingConstraint((currentGroup.rightMostX + self.spacing == nextGroup.leftMostX)|"required")
+            constraintsToAdd.append(nextGroup.spacingConstraint)
+        newRec = currentGroup.rectangles[-1]
+        constraintsToAdd.extend(newRec.GetAllConstraints())
+        constraintsToAdd.append((currentGroup.rectangles[0].leftBottom.Y == newRec.leftBottom.Y)|"required")
+        print("--- chart.AddRectangleAsInterval end ---")
+        return newRec.height, constraintsToAdd, constraintsToRemove
+
 class VariableCandlesticChart(VariableChart):
     """
     VariableChart version for candlestick chart
@@ -110,7 +154,7 @@ class VariableCandlesticChart(VariableChart):
         self._createCandleSpacingConstraints()
 
     def _createCandleSpacingConstraints(self):
-        self.candles[0].SetSpacingConstraint((self.candles[0].openingCorner.X - self.spacing == self.origin.X) | "required")
+        self.candles[0].SetSpacingConstraint((self.candles[0].openingCorner.X - self.spacing == self.origin.X) | "required") #TODO move spacing constraints out
         for index in range(1, len(self.candles)):
             self.candles[index].SetSpacingConstraint((self.candles[index-1].closingCorner.X + self.spacing == self.candles[index].openingCorner.X) | "required")
     
@@ -163,6 +207,16 @@ class VariableCandlesticChart(VariableChart):
     
     def GetWickTop(self, index : int) -> VariablePoint2D:
         return self.candles[index].GetWickTop()
+    
+    def AddCandle(self,name: str):
+        print("--- chart.AddCandle method start ---")
+        lastCandle = self.candles[-1]
+        newCandle = VariableCandle(self.width,0,0,0,0,name) #0 here for height is a placeholder
+        newCandle.SetSpacingConstraint((lastCandle.closingCorner.X + self.spacing == newCandle.openingCorner.X) | "required")
+        self.candles.append(newCandle)
+        print("--- chart.AddCandle method end ---")
+        return newCandle, newCandle.GetAllConstraints()
+        pass
 
 class VariableLineChart(VariableChart):
     def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0):
@@ -176,12 +230,24 @@ class VariableLineChart(VariableChart):
         indexA = 0
         indexB = 1                                                                                                            
         for pointA, pointB in list(pairwise(initialValues)):
-            self.lines.append(VariableLine(self.width, self.origin.Y, pointA, pointB, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) # ToDo add names
+            self.lines.append(VariableLine(self.width, self.origin.Y, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) # ToDo add names
             indexA = indexB
             indexB += 1
         self.leftMostPointConstraint : Constraint = ((self.lines[0].leftEnd.X == self.origin.X + self.padding)|"required") # less coupling please
 
         self.continuityConstraints : list[Constraint] = self._getContinuityConstraints()
+    
+    def AddPoint(self, name: str):
+        print("--- chart.AddPoint method start ---")
+        self.pointNames.append(name)
+        lastLine = self.lines[-1]
+        newLine = VariableLine(self.width, self.origin.Y,f"{self.pointNames[-2]}",f"{self.pointNames[-1]}")
+        xContinuityConstraint, yContinuityConstraint = ((lastLine.rightEnd.X == newLine.leftEnd.X) | "required"), ((lastLine.rightEnd.Y == newLine.leftEnd.Y) | "required")
+        self.lines.append(newLine)
+        self.continuityConstraints.append(xContinuityConstraint)
+        self.continuityConstraints.append(yContinuityConstraint)
+        print("--- chart.AddPoint method end ---")
+        return newLine, [xContinuityConstraint, yContinuityConstraint] + newLine.GetAllConstraints() #TODO better return
     
     def _getContinuityConstraints(self):
         result : list[Constraint] = []
