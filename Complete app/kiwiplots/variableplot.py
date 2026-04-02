@@ -49,7 +49,7 @@ class VariableBarChart(VariableChart):
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
     
-    def SetIntervalValues(self, intervals: list[list[float,float]]): # type: ignore
+    def SetIntervalValues(self, intervals: list[tuple[float,float]]): # type: ignore
         """
         Sets interval scales for histogram.
         """
@@ -83,19 +83,63 @@ class VariableBarChart(VariableChart):
         return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required",self.widthValueConstraint, self.spacingValueConstraint, self.innerSpacingValueConstraint]
     
     def _getVerticalGroupAligmentConstraints(self) -> list[Constraint]:
-        return [(self.groups[i-1].bottomY == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
+        return [(self.origin.Y == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
     
     def _getOriginConstraints(self) -> list[Constraint]:
         return [self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
 
     def GetAllConstraints(self)-> list[Constraint]:
         return self._getGroupConstraints() + self._getSpacingConstraints()+ self._getVerticalGroupAligmentConstraints() + self._getOriginConstraints()
+    
     def GetName(self, groupIndex : int, rectangleIndex : int):
         return self.groups[groupIndex].GetName(rectangleIndex)
     
     def GetHeightVariable(self,groupIndex : int, rectangleIndex : int) -> Variable:
         return self.groups[groupIndex].GetHeightVariable(rectangleIndex)
     
+    def AddGroup(self,firstRectangleName : str):
+        print("--- chart.AddGroup method start ---")
+        lastGroup = self.groups[-1] #TODO first one
+        newGroup = VariableRectangleGroup(self.width, [0], self.innerSpacing, [firstRectangleName])
+        self.groups.append(newGroup)
+        newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
+        print("--- chart.AddGroup method end ---")
+        return newGroup, newGroup.GetAllConstraints() + [(self.origin.Y == newGroup.bottomY) | "required"]
+
+    def AddRectangle(self,name: str, groupIndex: int):
+        print("--- chart.AddRectangle start ---")
+        currentGroup = self.groups[groupIndex]
+        nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
+        constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
+        constraintsToAdd = []
+        currentGroup.AddRectangle(name)
+        if nextGroup != None:
+            nextGroup.SetSpacingConstraint((currentGroup.rightMostX + self.spacing == nextGroup.leftMostX)|"required")
+            constraintsToAdd.append(nextGroup.spacingConstraint)
+        newRec = currentGroup.rectangles[-1]
+        constraintsToAdd.extend(newRec.GetAllConstraints())
+        constraintsToAdd.append((currentGroup.rectangles[0].leftBottom.Y == newRec.leftBottom.Y)|"required")
+        print("--- chart.AddRectangle end ---")
+        return newRec.height, constraintsToAdd, constraintsToRemove
+    
+    def AddRectangleAsInterval(self,groupIndex: int, widthScale: float, intervalStart: float, intervalEnd: float):
+        print("--- chart.AddRectangleAsInterval start ---")
+        currentGroup = self.groups[groupIndex]
+        nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
+        constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
+        constraintsToAdd = []
+        newRectangle = currentGroup.AddRectangle("",widthScale)
+        newRectangle.leftBottom.secondaryName = f"{intervalStart}" #TODO better bitte
+        newRectangle.rightTop.secondaryName = f"{intervalEnd}"
+        if nextGroup != None:
+            nextGroup.SetSpacingConstraint((currentGroup.rightMostX + self.spacing == nextGroup.leftMostX)|"required")
+            constraintsToAdd.append(nextGroup.spacingConstraint)
+        newRec = currentGroup.rectangles[-1]
+        constraintsToAdd.extend(newRec.GetAllConstraints())
+        constraintsToAdd.append((currentGroup.rectangles[0].leftBottom.Y == newRec.leftBottom.Y)|"required")
+        print("--- chart.AddRectangleAsInterval end ---")
+        return newRec.height, constraintsToAdd, constraintsToRemove
+
 class VariableCandlesticChart(VariableChart):
     """
     VariableChart version for candlestick chart

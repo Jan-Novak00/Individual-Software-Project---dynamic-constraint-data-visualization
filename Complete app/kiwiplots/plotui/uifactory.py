@@ -238,7 +238,7 @@ class UIFactory:
         return BarChartMetadata(title,UIFactory._calculateScaleFactor(allValues,plotHeight),xAxisLabel,yAxisLabel)
     
     @staticmethod
-    def _createBarChartSolver(metadata: BarChartMetadata, initialValues: list[list[float]], rectangleNames : list[list[str]], initialSpacing : int = INITIAL_SPACING, initialInnerSpacing : int = INITIAL_INNER_SPACING)->BarChartSolver:
+    def _createBarChartSolver(metadata: BarChartMetadata, initialValues: list[list[float]], rectangleNames : list[list[str]], initialSpacing : int = INITIAL_SPACING, initialInnerSpacing : int = INITIAL_INNER_SPACING, widhtScales : list[list[float]] = None)->BarChartSolver:
         """
         Create a `BarChartSolver` from grouped values and names.
 
@@ -259,7 +259,7 @@ class UIFactory:
         for group in initialValues:
             rescaledGroupValues.append([int(metadata.heightScaleFactor*value) for value in group])
         
-        return BarChartSolver(INITIAL_WIDTH,rescaledGroupValues,initialSpacing,initialInnerSpacing,rectangleNames,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y)
+        return BarChartSolver(INITIAL_WIDTH,rescaledGroupValues,initialSpacing,initialInnerSpacing,rectangleNames,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y, widhtScales)
         
 
     @staticmethod
@@ -340,7 +340,7 @@ class UIFactory:
         return scales
 
     @staticmethod
-    def _createHistogramSolver(metadata: HistogramMetadata, initialValues: list[float], intervals: list[tuple[float,float]]) -> BarChartSolver:
+    def _createHistogramSolver(plotMetadata: HistogramMetadata, initialValues: list[float], intervals: list[tuple[float,float]]) -> HistogramSolver:
         """
         Create a `BarChartSolver` configured for histogram rendering.
 
@@ -356,9 +356,21 @@ class UIFactory:
         Returns:
             BarChartSolver: Solver prepared for histogram visualization.
         """
-        solver: BarChartSolver = UIFactory._createBarChartSolver(metadata,[initialValues],[["" for _ in initialValues]],INITIAL_PADDING,0)
+        solver: BarChartSolver = UIFactory._createBarChartSolver(metadata=plotMetadata,
+                                                                 initialValues=[initialValues],
+                                                                 rectangleNames=[["" for _ in initialValues]],
+                                                                 initialSpacing=INITIAL_PADDING,
+                                                                 initialInnerSpacing=0,
+                                                                 widhtScales=[UIFactory._createIntervalScales(intervals)])
         solver.SetIntervalValues(intervals) # pyright: ignore[reportArgumentType]
-        return solver
+        return HistogramSolver(solver)
+    
+    @staticmethod
+    def _createIntervalScales(intervals : list[tuple[float,float]])->list[float]:
+        intervalLengths : list[float] = [interval[1]-interval[0] for interval in intervals]
+        minimum = min([length for length in intervalLengths if length > 0], default=1)
+        scales : list[float] = [length/minimum for length in intervalLengths]
+        return scales
     
     @staticmethod
     def CreateLineChart(title: str, 
