@@ -196,16 +196,16 @@ class VariableRectangleGroup(VariableElement):
     def GetHeightVariable(self, rectangleIndex: int) -> Variable:
         return self.rectangles[rectangleIndex].GetHeightVariable()
     
-    def AddRectangle(self, name: str):
+    def AddRectangle(self, name: str, widthScale: float = 1):
         print("--- rectangleGroup.AddRectangle start ---")
         #Hint: this method can only be called on a group with at least one rectangle
-        newRectangle = VariableRectangle(self.width,0,name)
+        newRectangle = VariableRectangle(width=self.width,height=0,name=name,widthScale=widthScale)
         lastRectangle = self.rectangles[-1]
         self.rectangles.append(newRectangle)
         newRectangle.SetSpacingConstraint((lastRectangle.rightTop.X + self.innerSpacing == newRectangle.leftBottom.X) | "required")
         self.rightMostX = newRectangle.rightTop.X
         print("--- rectangleGroup.AddRectangle end ---")
-        pass
+        return newRectangle
         
 class ValueCandle(ValueRectangle):
     """

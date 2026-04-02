@@ -49,7 +49,7 @@ class VariableBarChart(VariableChart):
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
     
-    def SetIntervalValues(self, intervals: list[list[float,float]]): # type: ignore
+    def SetIntervalValues(self, intervals: list[tuple[float,float]]): # type: ignore
         """
         Sets interval scales for histogram.
         """
@@ -120,6 +120,24 @@ class VariableBarChart(VariableChart):
         constraintsToAdd.extend(newRec.GetAllConstraints())
         constraintsToAdd.append((currentGroup.rectangles[0].leftBottom.Y == newRec.leftBottom.Y)|"required")
         print("--- chart.AddRectangle end ---")
+        return newRec.height, constraintsToAdd, constraintsToRemove
+    
+    def AddRectangleAsInterval(self,groupIndex: int, widthScale: float, intervalStart: float, intervalEnd: float):
+        print("--- chart.AddRectangleAsInterval start ---")
+        currentGroup = self.groups[groupIndex]
+        nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
+        constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
+        constraintsToAdd = []
+        newRectangle = currentGroup.AddRectangle("",widthScale)
+        newRectangle.leftBottom.secondaryName = f"{intervalStart}" #TODO better bitte
+        newRectangle.rightTop.secondaryName = f"{intervalEnd}"
+        if nextGroup != None:
+            nextGroup.SetSpacingConstraint((currentGroup.rightMostX + self.spacing == nextGroup.leftMostX)|"required")
+            constraintsToAdd.append(nextGroup.spacingConstraint)
+        newRec = currentGroup.rectangles[-1]
+        constraintsToAdd.extend(newRec.GetAllConstraints())
+        constraintsToAdd.append((currentGroup.rectangles[0].leftBottom.Y == newRec.leftBottom.Y)|"required")
+        print("--- chart.AddRectangleAsInterval end ---")
         return newRec.height, constraintsToAdd, constraintsToRemove
 
 class VariableCandlesticChart(VariableChart):
