@@ -2,7 +2,7 @@ import tkinter as tk
 from typing import Union
 from .canvasdrawers import HistogramCanvasDrawer
 from .eventhandlers import EventHandler
-from kiwiplots.solvers import BarChartSolver
+from kiwiplots.solvers import HistogramSolver
 from .plotmetadata import BarChartMetadata, HistogramMetadata
 from .plotmath import isNear
 from .dataviewers import HistogramDataViewer
@@ -16,8 +16,8 @@ from typing import TypeAlias
 class HistogramEventHandler(BarChartEventHandler):
 
     LeftEvents: TypeAlias = BarChartEventHandler.BarEventRegistersLeftButton.BarLeftEvents
-    def __init__(self, plotMetadata: HistogramMetadata, solver: BarChartSolver):
-        super().__init__(plotMetadata, solver)
+    def __init__(self, plotMetadata: HistogramMetadata, solver: HistogramSolver):
+        super().__init__(plotMetadata, solver) #pyright: ignore
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = HistogramDataViewer(textWindow)

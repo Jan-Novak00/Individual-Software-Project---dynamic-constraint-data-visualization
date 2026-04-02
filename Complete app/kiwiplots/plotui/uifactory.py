@@ -340,7 +340,7 @@ class UIFactory:
         return scales
 
     @staticmethod
-    def _createHistogramSolver(plotMetadata: HistogramMetadata, initialValues: list[float], intervals: list[tuple[float,float]]) -> BarChartSolver:
+    def _createHistogramSolver(plotMetadata: HistogramMetadata, initialValues: list[float], intervals: list[tuple[float,float]]) -> HistogramSolver:
         """
         Create a `BarChartSolver` configured for histogram rendering.
 
@@ -363,7 +363,7 @@ class UIFactory:
                                                                  initialInnerSpacing=0,
                                                                  widhtScales=[UIFactory._createIntervalScales(intervals)])
         solver.SetIntervalValues(intervals) # pyright: ignore[reportArgumentType]
-        return solver
+        return HistogramSolver(solver)
     
     @staticmethod
     def _createIntervalScales(intervals : list[tuple[float,float]])->list[float]:

@@ -706,7 +706,7 @@ class HistogramSolver(ChartSolver):
         return self.innerSolver.GetRectangleData()
     
     def GetRectangleDataAsList(self):
-        return self.GetRectangleDataAsList()
+        return self.innerSolver.GetRectangleDataAsList()
     
     def GetInnerSpacing(self):
         warnings.warn("GetInnerSpacing called on histogram!!!",category=RuntimeWarning,stacklevel=1)
