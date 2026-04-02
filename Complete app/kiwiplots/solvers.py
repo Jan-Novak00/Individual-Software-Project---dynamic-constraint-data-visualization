@@ -643,3 +643,11 @@ class LineChartSolver(ChartSolver):
         print("--- solver.AddPoint method end ---")
         pass
 
+
+class HistogramSolver:
+    def __init__(self,width: int, initialHeights: list[int], paddingLeft: int):
+        self.innerSolver : BarChartSolver = BarChartSolver(width=width,
+                                                           initialHeights=initialHeights,
+                                                           spacing=paddingLeft,
+                                                           innerSpacing=0,
+                                                           rectangleNames=[["" for _ in initialHeights]])

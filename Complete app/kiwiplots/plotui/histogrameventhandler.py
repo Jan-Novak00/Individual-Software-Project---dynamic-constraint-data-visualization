@@ -12,6 +12,7 @@ from tkinter import colorchooser
 from .barcharteventhandler import BarChartEventHandler
 from enum import Enum
 from typing import TypeAlias
+
 class HistogramEventHandler(BarChartEventHandler):
 
     LeftEvents: TypeAlias = BarChartEventHandler.BarEventRegistersLeftButton.BarLeftEvents
