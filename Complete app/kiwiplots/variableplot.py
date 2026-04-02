@@ -49,7 +49,7 @@ class VariableBarChart(VariableChart):
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
     
-    def SetIntervalValues(self, intervals: list[list[float,float]]): # type: ignore
+    def SetIntervalValues(self, intervals: list[tuple[float,float]]): # type: ignore
         """
         Sets interval scales for histogram.
         """
