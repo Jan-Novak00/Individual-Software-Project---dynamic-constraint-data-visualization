@@ -57,8 +57,8 @@ class LineChartEventHandler(EventHandler):
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         super().initializeDefaultRightClickMenu(menu)
         self.defaultMenu.add_command(label="Change mode", command=self._changeMode)
-        self.defaultMenu.add_command(label="Add point test", command=self._addPointTEST)
         self.defaultMenu.add_command(label="Add point", command=self._addPoint)
+        self.defaultMenu.add_command(label="Draw other TEST", command=self._drawOther)
 
 
     def _changeMode(self):
@@ -75,14 +75,19 @@ class LineChartEventHandler(EventHandler):
         self.plotMetadata.color = color[1] # pyright: ignore[reportAttributeAccessIssue]
         self._updateCanvas()
     
-    def _addPointTEST(self):                                                               #addition TEST
-        print("adding point to the graph")
-        newValue = 10
-        self.plotSolver.AddPoint(value = newValue * self.plotMetadata.heightScaleFactor, name = "new")
-        print("solver.AddPoint called and returned")
-        print("updating UI")
-        self.UpdateUI()
+
+    def _drawOther(self):
+        def _rescaleList(inputList : list[float], scaleFactor : float, scaledXAxisValue: float = 0) -> list[int]:
+            return [int(value*scaleFactor-scaledXAxisValue) for value in inputList]
+        values = [1,2,3,4.]
+        names = ["" for i in range(4)]
+        rescaledValues = _rescaleList(values, self.plotMetadata.heightScaleFactor)
+        newSolver = LineChartSolver(width=0,initialValues=rescaledValues,pointNames=names) # pyright: ignore[reportArgumentType]
+        self.plotSolver.Feed(newSolver)
+        self.drawer.drawBare(self.plotMetadata,newSolver,clear=True,specialHighlight=True)
+        self.drawer.draw(self.plotMetadata,self.plotSolver,outlineOnly=True,clear=False)
         pass
+
 
     def _addPoint(self):
         def createPopUp():

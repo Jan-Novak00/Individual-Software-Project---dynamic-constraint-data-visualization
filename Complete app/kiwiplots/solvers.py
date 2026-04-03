@@ -603,6 +603,14 @@ class LineChartSolver(ChartSolver):
             values = valuePairs[i]
             self.solver.suggestValue(line.leftHeight, values[0])
             self.solver.suggestValue(line.rightHeight,values[1])
+    
+    def Feed(self, otherSolver: "LineChartSolver"):
+        origin = self.GetOrigin()
+        otherSolver.ChangeOrigin(origin.X, origin.Y)
+        otherSolver.ChangeAxisHeight(self.GetAxisHeight())
+        otherSolver.ChangeWidth(self.GetWidth())
+        otherSolver.ChangePadding(self.GetPadding())
+        otherSolver.Solve()
 
     def GetLineData(self):
         return [line.Value() for line in self.variableChart.lines]
@@ -773,4 +781,5 @@ class HistogramSolver(ChartSolver):
         rectangles = self.GetRectangleDataAsList()
         val = min([abs(float(rec.rightTop.secondaryName) - abs(float(rec.leftBottom.secondaryName))) for rec in rectangles],default=1)
         return val if val > 0 else 1
+
    

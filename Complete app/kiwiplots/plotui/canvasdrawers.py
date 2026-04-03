@@ -207,11 +207,15 @@ class LineChartCanvasDrawer(CanvasDrawer):
 
             #text ToDo
 
-    def drawBare(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
-        raise NotImplementedError("Method CanvasDrawer.drawBare not implemented")
+    def drawBare(self, plotMetadata: LineChartMetadata, solver : LineChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
+        if clear:
+            self.canvas.delete("all")
+        self._drawLines(plotMetadata,solver)
 
     def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False)->None:
-        self.canvas.delete("all")
+        
+        if clear:
+            self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)
         lines = solver.GetLineData()
 
@@ -221,5 +225,4 @@ class LineChartCanvasDrawer(CanvasDrawer):
         minimum: float = 0
 
         self._drawAxes(solver.GetAxisHeight(),int(lines[-1].rightEnd.X),origin,plotMetadata.heightScaleFactor,int(minimum),plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
-        self._drawLines(plotMetadata,solver)
-        pass
+        self.drawBare(plotMetadata,solver,clear=False,outlineOnly=outlineOnly,specialHighlight=specialHighlight)
