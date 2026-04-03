@@ -172,6 +172,11 @@ class BarChartSolver(ChartSolver):
         self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
         self.solver.suggestValue(self.variableChart.innerSpacing, self.variableChart.innerSpacing.value())
         self.solver.suggestValue(self.variableChart.origin.X, self.variableChart.origin.X.value())
+    
+    def Feed(self, otherSolver: "BarChartSolver"):
+        print("feeding...")
+        otherSolver.ChangeInnerSpacing(self.GetInnerSpacing())
+        super().Feed(otherSolver)
         
     def SetIntervalValues(self, intervals: list[tuple[float,float]]):
         self.variableChart.SetIntervalValues(intervals)

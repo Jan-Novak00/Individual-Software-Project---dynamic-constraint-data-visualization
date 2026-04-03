@@ -128,7 +128,7 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         self.drawBare(plotMetadata, solver, clear=False, outlineOnly=outlineOnly, specialHighlight=specialHighlight)
 
 class BarChartCanvasDrawer(CanvasDrawer):
-    def _drawRectangles(self, solver: BarChartSolver): 
+    def _drawRectangles(self, solver: BarChartSolver, outlineOnly : bool = False): 
         """
         Draws rectangles on the plot and writes their names under them.
         """
@@ -139,20 +139,23 @@ class BarChartCanvasDrawer(CanvasDrawer):
             
             x2 = rec.rightTop.X
             y2 = self.canvasHeight - rec.rightTop.Y
-            self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black") # pyright: ignore[reportArgumentType]
+            self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color if not outlineOnly else "", outline="black" if not outlineOnly else "red", width= 1 if not outlineOnly else 3) # pyright: ignore[reportArgumentType]
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
 
-    def drawBare(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
-        raise NotImplementedError("Method CanvasDrawer.drawBare not implemented")
+    def drawBare(self, plotMetadata: PlotMetadata, solver : BarChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
+        if clear:
+            self.canvas.delete("all")
+        print("drawing bare")
+        self._drawRectangles(solver, outlineOnly)
 
     def draw(self, plotMetadata: BarChartMetadata, solver : BarChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Draws rectangles and axes on the plot
         """
-        self.canvas.delete("all")
+        if clear:
+            self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)
         rectangles = solver.GetRectangleDataAsList()
-        self._drawRectangles(solver)
 
         origin = solver.GetOrigin()
         
@@ -160,6 +163,7 @@ class BarChartCanvasDrawer(CanvasDrawer):
         y = solver.GetAxisHeight()
 
         self._drawAxes(solver.GetAxisHeight(), int(rectangles[-1].rightTop.X), origin, plotMetadata.heightScaleFactor,0,plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
+        self.drawBare(plotMetadata,solver, clear=False, outlineOnly=outlineOnly, specialHighlight=specialHighlight)
 
 class HistogramCanvasDrawer(BarChartCanvasDrawer):
     def _drawRectangles(self, solver: BarChartSolver): 

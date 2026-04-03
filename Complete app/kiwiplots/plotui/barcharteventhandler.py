@@ -72,7 +72,20 @@ class BarChartEventHandler(EventHandler):
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         super().initializeDefaultRightClickMenu(menu)
         self.defaultMenu.add_command(label="Add rectangle group", command=self._addGroup)
-    
+        self.defaultMenu.add_command(label="Draw other TEST", command=self._drawOther)
+
+    def _drawOther(self):
+        rescaledGroupValues : list[list[int]] = []
+        values = [[3,4.],[2,8]]
+        names = [["",""],["",""]]
+        for group in values:
+            rescaledGroupValues.append([int(value*self.plotMetadata.heightScaleFactor) for value in group])
+        print(rescaledGroupValues)
+        newSolver = BarChartSolver(width=0,initialHeights=rescaledGroupValues,spacing=0, innerSpacing=0, rectangleNames=names)
+        self.plotSolver.Feed(newSolver)
+        self.drawer.drawBare(self.plotMetadata,newSolver,clear=True,specialHighlight=True,outlineOnly=False)
+        self.drawer.draw(self.plotMetadata,self.plotSolver,outlineOnly=True, clear=False)
+
     def _addGroup(self):
         def createPopUp():
             popup = tk.Toplevel()
