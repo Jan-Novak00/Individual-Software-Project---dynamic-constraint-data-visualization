@@ -701,6 +701,9 @@ class HistogramSolver(ChartSolver):
     def _initialSuggest(self):
         return
     
+    def Feed(self, otherSolver: "HistogramSolver"):
+        ChartSolver.Feed(self,otherSolver)
+    
     def Solve(self):
         self.innerSolver.Solve()
     

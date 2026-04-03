@@ -166,7 +166,7 @@ class BarChartCanvasDrawer(CanvasDrawer):
         self.drawBare(plotMetadata,solver, clear=False, outlineOnly=outlineOnly, specialHighlight=specialHighlight)
 
 class HistogramCanvasDrawer(BarChartCanvasDrawer):
-    def _drawRectangles(self, solver: BarChartSolver): 
+    def _drawRectangles(self, solver: BarChartSolver, outlineOnly : bool = False): 
         """
         Draws rectangles on the plot and writes their names under them.
         """
@@ -177,7 +177,7 @@ class HistogramCanvasDrawer(BarChartCanvasDrawer):
             
             x2 = rec.rightTop.X
             y2 = self.canvasHeight - rec.rightTop.Y
-            self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black") # pyright: ignore[reportArgumentType]
+            self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color if not outlineOnly else "", outline="black" if not outlineOnly else "red", width= 1 if not outlineOnly else 3) # pyright: ignore[reportArgumentType]
             self.canvas.create_text(x1,y1 + 10, text=rec.leftBottom.secondaryName)
             self.canvas.create_text(x2,y1 + 10, text=rec.rightTop.secondaryName)
 

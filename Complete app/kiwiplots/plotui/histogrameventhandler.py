@@ -2,7 +2,7 @@ import tkinter as tk
 from typing import Union
 from .canvasdrawers import HistogramCanvasDrawer
 from .eventhandlers import EventHandler
-from kiwiplots.solvers import HistogramSolver
+from kiwiplots.solvers import HistogramSolver, BarChartSolver
 from .plotmetadata import BarChartMetadata, HistogramMetadata
 from .plotmath import isNear
 from .dataviewers import HistogramDataViewer
@@ -32,7 +32,27 @@ class HistogramEventHandler(BarChartEventHandler):
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         EventHandler.initializeDefaultRightClickMenu(self,menu)
         self.defaultMenu.add_command(label="Append new interval", command=self._addRectangle)
-    
+        self.defaultMenu.add_command(label="Add other TEST", command=self._addOther)
+
+    def _addOther(self):
+        def _createIntervalScales(intervals : list[tuple[float,float]])->list[float]:
+            intervalLengths : list[float] = [interval[1]-interval[0] for interval in intervals]
+            minimum = min([length for length in intervalLengths if length > 0], default=1)
+            scales : list[float] = [length/minimum for length in intervalLengths]
+            return scales
+        intervals = [(0,1),(1,2.5),(2.5,6)]
+        values = [[3,3,4.]]
+        rescaledGroupValues : list[list[int]] = []
+        for group in values:
+            rescaledGroupValues.append([int(self.plotMetadata.heightScaleFactor*value) for value in group])
+        widhtScales=[_createIntervalScales(intervals)]
+
+        newPreSolver = BarChartSolver(width=0,initialHeights=rescaledGroupValues,spacing=0,innerSpacing=0,rectangleNames=[["" for _ in values[0]]],widthScalesForGroups=widhtScales)
+        newSolver = HistogramSolver(newPreSolver)
+        self.plotSolver.Feed(newSolver)
+        self.drawer.drawBare(self.plotMetadata,newSolver,clear=True,specialHighlight=True)
+        self.drawer.draw(self.plotMetadata,self.plotSolver,outlineOnly=True,clear=False)
+        pass
 
     def _addRectangle(self):
         #TODO only one interval
