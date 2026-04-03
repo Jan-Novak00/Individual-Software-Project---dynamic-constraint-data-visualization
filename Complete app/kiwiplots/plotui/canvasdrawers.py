@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import font 
 from abc import ABC
+from kiwiplots.plotui.plotmetadata import PlotMetadata
 from kiwiplots.solvers import *
+from kiwiplots.solvers import ChartSolver
 from .plotmetadata import *
 from .plotmath import ceilToNearestTen, divideInterval
 from kiwiplots.plotelement import ValuePoint2D
@@ -23,6 +25,9 @@ class CanvasDrawer(ABC):
         self.canvas : tk.Canvas = canvas
         self.canvasWidth : int = canvasWidth
         self.canvasHeight = canvasHeight
+    
+    def drawBare(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear : bool = True):
+        raise NotImplementedError("Method CanvasDrawer.drawBare must be declared in subclass")
     
     def draw(self, plotMetadata: PlotMetadata, solver : ChartSolver)->None:
         """
@@ -64,8 +69,6 @@ class CanvasDrawer(ABC):
         boldFont = font.Font(family="Helvetica", size=10, weight="bold")
         self.canvas.create_text(leftCornerXAxis + 20, self.canvasHeight - origin.Y + 10, text=xAxisLabel, anchor="n",font=boldFont)
         self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - 10, text=yAxisLabel, anchor="s",font=boldFont)
-    
-
 
 class CandlesticCanvasDrawer(CanvasDrawer):
     def _drawCandles(self, solver: CandlestickChartSolver): 
@@ -101,6 +104,11 @@ class CandlesticCanvasDrawer(CanvasDrawer):
             if candle.nameVisible: 
                 self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + 10, text=candle.name)
     
+    def drawBare(self, plotMetadata: PlotMetadata, solver: CandlestickChartSolver, clear: bool = True):
+        if clear:
+            self.canvas.delete("all")
+        self._drawCandles(solver)
+
     def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver)->None: # type: ignore #ToDo typing of plot metadata
         """
         Draws candles and axes on the plot
@@ -113,7 +121,7 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         self._drawAxes(solver.GetAxisHeight(), int(candles[-1].rightTop.X), origin, plotMetadata.heightScaleFactor, int(min(0, lowestWickHeight)), plotMetadata.xAxisLabel, plotMetadata.yAxisLabel, plotMetadata.xAxisValue)  
         
-        self._drawCandles(solver)
+        self.drawBare(plotMetadata, solver, False)
 
 class BarChartCanvasDrawer(CanvasDrawer):
     def _drawRectangles(self, solver: BarChartSolver): 

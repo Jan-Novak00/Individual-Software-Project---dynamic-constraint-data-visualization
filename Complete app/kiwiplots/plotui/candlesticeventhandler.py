@@ -69,15 +69,30 @@ class CandlesticEventHandler(EventHandler):
     
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         super().initializeDefaultRightClickMenu(menu)
-        self.defaultMenu.add_command(label="Add candle TEST", command=self._addCandleTEST)
         self.defaultMenu.add_command(label="Add candle", command=self._addCandle)
+        self.defaultMenu.add_command(label="Draw other TEST", command=self._drawOther)
     
-    def _addCandleTEST(self):
-        print("adding candle!")
-        self.plotSolver.AddCandle("newOne", 2* self.plotMetadata.heightScaleFactor,8* self.plotMetadata.heightScaleFactor,1* self.plotMetadata.heightScaleFactor,11* self.plotMetadata.heightScaleFactor)
-        print("updating UI")
-        self.UpdateUI()
-        print("candle added")
+    def _drawOther(self):
+        def _rescaleList(inputList : list[float], scaleFactor : float, scaledXAxisValue: float = 0) -> list[int]:
+            return [int(value*scaleFactor-scaledXAxisValue) for value in inputList]
+        rescaledXAxisValue : float = self.plotMetadata.xAxisValue*self.plotMetadata.heightScaleFactor
+        openings = [1.,6]
+        closings = [6.,-1]
+        minimum = [-1,-2.]
+        maximum = [7,7.]
+        names = ["december","january"]
+        newSolver = CandlestickChartSolver(width=0,
+                                           spacing=0,
+                                           initialOpening=_rescaleList(openings,self.plotMetadata.heightScaleFactor,rescaledXAxisValue),
+                                           initialClosing=_rescaleList(closings,self.plotMetadata.heightScaleFactor,rescaledXAxisValue),
+                                           initialMinimum=_rescaleList(minimum,self.plotMetadata.heightScaleFactor,rescaledXAxisValue),
+                                           initialMaximum=_rescaleList(maximum,self.plotMetadata.heightScaleFactor,rescaledXAxisValue),
+                                           names=names)
+        newSolver.ChangeNegativeColor("pink")
+        newSolver.ChangePositiveColor("blue")
+        self.plotSolver.Feed(newSolver)
+        self.drawer.drawBare(self.plotMetadata,newSolver,False)
+    
     
     def _addCandle(self):
         def createPopUp():

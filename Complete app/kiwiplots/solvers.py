@@ -62,6 +62,14 @@ class ChartSolver(ABC):
         else:
             self.solver.removeConstraint(constraint)
             return None # pyright: ignore[reportReturnType]
+    
+    def Feed(self, otherSolver: "ChartSolver"):
+        origin = self.GetOrigin()
+        otherSolver.ChangeOrigin(origin.X, origin.Y)
+        otherSolver.ChangeAxisHeight(self.GetAxisHeight())
+        otherSolver.ChangeWidth(self.GetWidth())
+        otherSolver.ChangeSpacing(self.GetSpacing()+5)
+        otherSolver.Solve()
 
     def Solve(self):
         """
@@ -541,6 +549,7 @@ class CandlestickChartSolver(ChartSolver):
 
         print("--- solver.AddCandle method end ---")
         pass
+
 
 
 class LineChartSolver(ChartSolver):
