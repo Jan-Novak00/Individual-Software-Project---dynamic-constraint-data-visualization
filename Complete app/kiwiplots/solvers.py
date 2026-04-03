@@ -68,7 +68,7 @@ class ChartSolver(ABC):
         otherSolver.ChangeOrigin(origin.X, origin.Y)
         otherSolver.ChangeAxisHeight(self.GetAxisHeight())
         otherSolver.ChangeWidth(self.GetWidth())
-        otherSolver.ChangeSpacing(self.GetSpacing()+5)
+        otherSolver.ChangeSpacing(self.GetSpacing())
         otherSolver.Solve()
 
     def Solve(self):

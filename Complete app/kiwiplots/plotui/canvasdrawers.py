@@ -29,7 +29,7 @@ class CanvasDrawer(ABC):
     def drawBare(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear : bool = True):
         raise NotImplementedError("Method CanvasDrawer.drawBare must be declared in subclass")
     
-    def draw(self, plotMetadata: PlotMetadata, solver : ChartSolver)->None:
+    def draw(self, plotMetadata: PlotMetadata, solver : ChartSolver, outlineOnly : bool = False, clear: bool = True)->None:
         """
         Renders the plot data and axes on the canvas.
         
@@ -71,7 +71,7 @@ class CanvasDrawer(ABC):
         self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - 10, text=yAxisLabel, anchor="s",font=boldFont)
 
 class CandlesticCanvasDrawer(CanvasDrawer):
-    def _drawCandles(self, solver: CandlestickChartSolver): 
+    def _drawCandles(self, solver: CandlestickChartSolver, outlineOnly: bool = False): 
         
         origin = solver.GetOrigin()
         candles = solver.GetCandleData()
@@ -99,21 +99,22 @@ class CandlesticCanvasDrawer(CanvasDrawer):
             maxX = candle.wickTop.X
             maxY = self.canvasHeight - (candle.wickTop.Y + origin.Y)
 
-            self.canvas.create_rectangle(x1,y2,x2,y1, fill=candle.color, outline="black") # type: ignore
+            self.canvas.create_rectangle(x1,y2,x2,y1, fill=candle.color if not outlineOnly else "", outline="black" if not outlineOnly else candle.color) # type: ignore
             self.canvas.create_line(minX, minY, maxX, maxY, fill=candle.color) # type: ignore
             if candle.nameVisible: 
                 self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + 10, text=candle.name)
     
-    def drawBare(self, plotMetadata: PlotMetadata, solver: CandlestickChartSolver, clear: bool = True):
+    def drawBare(self, plotMetadata: PlotMetadata, solver: CandlestickChartSolver, clear: bool = True, outlineOnly: bool = False):
         if clear:
             self.canvas.delete("all")
-        self._drawCandles(solver)
+        self._drawCandles(solver, outlineOnly)
 
-    def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver)->None: # type: ignore #ToDo typing of plot metadata
+    def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver, outlineOnly : bool = False, clear: bool = True)->None: # type: ignore #ToDo typing of plot metadata
         """
         Draws candles and axes on the plot
         """
-        self.canvas.delete("all")
+        if clear:
+            self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)
         origin = solver.GetOrigin()
         candles = solver.GetCandleData()
@@ -121,7 +122,7 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         self._drawAxes(solver.GetAxisHeight(), int(candles[-1].rightTop.X), origin, plotMetadata.heightScaleFactor, int(min(0, lowestWickHeight)), plotMetadata.xAxisLabel, plotMetadata.yAxisLabel, plotMetadata.xAxisValue)  
         
-        self.drawBare(plotMetadata, solver, False)
+        self.drawBare(plotMetadata, solver, False, outlineOnly)
 
 class BarChartCanvasDrawer(CanvasDrawer):
     def _drawRectangles(self, solver: BarChartSolver): 
@@ -139,7 +140,7 @@ class BarChartCanvasDrawer(CanvasDrawer):
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
 
 
-    def draw(self, plotMetadata: BarChartMetadata, solver : BarChartSolver) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+    def draw(self, plotMetadata: BarChartMetadata, solver : BarChartSolver, outlineOnly : bool = False, clear: bool = True) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Draws rectangles and axes on the plot
         """
@@ -198,7 +199,7 @@ class LineChartCanvasDrawer(CanvasDrawer):
             #text ToDo
 
 
-    def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver)->None:
+    def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, outlineOnly : bool = False, clear: bool = True)->None:
         self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)
         lines = solver.GetLineData()

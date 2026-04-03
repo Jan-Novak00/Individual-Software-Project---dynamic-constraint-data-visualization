@@ -89,9 +89,10 @@ class CandlesticEventHandler(EventHandler):
                                            initialMaximum=_rescaleList(maximum,self.plotMetadata.heightScaleFactor,rescaledXAxisValue),
                                            names=names)
         newSolver.ChangeNegativeColor("pink")
-        newSolver.ChangePositiveColor("blue")
+        newSolver.ChangePositiveColor("aqua")
         self.plotSolver.Feed(newSolver)
-        self.drawer.drawBare(self.plotMetadata,newSolver,False)
+        self.drawer.drawBare(self.plotMetadata,newSolver,clear=True)
+        self.drawer.draw(self.plotMetadata,self.plotSolver,outlineOnly=True,clear=False)
     
     
     def _addCandle(self):
