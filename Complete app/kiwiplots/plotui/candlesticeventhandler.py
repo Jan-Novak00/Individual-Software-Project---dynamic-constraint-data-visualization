@@ -91,7 +91,7 @@ class CandlesticEventHandler(EventHandler):
         newSolver.ChangeNegativeColor("pink")
         newSolver.ChangePositiveColor("aqua")
         self.plotSolver.Feed(newSolver)
-        self.drawer.drawBare(self.plotMetadata,newSolver,clear=True)
+        self.drawer.drawBare(self.plotMetadata,newSolver,clear=True,specialHighlight=True)
         self.drawer.draw(self.plotMetadata,self.plotSolver,outlineOnly=True,clear=False)
     
     

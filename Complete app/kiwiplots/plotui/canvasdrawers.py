@@ -26,10 +26,10 @@ class CanvasDrawer(ABC):
         self.canvasWidth : int = canvasWidth
         self.canvasHeight = canvasHeight
     
-    def drawBare(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear : bool = True):
+    def drawBare(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
         raise NotImplementedError("Method CanvasDrawer.drawBare must be declared in subclass")
     
-    def draw(self, plotMetadata: PlotMetadata, solver : ChartSolver, outlineOnly : bool = False, clear: bool = True)->None:
+    def draw(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False)->None:
         """
         Renders the plot data and axes on the canvas.
         
@@ -71,7 +71,7 @@ class CanvasDrawer(ABC):
         self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - 10, text=yAxisLabel, anchor="s",font=boldFont)
 
 class CandlesticCanvasDrawer(CanvasDrawer):
-    def _drawCandles(self, solver: CandlestickChartSolver, outlineOnly: bool = False): 
+    def _drawCandles(self, solver: CandlestickChartSolver, outlineOnly: bool = False, specialHighlight : bool = False): 
         
         origin = solver.GetOrigin()
         candles = solver.GetCandleData()
@@ -99,17 +99,20 @@ class CandlesticCanvasDrawer(CanvasDrawer):
             maxX = candle.wickTop.X
             maxY = self.canvasHeight - (candle.wickTop.Y + origin.Y)
 
-            self.canvas.create_rectangle(x1,y2,x2,y1, fill=candle.color if not outlineOnly else "", outline="black" if not outlineOnly else candle.color) # type: ignore
-            self.canvas.create_line(minX, minY, maxX, maxY, fill=candle.color) # type: ignore
+            self.canvas.create_rectangle(x1,y2,x2,y1, fill=candle.color if not outlineOnly else "", outline="black" if not outlineOnly else candle.color, width= 1 if not outlineOnly else 3) # type: ignore
+            self.canvas.create_line(minX, minY, maxX, maxY, fill=candle.color, width= 1 if not outlineOnly else 3) # type: ignore
+            if specialHighlight:
+                self.canvas.create_line(minX-5, minY, minX+5, minY, fill=candle.color, width=1 if not outlineOnly else 3)
+                self.canvas.create_line(maxX-5, maxY, maxX+5, maxY, fill=candle.color, width=1 if not outlineOnly else 3)
             if candle.nameVisible: 
                 self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + 10, text=candle.name)
     
-    def drawBare(self, plotMetadata: PlotMetadata, solver: CandlestickChartSolver, clear: bool = True, outlineOnly: bool = False):
+    def drawBare(self, plotMetadata: PlotMetadata, solver: CandlestickChartSolver, clear: bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
         if clear:
             self.canvas.delete("all")
-        self._drawCandles(solver, outlineOnly)
+        self._drawCandles(solver, outlineOnly, specialHighlight)
 
-    def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver, outlineOnly : bool = False, clear: bool = True)->None: # type: ignore #ToDo typing of plot metadata
+    def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False)->None: # type: ignore #ToDo typing of plot metadata
         """
         Draws candles and axes on the plot
         """
@@ -122,7 +125,7 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         self._drawAxes(solver.GetAxisHeight(), int(candles[-1].rightTop.X), origin, plotMetadata.heightScaleFactor, int(min(0, lowestWickHeight)), plotMetadata.xAxisLabel, plotMetadata.yAxisLabel, plotMetadata.xAxisValue)  
         
-        self.drawBare(plotMetadata, solver, False, outlineOnly)
+        self.drawBare(plotMetadata, solver, clear=False, outlineOnly=outlineOnly, specialHighlight=specialHighlight)
 
 class BarChartCanvasDrawer(CanvasDrawer):
     def _drawRectangles(self, solver: BarChartSolver): 
@@ -139,8 +142,10 @@ class BarChartCanvasDrawer(CanvasDrawer):
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color, outline="black") # pyright: ignore[reportArgumentType]
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
 
+    def drawBare(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
+        raise NotImplementedError("Method CanvasDrawer.drawBare not implemented")
 
-    def draw(self, plotMetadata: BarChartMetadata, solver : BarChartSolver, outlineOnly : bool = False, clear: bool = True) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+    def draw(self, plotMetadata: BarChartMetadata, solver : BarChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Draws rectangles and axes on the plot
         """
@@ -198,8 +203,10 @@ class LineChartCanvasDrawer(CanvasDrawer):
 
             #text ToDo
 
+    def drawBare(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
+        raise NotImplementedError("Method CanvasDrawer.drawBare not implemented")
 
-    def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, outlineOnly : bool = False, clear: bool = True)->None:
+    def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False)->None:
         self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)
         lines = solver.GetLineData()
@@ -207,10 +214,7 @@ class LineChartCanvasDrawer(CanvasDrawer):
         origin = solver.GetOrigin()
         y = solver.GetAxisHeight()
 
-        #yValues = [line.leftEnd.Y+plotMetadata.xAxisValue for line in lines]+[line.rightEnd.Y+plotMetadata.xAxisValue for line in lines]
-        minimum: float = 0                #min(yValues)
-        #if minimum > plotMetadata.xAxisValue:
-        #    minimum = plotMetadata.xAxisValue
+        minimum: float = 0
 
         self._drawAxes(solver.GetAxisHeight(),int(lines[-1].rightEnd.X),origin,plotMetadata.heightScaleFactor,int(minimum),plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
         self._drawLines(plotMetadata,solver)
