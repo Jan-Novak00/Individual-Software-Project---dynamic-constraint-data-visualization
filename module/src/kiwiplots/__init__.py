@@ -13,3 +13,6 @@ from kiwiplots.plotui.picturedrawers import *
 from kiwiplots.plotui.candlesticeventhandler import *
 from kiwiplots.plotui.plotmetadata import *
 from kiwiplots.plotui.linecharteventhandler import *
+
+from kiwiplots.plotui.barcharteventhandler import *
+from kiwiplots.plotui.plotmetadata import *

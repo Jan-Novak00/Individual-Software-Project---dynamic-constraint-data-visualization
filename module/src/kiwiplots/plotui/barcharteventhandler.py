@@ -42,6 +42,12 @@ class BarChartEventHandler(EventHandler):
     ###################
 
     def __init__(self, plotMetadata: BarChartMetadata, solver: BarChartSolver) -> None:
+        """_summary_
+
+        Args:
+            plotMetadata (BarChartMetadata): _description_
+            solver (BarChartSolver): _description_
+        """
         super().__init__(plotMetadata)
         self.plotSolver : BarChartSolver = solver  # type: ignore
         self.canvasHeight : int = None # type: ignore
