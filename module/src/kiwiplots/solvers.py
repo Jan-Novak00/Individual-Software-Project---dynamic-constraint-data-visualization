@@ -62,6 +62,14 @@ class ChartSolver(ABC):
         else:
             self.solver.removeConstraint(constraint)
             return None # pyright: ignore[reportReturnType]
+    
+    def Feed(self, otherSolver: "ChartSolver"):
+        origin = self.GetOrigin()
+        otherSolver.ChangeOrigin(origin.X, origin.Y)
+        otherSolver.ChangeAxisHeight(self.GetAxisHeight())
+        otherSolver.ChangeWidth(self.GetWidth())
+        otherSolver.ChangeSpacing(self.GetSpacing())
+        otherSolver.Solve()
 
     def Solve(self):
         """
@@ -167,6 +175,11 @@ class BarChartSolver(ChartSolver):
         
     def SetIntervalValues(self, intervals: list[tuple[float,float]]):
         self.variableChart.SetIntervalValues(intervals)
+
+    def Feed(self, otherSolver: "BarChartSolver"):
+        print("feeding...")
+        otherSolver.ChangeInnerSpacing(self.GetInnerSpacing())
+        super().Feed(otherSolver)
 
     def GetRectangleData(self):
         return self.data
@@ -589,6 +602,14 @@ class LineChartSolver(ChartSolver):
             values = valuePairs[i]
             self.solver.suggestValue(line.leftHeight, values[0])
             self.solver.suggestValue(line.rightHeight,values[1])
+    
+    def Feed(self, otherSolver: "LineChartSolver"):
+        origin = self.GetOrigin()
+        otherSolver.ChangeOrigin(origin.X, origin.Y)
+        otherSolver.ChangeAxisHeight(self.GetAxisHeight())
+        otherSolver.ChangeWidth(self.GetWidth())
+        otherSolver.ChangePadding(self.GetPadding())
+        otherSolver.Solve()
 
     def GetLineData(self):
         return [line.Value() for line in self.variableChart.lines]
@@ -678,6 +699,9 @@ class HistogramSolver(ChartSolver):
     
     def _initialSuggest(self):
         return
+
+    def Feed(self, otherSolver: "HistogramSolver"):
+        ChartSolver.Feed(self,otherSolver)
     
     def Solve(self):
         self.innerSolver.Solve()

@@ -8,6 +8,6 @@ class GameEvaluator(ABC):
     """
     @abstractmethod
     @staticmethod
-    def Eval(userSolver: ChartSolver, solutionSolver: ChartSolver) -> int:
+    def Eval(userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata : PlotMetadata) -> int:
         raise NotImplementedError("Metod GameEvaluator.Eval must be declared in a subclass.")
     

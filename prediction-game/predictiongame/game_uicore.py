@@ -2,15 +2,19 @@ from kiwiplots import *
 import tkinter as tk
 from .gameevaluator import GameEvaluator
 from .gameeventhandler import GameEventHandler
+from .game_dataviewer import GameDataViewer
 
 
 class GameUI:
-    def __init__(self, gameEventHandler, instructionString: str, evaluator: GameEvaluator, plotWidth: int, plotHeight: int):
+    def __init__(self, gameEventHandler, instructionString: str, evaluator: GameEvaluator, userSolver : ChartSolver, solutionSolver : ChartSolver, plotMetadata : PlotMetadata, plotWidth: int, plotHeight: int):
         self.canvasHandler = gameEventHandler
         self.plotWidth = plotWidth
         self.plotHeight = plotHeight
         self.instructionsForPlayer : str = instructionString
         self.evaluator: GameEvaluator = evaluator
+        self.userSolver : ChartSolver = userSolver
+        self.solutionSolver : ChartSolver = solutionSolver
+        self.plotMetadata : PlotMetadata = plotMetadata
 
     def initializeUIElements(self):
         """
@@ -78,5 +82,9 @@ class GameUI:
 
     def _evaluatePrediction_ButtonPressed(self):
         print("TODO")
-        self.scoreCounter.set("9990/10000")
-        pass
+        self.canvasHandler.Pause()
+        self.canvasHandler.DisplayOther(self.solutionSolver)
+        score = self.evaluator.Eval(self.userSolver, self.solutionSolver, self.plotMetadata)
+        self.scoreCounter.set(f"{score}/10000")
+        self.canvasHandler.WriteSolution(self.userSolver, self.solutionSolver, self.plotMetadata)
+        
