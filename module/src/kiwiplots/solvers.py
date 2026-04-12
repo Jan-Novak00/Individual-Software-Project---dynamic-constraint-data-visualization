@@ -134,6 +134,7 @@ class BarChartSolver(ChartSolver):
         super().__init__()
         #Change of typehinting for variableChart
         self.variableChart : VariableBarChart = self.variableChart
+        self.lockedRectangles: set[tuple[int,int]] = set()
 
     def _initializeVariableChart(self) -> VariableChart:
         return VariableBarChart(self.initialRectangleNames, self.initialWidthScaleForGroups)
@@ -172,10 +173,18 @@ class BarChartSolver(ChartSolver):
         self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
         self.solver.suggestValue(self.variableChart.innerSpacing, self.variableChart.innerSpacing.value())
         self.solver.suggestValue(self.variableChart.origin.X, self.variableChart.origin.X.value())
+    
+    def SwitchRectangleLock(self, groupIndex: int, recIndex: int) -> bool:
+        if (groupIndex,recIndex) in self.lockedRectangles:
+            self.lockedRectangles.remove((groupIndex,recIndex))
+            return False
+        else:
+            self.lockedRectangles.add((groupIndex,recIndex))
+            return True
         
     def SetIntervalValues(self, intervals: list[tuple[float,float]]):
         self.variableChart.SetIntervalValues(intervals)
-
+    
     def Feed(self, otherSolver: "BarChartSolver"):
         print("feeding...")
         otherSolver.ChangeInnerSpacing(self.GetInnerSpacing())
@@ -198,6 +207,8 @@ class BarChartSolver(ChartSolver):
         return self.variableChart.GetName(groupIndex, rectangleIndex)
     
     def ChangeHeight(self, groupIndex: int, rectangleIndex: int, newHeight: int):
+        if (groupIndex, rectangleIndex) in self.lockedRectangles:
+            return
         self.solver.suggestValue(self.variableChart.GetHeightVariable(groupIndex, rectangleIndex), newHeight)
         
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
@@ -369,6 +380,7 @@ class CandlestickChartSolver(ChartSolver):
         super().__init__()
         
         self.variableChart : VariableCandlesticChart = self.variableChart
+        self.lockedCandles : set[int] = set()
 
     def _addEditVariables(self):
         self.solver.addEditVariable(self.variableChart.width, "strong")
@@ -401,7 +413,17 @@ class CandlestickChartSolver(ChartSolver):
         for constraint in self.variableChart.GetAllConstraints():
             self.solver.addConstraint(constraint)
     
+    def SwitchCandleLock(self, index: int)->bool:
+        if index in self.lockedCandles:
+            self.lockedCandles.remove(index)
+            return False
+        else:
+            self.lockedCandles.add(index)
+            return True
+    
     def ChangeHeight(self, candleIndex : int, height : int):
+        if candleIndex in self.lockedCandles:
+            return
         self.solver.suggestValue(self.variableChart.GetHeightVariable(candleIndex), height)
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
         spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
@@ -414,6 +436,8 @@ class CandlestickChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
     
     def ChangeMaximum(self, candleIndex : int, yValue : int):
+        if candleIndex in self.lockedCandles:
+            return
         topOfCandle = max(self.variableChart.GetOpeningCorner(candleIndex).Y.value(), self.variableChart.GetClosingCorner(candleIndex).Y.value())
         self.solver.suggestValue(self.variableChart.GetWickTop(candleIndex).Y, yValue if (yValue >= topOfCandle) else topOfCandle)
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
@@ -427,6 +451,8 @@ class CandlestickChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
 
     def ChangeMinimum(self, candleIndex : int, yValue : int):
+        if candleIndex in self.lockedCandles:
+            return
         self.solver.suggestValue(self.variableChart.GetWickBottom(candleIndex).Y, yValue)
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
         spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
@@ -439,6 +465,8 @@ class CandlestickChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
 
     def ChangeOpening(self, candleIndex: int, yValue : int):
+        if candleIndex in self.lockedCandles:
+            return
         self.solver.suggestValue(self.variableChart.GetOpeningCorner(candleIndex).Y, yValue)
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
         spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
@@ -566,8 +594,7 @@ class LineChartSolver(ChartSolver):
         self.initialPadding = padding
         super().__init__()
         self.variableChart : VariableLineChart = self.variableChart
-        self.originLocked = False
-        self.paddingLock = False
+        self.lockedPoints : set[int] = set()
         
 
     def _initializeVariableChart(self):
@@ -620,7 +647,17 @@ class LineChartSolver(ChartSolver):
             return []
         return [lines[0].leftEnd] + [line.rightEnd for line in lines]
     
+    def SwitchPointLock(self, pointIndex: int):
+        if pointIndex in self.lockedPoints:
+            self.lockedPoints.remove(pointIndex)
+            return False
+        else:
+            self.lockedPoints.add(pointIndex)
+            return True
+    
     def ChangeHeight(self, pointIndex: int, height: float):
+        if pointIndex in self.lockedPoints:
+            return
         self.solver.suggestValue(self.variableChart.GetHeightList()[pointIndex], height)
         self.Solve()
     
@@ -699,10 +736,10 @@ class HistogramSolver(ChartSolver):
     
     def _initialSuggest(self):
         return
-
+    
     def Feed(self, otherSolver: "HistogramSolver"):
         ChartSolver.Feed(self,otherSolver)
-    
+
     def Solve(self):
         self.innerSolver.Solve()
     

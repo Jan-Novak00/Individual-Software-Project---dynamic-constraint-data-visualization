@@ -42,6 +42,8 @@ class GameFactory(UIFactory):
         plotMetadata = BarChartMetadata("My bar chart game",scaleFactor,"x axis", "y axis")
         solutionSolver = BarChartSolver(100, data, 15, 10,names,50,30)
         userSolver = BarChartSolver(100,userData,15,10,names,50,30)
+        userSolver.SwitchRectangleLock(0,0)
+        userSolver.SwitchRectangleLock(0,1)
         eventHandler = GameBarChartEventHandler(plotMetadata=plotMetadata, solver=userSolver, dataViewerClass=GameBarChartDataViewer)
         
         class Mock:
