@@ -5,15 +5,12 @@ class GameEventHandler(ABC):
     def __init__(self):
         self.paused = False
     
-    @abstractmethod
     def Pause(self):
         self.paused = True
     
-    @abstractmethod
     def Unpause(self):
         self.paused = False
 
-    @abstractmethod
     def IsPaused(self):
         return self.paused
 

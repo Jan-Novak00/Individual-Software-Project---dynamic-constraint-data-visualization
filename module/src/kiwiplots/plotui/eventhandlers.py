@@ -79,7 +79,7 @@ class EventHandler(ABC):
         
         Highlights the data element currently being edited if any.
         """
-        self.dataViewer.write(self.plotMetadata, self.plotSolver, self.eventRegistersLeft.dragIndex, self.eventRegistersLeft.eventType) # type: ignore
+        self.dataViewer.Write(self.plotMetadata, self.plotSolver, self.eventRegistersLeft.dragIndex, self.eventRegistersLeft.eventType) # type: ignore
     
     def _changeTitle(self):
         """

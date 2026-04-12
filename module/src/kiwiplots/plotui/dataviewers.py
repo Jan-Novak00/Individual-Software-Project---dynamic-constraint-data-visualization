@@ -20,7 +20,7 @@ class DataViewer(ABC):
         """
         self.dataWindow : tk.Text = textWindow
 
-    def write(self, plotMetadata: PlotMetadata, solver: ChartSolver, changedIndex: int, changedStatus: str)->None: # type: ignore
+    def Write(self, plotMetadata: PlotMetadata, solver: ChartSolver, changedIndex: int, changedStatus: str)->None: # type: ignore
         """
         Displays plot data in the text window.
         
@@ -40,7 +40,7 @@ class CandlesticDataViewer(DataViewer):
     def __init__(self, textWindow: tk.Text):
         super().__init__(textWindow)
 
-    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str): # pyright: ignore[reportIncompatibleMethodOverride]
+    def Write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str): # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Displays all data for the user and highlights which data is being edited
         """
@@ -68,7 +68,7 @@ class CandlesticDataViewer(DataViewer):
         self.dataWindow.config(state="disabled")
 
 class BarChartDataViewer(DataViewer):
-    def write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+    def Write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Displays all data for the user and highlights which data is being edited
         """
@@ -95,7 +95,7 @@ class BarChartDataViewer(DataViewer):
         self.dataWindow.config(state="disabled")
 
 class HistogramDataViewer(DataViewer):
-    def write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+    def Write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
@@ -120,7 +120,7 @@ class HistogramDataViewer(DataViewer):
         self.dataWindow.config(state="disabled")
 
 class LineChartDataViewer(DataViewer):
-    def write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, changedStatus: str)->None:
+    def Write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, changedStatus: str)->None:
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
         self.dataWindow.tag_configure("changing_Value", foreground="red")

@@ -7,7 +7,7 @@ from .game_dataviewer import GameDataViewer
 
 class GameUI:
     def __init__(self, gameEventHandler, instructionString: str, evaluator: GameEvaluator, userSolver : ChartSolver, solutionSolver : ChartSolver, plotMetadata : PlotMetadata, plotWidth: int, plotHeight: int):
-        self.canvasHandler = gameEventHandler
+        self.eventHandler = gameEventHandler
         self.plotWidth = plotWidth
         self.plotHeight = plotHeight
         self.instructionsForPlayer : str = instructionString
@@ -68,23 +68,47 @@ class GameUI:
         """
         Initializes all event handlers with their respective UI components.
         """
-        self.canvasHandler.initializeCanvas(self.canvas, self.plotWidth, self.plotHeight)
-        self.canvasHandler.initializeDataView(self.dataWindow)
-        self.canvasHandler.initializeDefaultRightClickMenu(self.defaultMenu)
-        self.canvasHandler.initializeRightClickMenu(self.elementMenu)
+        self.eventHandler.initializeCanvas(self.canvas, self.plotWidth, self.plotHeight)
+        self.eventHandler.initializeDataView(self.dataWindow)
+        self.eventHandler.initializeDefaultRightClickMenu(self.defaultMenu)
+        self.eventHandler.initializeRightClickMenu(self.elementMenu)
+    
+
+    def _canvasBind(self):
+        self.canvas.bind("<Button-1>", self.eventHandler.on_left_down) # type: ignore
+        self.canvas.bind("<B1-Motion>", self.eventHandler.on_mouse_move) # type: ignore
+        self.canvas.bind("<ButtonRelease-1>", self.eventHandler.on_left_up) # type: ignore
+        self.canvas.bind("<Motion>", self.eventHandler.check_cursor) # type: ignore
+        self.canvas.bind("<Button-3>", self.eventHandler.on_right_down) # type: ignore
+        self.canvas.bind("<ButtonRelease-3>", self.eventHandler.on_right_up) # type: ignore
+
+
+    def _UIRun(self):
+        """
+        Binds all mouse and motion events to their respective handlers.
+        
+        Starts the main tkinter event loop.
+        """
+        self._canvasBind()
+        self.root.mainloop()
 
     
     def Play(self):
+        print("checkpoint 1")
         self.initializeUIElements()
+        print("checkpoint 2")
         self.inicializeHandlers()
-        self.root.mainloop()
+        print("checkpoint 3")
+        self.eventHandler.UpdateUI()
+        print("ui updtated")
+        self._UIRun()
     
 
     def _evaluatePrediction_ButtonPressed(self):
-        print("TODO")
-        self.canvasHandler.Pause()
-        self.canvasHandler.DisplayOther(self.solutionSolver)
+        self.eventHandler.Pause()
+        self.eventHandler.DisplayOther(self.solutionSolver)
         score = self.evaluator.Eval(self.userSolver, self.solutionSolver, self.plotMetadata)
         self.scoreCounter.set(f"{score}/10000")
-        self.canvasHandler.WriteSolution(self.userSolver, self.solutionSolver, self.plotMetadata)
+        self.eventHandler.WriteSolution(self.userSolver, self.solutionSolver, self.plotMetadata)
+        self.evalButton.config(state="disabled")
         

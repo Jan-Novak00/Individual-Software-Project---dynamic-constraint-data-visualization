@@ -1,27 +1,48 @@
-from tkinter import Event
+from tkinter import Event, Text
+from typing import Type
 from kiwiplots import BarChartEventHandler
 from kiwiplots.plotui.plotmetadata import PlotMetadata
 from .gameeventhandler import GameEventHandler
 from kiwiplots.solvers import BarChartSolver, ChartSolver
 from kiwiplots import BarChartMetadata
-from game_dataviewer import GameDataViewer
+from .game_dataviewer import GameDataViewer, GameBarChartDataViewer
 
 class GameBarChartEventHandler(BarChartEventHandler,GameEventHandler):
-    def __init__(self, plotMetadata: BarChartMetadata, solver: BarChartSolver) -> None:
+    def __init__(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, dataViewerClass: Type[GameDataViewer]) -> None:
         BarChartEventHandler.__init__(self,plotMetadata,solver)
         GameEventHandler.__init__(self)
         self.dataViewer : GameDataViewer = self.dataViewer
+        self.dataViewerType : Type[GameDataViewer] = dataViewerClass
+    
+    def initializeDataView(self, textWindow: Text) -> None:
+        self.dataViewer = self.dataViewerType(textWindow)
     
     def on_left_down(self, event: Event):
         if self.paused:
             return
         super().on_left_down(event)
     
+    def on_mouse_move(self, event):
+        if self.paused:
+            return
+        return super().on_mouse_move(event)
+    
     def on_right_down(self, event: Event):
+        return
         if self.paused:
             return
         super().on_right_down(event)
     
+    def on_left_up(self, event):
+        if self.paused:
+            return
+        return super().on_left_up(event)
+    
+    def on_right_up(self, event: Event) -> None:
+        if self.paused:
+            return
+        return super().on_right_up(event)
+
     def check_cursor(self, event):
         if self.paused:
             return
