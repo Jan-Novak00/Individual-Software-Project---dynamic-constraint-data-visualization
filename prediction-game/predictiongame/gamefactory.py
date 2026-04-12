@@ -3,6 +3,7 @@ from .gameloader import *
 from .game_barcharteventhandler import GameBarChartEventHandler
 from .game_dataviewer import *
 from .game_uicore import GameUI
+from .defaultevaluators import *
 
 
 class GameFactory(UIFactory):
@@ -46,11 +47,6 @@ class GameFactory(UIFactory):
         userSolver.SwitchRectangleLock(0,1)
         eventHandler = GameBarChartEventHandler(plotMetadata=plotMetadata, solver=userSolver, dataViewerClass=GameBarChartDataViewer)
         
-        class Mock:
-            @staticmethod
-            def Eval(a,b,c):
-                return 14444444444444444444
-            pass
-        m = Mock()
+        evaluator = DefaultBarChartEvaluator()
         instructionString = "Bars follow the sequence from 1 to 4."
-        return GameUI(eventHandler,instructionString,m,userSolver,solutionSolver,plotMetadata,width,height)
+        return GameUI(eventHandler,instructionString,evaluator,userSolver,solutionSolver,plotMetadata,width,height)

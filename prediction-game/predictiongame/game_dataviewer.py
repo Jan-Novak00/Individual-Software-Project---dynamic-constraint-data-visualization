@@ -7,9 +7,6 @@ def FormatFloat(value: float)->str:
         return f"{value:.4g}"
     return str(value)
 
-
-
-
 class GameDataViewer(DataViewer):
     @abstractmethod
     def WriteSolution(self, userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata : PlotMetadata):
@@ -22,9 +19,7 @@ class GameBarChartDataViewer(GameDataViewer):
         self.dataWindow.tag_configure("header",font=("Arial", 12, "bold"))
         self.dataWindow.tag_configure("green_highlight",foreground="green",font=("Arial", 12, "bold"))
     
-    
     def Write(self, plotMetadata: PlotMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None:
-        print("write called")
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
@@ -43,8 +38,6 @@ class GameBarChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="disabled")
 
     def WriteSolution(self, userSolver: BarChartSolver, solutionSolver: BarChartSolver, plotMetadata: PlotMetadata):
-        print("WriteSolution called")
-        print("write called")
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 

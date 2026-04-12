@@ -55,3 +55,4 @@ class GameBarChartEventHandler(BarChartEventHandler,GameEventHandler):
     
     def WriteSolution(self, userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata: PlotMetadata):
         self.dataViewer.WriteSolution(userSolver,solutionSolver,plotMetadata)
+    
