@@ -71,3 +71,90 @@ class LineChartMetadata(PlotMetadata):
     def __init__(self, title: str, color: Union[str,int], heightScaleFactor: float, xAxisValue: float, xAxisLabel : str, yAxisLabel : str):
         super().__init__(title, heightScaleFactor, xAxisValue, xAxisLabel, yAxisLabel)
         self.color : Union[str,int] = color
+
+from numpy import abs
+from .datautils import *
+from .uiconstants import *
+
+def CreateCandlesticChartMetadata(title: str,
+                            xAxisLabel: str, 
+                            yAxisLabel: str, 
+                            xAxisValue : float,
+                            initialOpening : list[float], 
+                            initialClosing : list[float], 
+                            initialMinimum : list[float], 
+                            initialMaximum : list[float],
+                            plotHeight : int
+                            )-> CandlesticPlotMetadata:
+    """
+    Creates metadata for a candlestick chart, including calculated scale factor.
+    
+    This method determines the appropriate scale factor to fit the data values within
+    the plot height (between 30% and 70% of available height). If values fall outside
+    this range, it calculates a scale factor to fit them optimally.
+    
+    Args:
+        title (str): Title of the plot
+        xAxisLabel (str): Label for the x-axis
+        yAxisLabel (str): Label for the y-axis
+        xAxisValue (float): The value where the x-axis is positioned
+        initialOpening (list[float]): List of opening prices
+        initialClosing (list[float]): List of closing prices
+        initialMinimum (list[float]): List of minimum prices
+        initialMaximum (list[float]): List of maximum prices
+        plotHeight (int): Height of the plot area in pixels
+        
+    Returns:
+        CandlesticPlotMetadata: Metadata object containing scale factor and axis information
+    """
+    allValues : list[float] = abs(initialClosing) + abs(initialOpening) + abs(initialMinimum) + abs(initialMaximum) # pyright: ignore[reportAssignmentType]
+
+    return CandlesticPlotMetadata(title,CalculateScaleFactor(allValues,plotHeight),xAxisValue,xAxisLabel,yAxisLabel)
+
+def CreateBarChartMetadata(title: str, xAxisLabel: str, yAxisLabel: str, initialValues: list[list[float]], plotHeight: int):
+    """
+    Produce `BarChartMetadata` with a scale factor computed from all rectangle groups.
+
+    Args:
+        title (str): Chart title.
+        xAxisLabel (str): Label for the x-axis.
+        yAxisLabel (str): Label for the y-axis.
+        initialValues (list[list[float]]): Grouped bar values.
+        plotHeight (int): Pixel height of the plotting area.
+
+    Returns:
+        BarChartMetadata: Metadata instance with computed height scale.
+    """
+    allValues : list[float] = []
+    for group in initialValues:
+        for value in group:
+            allValues.append(value)
+    return BarChartMetadata(title,CalculateScaleFactor(allValues,plotHeight),xAxisLabel,yAxisLabel)
+
+
+def CreateHistogramMetadata(title: str, xAxisLabel: str, yAxisLabel: str, initialValues : list[float], intervals: list[tuple[float,float]], plotHeight: int)-> HistogramMetadata:
+    """
+    Build `HistogramMetadata` including height and per-interval width scales.
+
+    Computes the height scale using the provided values and constructs a
+    nested list of width scale factors for the provided `intervals`.
+
+    Args:
+        title (str): Histogram title.
+        xAxisLabel (str): X-axis label.
+        yAxisLabel (str): Y-axis label.
+        initialValues (list[float]): Values to use when computing height scale.
+        intervals (list[tuple[float,float]]): Bins defined by (start, end) tuples.
+        plotHeight (int): Pixel height of the plotting area.
+
+    Returns:
+        HistogramMetadata: Metadata with height and width scale information.
+    """
+    heightScaleFactor : float = CalculateScaleFactor(initialValues,plotHeight)
+    widthScales = [CreateScalesForIntervalGroup(intervals)]
+    return HistogramMetadata(title, heightScaleFactor, widthScales, xAxisLabel, yAxisLabel)
+
+
+def CreateLineChartMetadata(title: str, xAxisValue : float, values : list[float], xAxisLabel : str, yAxisLabel : str, height : int)->LineChartMetadata:
+    heightScaleFactor : float = CalculateScaleFactor(values,height)
+    return LineChartMetadata(title,INITIAL_COLOR,heightScaleFactor,xAxisValue,xAxisLabel,yAxisLabel)

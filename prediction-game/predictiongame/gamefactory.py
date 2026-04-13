@@ -4,6 +4,13 @@ from .game_barcharteventhandler import GameBarChartEventHandler
 from .game_dataviewer import *
 from .game_uicore import GameUI
 from .defaultevaluators import *
+from enum import Enum
+
+class GameModes(Enum):
+    BarChart         = 1
+    CandlestickChart = 2
+    LineChart        = 3
+    Histogram        = 4
 
 
 class GameFactory(UIFactory):
@@ -16,15 +23,15 @@ class GameFactory(UIFactory):
     def BarChartGameTEST():
         width = 1000
         height = 500
-        data = [[1,2,3,4]]
-        names = [["a","b","c","d"]]
+        data = [[1,2,3,4],[1]]
+        names = [["a","b","c","d"],["z"]]
         allData = []
         for sublist in data:
             allData.extend(sublist)
-        userData = [[1,2,0,0]]
+        userData = [[1,2,0,0],[0]]
         newData = []
         newUserData = []
-        scaleFactor = UIFactory._calculateScaleFactor(allData,height)
+        scaleFactor = CalculateScaleFactor(allData,height)
         for i in range(len(data)):
             newList = []
             newUserList = []
@@ -50,3 +57,38 @@ class GameFactory(UIFactory):
         evaluator = DefaultBarChartEvaluator()
         instructionString = "Bars follow the sequence from 1 to 4."
         return GameUI(eventHandler,instructionString,evaluator,userSolver,solutionSolver,plotMetadata,width,height)
+    
+    @staticmethod
+    def LoadGameFromConfig(configFilePath : str):
+        loader: GameLoader = GameLoader.GetLoader(configFilePath=configFilePath)
+
+        solutionSolver = loader.GetSolutionSolver()
+        userSolver = loader.GetUserSolver()
+        metadata = loader.GetPlotMetadata()
+
+        eventHandler = None
+
+        if (loader.GetGameMode() == GameModes.BarChart):
+            eventHandler = GameBarChartEventHandler(metadata,userSolver,GameBarChartDataViewer) # pyright: ignore[reportArgumentType]
+        elif (loader.GetGameMode() == GameModes.LineChart):
+            raise NotImplementedError()
+        elif (loader.GetGameMode() == GameModes.CandlestickChart):
+            raise NotImplementedError()
+        elif (loader.GetGameMode() == GameModes.Histogram):
+            raise NotImplementedError()
+        else:
+            assert False, "Unreachable reached"
+        
+        evaluator = loader.GetEvaluator()
+        instructions = loader.GetInstructions()
+        width = loader.GetWidth()
+        height = loader.GetHeight()
+
+        return GameUI(gameEventHandler=eventHandler,
+                      instructionString=instructions,
+                      userSolver=userSolver,
+                      solutionSolver=solutionSolver,
+                      plotMetadata=metadata,
+                      evaluator=evaluator,
+                      plotWidth=width,
+                      plotHeight=height)

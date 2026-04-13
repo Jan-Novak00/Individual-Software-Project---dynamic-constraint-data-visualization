@@ -15,3 +15,18 @@ class DefaultBarChartEvaluator(GameEvaluator):
         score = 10000*(1-totalError/maxError)
 
         return round(score)
+
+class DefaultCandlestickChartEvaluator(GameEvaluator):
+    @staticmethod
+    def Eval(userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata: PlotMetadata) -> int:
+        return 0
+
+class DefaultHistogramEvaluator(GameEvaluator):
+    @staticmethod
+    def Eval(userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata: PlotMetadata) -> int:
+        return 0
+
+class DefaultLineChartEvaluator(GameEvaluator):
+    @staticmethod
+    def Eval(userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata: PlotMetadata) -> int:
+        return 0
