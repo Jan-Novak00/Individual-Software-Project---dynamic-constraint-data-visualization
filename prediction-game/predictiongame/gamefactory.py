@@ -4,14 +4,7 @@ from .game_barcharteventhandler import GameBarChartEventHandler
 from .game_dataviewer import *
 from .game_uicore import GameUI
 from .defaultevaluators import *
-from enum import Enum
-
-class GameModes(Enum):
-    BarChart         = 1
-    CandlestickChart = 2
-    LineChart        = 3
-    Histogram        = 4
-
+from .gamemodes import GameModes
 
 class GameFactory(UIFactory):
 

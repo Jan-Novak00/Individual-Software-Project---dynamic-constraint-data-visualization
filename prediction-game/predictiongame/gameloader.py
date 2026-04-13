@@ -8,7 +8,7 @@ import importlib
 import importlib.util
 import sys
 from pathlib import Path
-from .gamefactory import GameModes
+from .gamemodes import GameModes
 
 INITIAL_WIDTH : int   = 100
 INITIAL_SPACING : int = 15
@@ -24,7 +24,7 @@ BARCHART_DATA_CONFIG_SECTION_HEADER     = "bar_chart"
 HISTOGRAM_DATA_CONFIG_SECTION_HEADER    = "histogram"
 CANDLESTICK_DATA_CONFIG_SECTION_HEADER  = "candlestick_chart"
 LINECHART_DATA_CONFIG_SECTION_HEADER    = "line_chart"
-ORIGIN_HEADER                           = GENERAL_CONFIG_SECTION_HEADER + ".origin"
+ORIGIN_HEADER                           = "origin"
 
 X_AXIS_LABEL_KEY = "x_axis_label"
 Y_AXIS_LABEL_KEY = "y_axis_label"
@@ -368,7 +368,7 @@ class BarChartGameLoader(GameLoader):
                                              yCoordinate=self.originY)
         
         for i in range(len(isGuess)):
-            for j in range(len(isGuess[j])):
+            for j in range(len(isGuess[i])):
                 if not isGuess[i][j]:
                     self.userSolver.SwitchRectangleLock(i,j)
 

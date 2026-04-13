@@ -1,13 +1,16 @@
 from kiwiplots import *
 from predictiongame import *
+BASE_DIR = Path(__file__).resolve().parent
 
 def test1():
     a = GameFactory.BarChartGameTEST()
     a.Play()
 
 def test2():
-    pass
+    base_dir = Path(__file__).resolve().parent
+    config_path = base_dir / "barchart.test.toml"
+    a = GameFactory.LoadGameFromConfig(str(config_path))
+    a.Play()
 
 if __name__ == "__main__":
-    a = GameFactory.BarChartGameTEST()
-    a.Play()
+    test2()
