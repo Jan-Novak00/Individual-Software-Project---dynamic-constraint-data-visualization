@@ -1,6 +1,5 @@
 from kiwiplots import *
 from abc import ABC
-from .gameevaluator import *
 from .defaultevaluators import *
 import tomllib
 from typing import Any, Type
@@ -9,6 +8,7 @@ import importlib.util
 import sys
 from pathlib import Path
 from .gamemodes import GameModes
+from .gameevaluator import GameEvaluator
 
 INITIAL_WIDTH : int   = 100
 INITIAL_SPACING : int = 15
@@ -151,9 +151,11 @@ class GameLoader(ABC):
             EvaluatorLoadFailedException: Unknown error.
             InvalidEvaluatorException: Provided class does not inherit from GameEvaluator.
         """
-        modulePart, className = source.split(":")
+        parts = modulePart, className = source.rsplit(":", 1)
+        modulePart, className = parts[0], parts[1]
+        path = Path(modulePart)
 
-        if modulePart.endswith(".py"):
+        if path.suffix == ".py":
             filePath = Path(modulePart)
             spec = importlib.util.spec_from_file_location(filePath.stem, filePath)
             if spec is None:
