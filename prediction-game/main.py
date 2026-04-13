@@ -12,5 +12,9 @@ def test2():
     a = GameFactory.LoadGameFromConfig(str(config_path))
     a.Play()
 
+def test3():
+    a = GameFactory.LineChartGameTEST()
+    a.Play()
+
 if __name__ == "__main__":
-    test2()
+    test3()

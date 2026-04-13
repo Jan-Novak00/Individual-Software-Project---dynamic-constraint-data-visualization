@@ -1,16 +1,13 @@
 from kiwiplots import *
 from .gameloader import *
 from .game_barcharteventhandler import GameBarChartEventHandler
+from .game_linecharteventhandler import GameLineChartEventHandler
 from .game_dataviewer import *
 from .game_uicore import GameUI
 from .defaultevaluators import *
 from .gamemodes import GameModes
 
 class GameFactory(UIFactory):
-
-    @staticmethod
-    def GetBarChartGame(configFilePath: str):
-        pass
 
     @staticmethod
     def BarChartGameTEST():
@@ -51,6 +48,33 @@ class GameFactory(UIFactory):
         instructionString = "Bars follow the sequence from 1 to 4."
         return GameUI(eventHandler,instructionString,evaluator,userSolver,solutionSolver,plotMetadata,width,height)
     
+    @staticmethod
+    def LineChartGameTEST():
+        width = 1000
+        height = 500
+        data = [1,2,3.,4]
+        names = ["a","b","c","d"]
+        userData = [1,2.,0,0]
+        scaleFactor = CalculateScaleFactor(data,height)
+
+        rescaledUserData = RescaleList(userData,scaleFactor)
+        rescaledSolutionData = RescaleList(data, scaleFactor)
+
+        plotMetadata = LineChartMetadata("My plot", "blue", scaleFactor, 0, "x osa", "yyy")
+        userSolver = LineChartSolver(100,rescaledUserData,names,50,30,20) # pyright: ignore[reportArgumentType]
+        solutionSolver = LineChartSolver(100,rescaledSolutionData,names,50,30,20) # pyright: ignore[reportArgumentType]
+
+        eventHandler = GameLineChartEventHandler(plotMetadata,userSolver,GameLineChartDataViewer)
+        class Mock:
+            @staticmethod
+            def Eval(a,b,c):
+                return 54
+        
+        instructionString = "Points follow the sequence from 1 to 4."
+        
+        evaluator = Mock()
+        return GameUI(eventHandler,instructionString,evaluator,userSolver,solutionSolver,plotMetadata,width,height) # pyright: ignore[reportArgumentType]
+
     @staticmethod
     def LoadGameFromConfig(configFilePath : str):
         loader: GameLoader = GameLoader.GetLoader(configFilePath=configFilePath)
