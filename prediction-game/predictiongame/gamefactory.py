@@ -88,7 +88,7 @@ class GameFactory(UIFactory):
         if (loader.GetGameMode() == GameModes.BarChart):
             eventHandler = GameBarChartEventHandler(metadata,userSolver,GameBarChartDataViewer) # pyright: ignore[reportArgumentType]
         elif (loader.GetGameMode() == GameModes.LineChart):
-            raise NotImplementedError()
+            eventHandler = GameLineChartEventHandler(metadata,userSolver,GameLineChartDataViewer) # pyright: ignore[reportArgumentType]
         elif (loader.GetGameMode() == GameModes.CandlestickChart):
             raise NotImplementedError()
         elif (loader.GetGameMode() == GameModes.Histogram):

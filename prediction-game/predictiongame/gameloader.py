@@ -35,9 +35,10 @@ WIDTH_KEY        = "plot_width"
 HEIGHT_KEY       = "plot_height"
 ORIGIN_X_KEY     = "x"
 ORIGIN_Y_KEY     = "y"
+X_AXIS_VALUE_KEY     = "x_axis_value"
 
-IS_GUESS_KEYWORD = "is_guess"
-NAMES_KEYWORD    = "names"
+IS_GUESS_KEY = "is_guess"
+NAMES_KEY    = "names"
 
 class LoadFailedException(Exception):
     def __init__(self, message: str):
@@ -283,29 +284,29 @@ class BarChartGameLoader(GameLoader):
     @staticmethod
     def _validateData(data: list[list[float]], whatToGuess: list[list[bool]], names: list[list[str]]):
         if not isinstance(data,list):
-            raise InvalidDataFormatException("Data under \"groups\" keyword must be a list of lists of floats.",GROUPS_KEYWORD)
+            raise InvalidDataFormatException(f"Data under \"{GROUPS_KEYWORD}\" keyword must be a list of lists of floats.",GROUPS_KEYWORD)
         
         if not isinstance(whatToGuess,list):
-            raise InvalidDataFormatException("Data under \"is_guess\" keyword must be a list of lists of booleans.",IS_GUESS_KEYWORD)
+            raise InvalidDataFormatException(f"Data under \"{IS_GUESS_KEY}\" keyword must be a list of lists of booleans.",IS_GUESS_KEY)
         
         if not isinstance(names, list):
-            raise InvalidDataFormatException("Data under \"names\" keyword must be a list of lists of strings.",NAMES_KEYWORD)
+            raise InvalidDataFormatException(f"Data under \"{NAMES_KEY}\" keyword must be a list of lists of strings.",NAMES_KEY)
         
         if len(data) != len(whatToGuess) or len(data) != len(names):
-            raise InvalidDataFormatException("List under \"groups\" keyword, under \"is_guess\" keyword and under \"names\" keyword must be of the same length.",GROUPS_KEYWORD)
+            raise InvalidDataFormatException(f"Lists under \"{GROUPS_KEYWORD}\" keyword, under \"{IS_GUESS_KEY}\" keyword and under \"{NAMES_KEY}\" keyword must be of the same length.",GROUPS_KEYWORD)
         
         for i in range(len(data)):
             if not isinstance(data[i],list) or not isinstance(whatToGuess[i],list) or not isinstance(names[i],list):
-                raise InvalidDataFormatException("Data under \"groups\" keyword, under \"is_guess\" keyword and under \"names\" keyword must be lists of lists", GROUPS_KEYWORD)
+                raise InvalidDataFormatException(f"Data under \"{GROUPS_KEYWORD}\" keyword, under \"{IS_GUESS_KEY}\" keyword and under \"{NAMES_KEY}\" keyword must be lists of lists.", GROUPS_KEYWORD)
             if len(data[i]) != len(whatToGuess[i]) or len(data[i]) != len(names[i]):
-                raise InvalidDataFormatException("Sublists of lists under \"groups\" keyword, under \"is_guess\" keyword and under \"names\" keyword must be of the same length for every index.",GROUPS_KEYWORD)
+                raise InvalidDataFormatException(f"Sublists of lists under \"{GROUPS_KEYWORD}\" keyword, under \"{IS_GUESS_KEY}\" keyword and under \"{NAMES_KEY}\" keyword must be of the same length for every index.",GROUPS_KEYWORD)
             for j in range(len(data[i])):
-                if not isinstance(data[i][j],int) or isinstance(data[i][j],float):
-                    raise InvalidDataFormatException("Data under \"groups\" keyword must be a list of lists of floats.",GROUPS_KEYWORD)
+                if not isinstance(data[i][j],int) and not isinstance(data[i][j],float):
+                    raise InvalidDataFormatException(f"Data under \"{GROUPS_KEYWORD}\" keyword must be a list of lists of floats.",GROUPS_KEYWORD)
                 if not isinstance(whatToGuess[i][j],bool):
-                    raise InvalidDataFormatException("Data under \"is_guess\" keyword must be a list of lists of booleans.",IS_GUESS_KEYWORD)
+                    raise InvalidDataFormatException(f"Data under \"{IS_GUESS_KEY}\" keyword must be a list of lists of booleans.",IS_GUESS_KEY)
                 if not isinstance(names[i][j],str):
-                    raise InvalidDataFormatException("Data under \"names\" keyword must be a list of lists of strings.",NAMES_KEYWORD)
+                    raise InvalidDataFormatException(f"Data under \"{NAMES_KEY}\" keyword must be a list of lists of strings.",NAMES_KEY)
     @staticmethod    
     def _createUserData(data: list[list[float]], isGuess: list[list[bool]])->list[list[float]]:
         result = []
@@ -335,15 +336,15 @@ class BarChartGameLoader(GameLoader):
         else:
             raise InvalidDataConfigSectionException(GROUPS_KEYWORD,BARCHART_DATA_CONFIG_SECTION_HEADER)
         
-        if IS_GUESS_KEYWORD in gameData:
-            isGuess = gameData[IS_GUESS_KEYWORD]
+        if IS_GUESS_KEY in gameData:
+            isGuess = gameData[IS_GUESS_KEY]
         else:
-            raise InvalidDataConfigSectionException(IS_GUESS_KEYWORD,BARCHART_DATA_CONFIG_SECTION_HEADER)
+            raise InvalidDataConfigSectionException(IS_GUESS_KEY,BARCHART_DATA_CONFIG_SECTION_HEADER)
         
-        if NAMES_KEYWORD in gameData:
-            names = gameData[NAMES_KEYWORD]
+        if NAMES_KEY in gameData:
+            names = gameData[NAMES_KEY]
         else:
-            raise InvalidDataConfigSectionException(NAMES_KEYWORD,BARCHART_DATA_CONFIG_SECTION_HEADER)
+            raise InvalidDataConfigSectionException(NAMES_KEY,BARCHART_DATA_CONFIG_SECTION_HEADER)
         
         BarChartGameLoader._validateData(groups,isGuess, names)
         userData = BarChartGameLoader._createUserData(groups,isGuess)
@@ -380,13 +381,94 @@ class BarChartGameLoader(GameLoader):
     def GetGameMode() -> GameModes:
         return GameModes.BarChart
 
+POINTS_KEY = "points"
+
 class LineChartGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
         super().__init__(data)
     
+    @staticmethod
+    def _validateData(data : list[float], isGuess : list[bool], names : list[str]):
+        if not isinstance(data, list):
+            raise InvalidDataFormatException(f"Data under \"{POINTS_KEY}\" key must be a list of floats.",POINTS_KEY)
+        if not isinstance(isGuess, list):
+            raise InvalidDataFormatException(f"Data under \"{IS_GUESS_KEY}\" key must be a list of booleans.",IS_GUESS_KEY)
+        if not isinstance(names, list):
+            raise InvalidDataFormatException(f"Data under \"{NAMES_KEY}\" key must be a list of booleans.", NAMES_KEY)
+        
+        if len(data) != len(isGuess) or len(data) != len(names):
+            raise InvalidDataFormatException(f"Lists under \"{POINTS_KEY}\" key, \"{IS_GUESS_KEY}\" key and \"{NAMES_KEY}\" key must be of the same length.",POINTS_KEY)
+        
+        for i in range(len(data)):
+            if not isinstance(data[i],int) and not isinstance(data[i],float):
+                raise InvalidDataFormatException(f"List under \"{POINTS_KEY}\" key must be a list of floats.",POINTS_KEY)
+            if not isinstance(isGuess[i], bool):
+                raise InvalidDataFormatException(f"List under \"{IS_GUESS_KEY}\" key must be a list of booleans.",IS_GUESS_KEY)
+            if not isinstance(names[i], str):
+                raise InvalidDataFormatException(f"List under \"{NAMES_KEY}\" key must be a list of strings.", NAMES_KEY)
+    
+    @staticmethod
+    def _createUserData(data: list[float], isGuess: list[bool])->list[float]:
+        assert len(data) == len(isGuess)
+        return [data[i] if not isGuess[i] else 0 for i in range(len(data))]
+    
     def _loadData(self, data: dict[str, Any]):
         gameData = data[LINECHART_DATA_CONFIG_SECTION_HEADER]
-        pass
+        points : list[float] = None # pyright: ignore[reportAssignmentType]
+        isGuess : list[bool] = None # pyright: ignore[reportAssignmentType]
+        names  : list[str]   = None # pyright: ignore[reportAssignmentType]
+        xAxisValue : float   = 0
+
+        if POINTS_KEY in gameData:
+            points = gameData[POINTS_KEY]
+        else:
+            raise InvalidDataConfigSectionException(POINTS_KEY, LINECHART_DATA_CONFIG_SECTION_HEADER)
+        
+        if NAMES_KEY in gameData:
+            names = gameData[NAMES_KEY]
+        else:
+            raise InvalidDataConfigSectionException(NAMES_KEY, LINECHART_DATA_CONFIG_SECTION_HEADER)
+        
+        if IS_GUESS_KEY in gameData:
+            isGuess = gameData[IS_GUESS_KEY]
+        else:
+            raise InvalidDataConfigSectionException(IS_GUESS_KEY, LINECHART_DATA_CONFIG_SECTION_HEADER)
+        
+        if X_AXIS_VALUE_KEY in gameData:
+            xAxisValue = gameData[X_AXIS_VALUE_KEY]
+            if not isinstance(xAxisValue,float) and not isinstance(xAxisValue, int):
+                raise InvalidDataFormatException(f"Value under \"{X_AXIS_VALUE_KEY}\" must be float.",X_AXIS_VALUE_KEY)
+
+        
+        LineChartGameLoader._validateData(points, isGuess, names)
+        userData = LineChartGameLoader._createUserData(points,isGuess)
+        solutionData = points
+
+        metadata: LineChartMetadata = CreateLineChartMetadata(self.title, xAxisValue, solutionData, self.xAxisLabel, self.yAxisLabel, self.plotHeight)
+
+        rescaledXAxisValue = xAxisValue*metadata.heightScaleFactor
+
+        rescaledUserData = RescaleList(userData, metadata.heightScaleFactor, rescaledXAxisValue)
+        rescaledSolutionData = RescaleList(solutionData, metadata.heightScaleFactor, rescaledXAxisValue)
+
+        self.solutionSolver = LineChartSolver(width=INITIAL_WIDTH, 
+                                              initialValues=rescaledSolutionData, # pyright: ignore[reportArgumentType]
+                                              pointNames=names, 
+                                              xCoordinate=self.originX,
+                                              yCoordinate=self.originY,
+                                              padding=INITIAL_PADDING)
+        
+        self.userSolver = LineChartSolver(width=INITIAL_WIDTH,
+                                          initialValues=rescaledUserData, # pyright: ignore[reportArgumentType]
+                                          pointNames=names,
+                                          xCoordinate=self.originX,
+                                          yCoordinate=self.originY,
+                                          padding=INITIAL_PADDING)
+        self.plotMetadata = metadata
+
+        for i in range(len(isGuess)):
+            if not isGuess[i]:
+                self.userSolver.SwitchPointLock(i)
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
         return DefaultLineChartEvaluator

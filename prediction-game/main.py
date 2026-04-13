@@ -16,5 +16,11 @@ def test3():
     a = GameFactory.LineChartGameTEST()
     a.Play()
 
+def test4():
+    base_dir = Path(__file__).resolve().parent
+    config_path = base_dir / "linechart.test.toml"
+    a = GameFactory.LoadGameFromConfig(str(config_path))
+    a.Play()
+
 if __name__ == "__main__":
-    test3()
+    test4()
