@@ -2,6 +2,7 @@ from kiwiplots import *
 from .gameloader import *
 from .game_barcharteventhandler import GameBarChartEventHandler
 from .game_linecharteventhandler import GameLineChartEventHandler
+from .game_candelstickeventhandler import GameCandlestickChartEventHandler
 from .game_dataviewer import *
 from .game_uicore import GameUI
 from .defaultevaluators import *
@@ -90,7 +91,7 @@ class GameFactory(UIFactory):
         elif (loader.GetGameMode() == GameModes.LineChart):
             eventHandler = GameLineChartEventHandler(metadata,userSolver,GameLineChartDataViewer) # pyright: ignore[reportArgumentType]
         elif (loader.GetGameMode() == GameModes.CandlestickChart):
-            raise NotImplementedError()
+            eventHandler = GameCandlestickChartEventHandler(metadata,userSolver,GameCandlestickChartDataViewer) # pyright: ignore[reportArgumentType]
         elif (loader.GetGameMode() == GameModes.Histogram):
             raise NotImplementedError()
         else:

@@ -1,5 +1,5 @@
 from .gameevaluator import GameEvaluator
-from kiwiplots import ChartSolver, BarChartSolver, PlotMetadata, BarChartMetadata
+from kiwiplots import ChartSolver, BarChartSolver, PlotMetadata, BarChartMetadata, LineChartSolver, CandlestickChartSolver
 
 class DefaultBarChartEvaluator(GameEvaluator):
     @staticmethod
@@ -18,8 +18,23 @@ class DefaultBarChartEvaluator(GameEvaluator):
 
 class DefaultCandlestickChartEvaluator(GameEvaluator):
     @staticmethod
-    def Eval(userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata: PlotMetadata) -> int:
-        return 0
+    def Eval(userSolver: CandlestickChartSolver, solutionSolver: CandlestickChartSolver, plotMetadata: PlotMetadata) -> int:
+        userCandles = userSolver.GetCandleData()
+        solutionCandles = solutionSolver.GetCandleData()
+
+        userPriceChanges = [candle.GetHeight() for candle in userCandles]
+        solutionPriceChanges = [candle.GetHeight() for candle in solutionCandles]
+        userMinMaxChange = [candle.wickTop.Y - candle.wickBottom.Y for candle in userCandles]
+        solutionMinMaxChange = [candle.wickTop.Y - candle.wickBottom.Y for candle in solutionCandles]
+
+        assert len(userCandles) == len(solutionCandles)
+
+        totalError = sum([abs(userPriceChanges[i] - solutionPriceChanges[i]) for i in range(len(userPriceChanges))]) + sum([abs(userMinMaxChange[i] - solutionMinMaxChange[i]) for i in range(len(userMinMaxChange))])
+        maxError = sum(solutionPriceChanges) + sum(solutionMinMaxChange)
+        
+        score = 10000*(1-totalError/maxError)
+
+        return round(score)
 
 class DefaultHistogramEvaluator(GameEvaluator):
     @staticmethod

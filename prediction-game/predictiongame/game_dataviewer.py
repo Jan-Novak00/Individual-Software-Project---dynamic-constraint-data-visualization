@@ -138,3 +138,12 @@ class GameLineChartDataViewer(GameDataViewer):
         self.dataWindow.insert("1.0","rectangle name = your guess (","header")
         self.dataWindow.config(state="disabled")
 
+class GameCandlestickChartDataViewer(GameDataViewer):
+    def __init__(self, textWindow: Text):
+        super().__init__(textWindow)
+    
+    def Write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str) -> None:
+        pass
+
+    def WriteSolution(self, userSolver: CandlestickChartSolver, solutionSolver: CandlestickChartSolver, plotMetadata: CandlesticPlotMetadata):
+        pass

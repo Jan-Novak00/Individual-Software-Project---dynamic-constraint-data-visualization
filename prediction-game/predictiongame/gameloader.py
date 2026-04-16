@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from .gamemodes import GameModes
 from .gameevaluator import GameEvaluator
+from dataclasses import dataclass
 
 INITIAL_WIDTH : int   = 100
 INITIAL_SPACING : int = 15
@@ -275,6 +276,15 @@ class GameLoader(ABC):
     def GetGameMode()->GameModes:
         pass
 
+def ValidateListUnderKeyword(keyword : str, listToValidate : list, itemType : Type[object]):
+    typeName = itemType.__name__ if itemType != Union[int,float] else float.__name__
+    if not isinstance(listToValidate, list):
+        raise InvalidDataFormatException(f"Data under \"{keyword}\" keyword must be a list of {typeName}.",keyword)
+    for item in listToValidate:
+        if not isinstance(item,itemType):
+            raise InvalidDataFormatException(f"List under \"{keyword}\" key must be a list of {typeName}.",keyword)
+
+
 GROUPS_KEYWORD = "groups"
 
 class BarChartGameLoader(GameLoader):
@@ -396,23 +406,11 @@ class LineChartGameLoader(GameLoader):
     
     @staticmethod
     def _validateData(data : list[float], isGuess : list[bool], names : list[str]):
-        if not isinstance(data, list):
-            raise InvalidDataFormatException(f"Data under \"{POINTS_KEY}\" key must be a list of floats.",POINTS_KEY)
-        if not isinstance(isGuess, list):
-            raise InvalidDataFormatException(f"Data under \"{IS_GUESS_KEY}\" key must be a list of booleans.",IS_GUESS_KEY)
-        if not isinstance(names, list):
-            raise InvalidDataFormatException(f"Data under \"{NAMES_KEY}\" key must be a list of booleans.", NAMES_KEY)
-        
+        ValidateListUnderKeyword(POINTS_KEY,data,Union[int,float]) # pyright: ignore[reportArgumentType]
+        ValidateListUnderKeyword(IS_GUESS_KEY,isGuess,bool)
+        ValidateListUnderKeyword(NAMES_KEY,names,str)
         if len(data) != len(isGuess) or len(data) != len(names):
             raise InvalidDataFormatException(f"Lists under \"{POINTS_KEY}\" key, \"{IS_GUESS_KEY}\" key and \"{NAMES_KEY}\" key must be of the same length.",POINTS_KEY)
-        
-        for i in range(len(data)):
-            if not isinstance(data[i],int) and not isinstance(data[i],float):
-                raise InvalidDataFormatException(f"List under \"{POINTS_KEY}\" key must be a list of floats.",POINTS_KEY)
-            if not isinstance(isGuess[i], bool):
-                raise InvalidDataFormatException(f"List under \"{IS_GUESS_KEY}\" key must be a list of booleans.",IS_GUESS_KEY)
-            if not isinstance(names[i], str):
-                raise InvalidDataFormatException(f"List under \"{NAMES_KEY}\" key must be a list of strings.", NAMES_KEY)
     
     @staticmethod
     def _createUserData(data: list[float], isGuess: list[bool])->list[float]:
@@ -488,19 +486,146 @@ class LineChartGameLoader(GameLoader):
     def GetGameMode() -> GameModes:
         return GameModes.LineChart
 
+OPENINGS_KEY = "openings"
+CLOSINGS_KEY = "closings"
+MAXIMUMS_KEY = "maximums"
+MINIMUMS_KEY = "minimums"
+
 class CandlestickChartGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
         super().__init__(data)
+        self.userSolver : CandlestickChartSolver = self.userSolver
+        self.solutionSolver : CandlestickChartSolver = self.solutionSolver
+
+    @dataclass
+    class CandleData:
+        openings: list[float]
+        closings: list[float]
+        minimums: list[float]
+        maximums: list[float]
     
     def _loadData(self, data: dict[str, Any]):
         gameData = data[CANDLESTICK_DATA_CONFIG_SECTION_HEADER]
-        pass
+        openings : list[float] = None # pyright: ignore[reportAssignmentType]
+        closings : list[float] = None # pyright: ignore[reportAssignmentType]
+        maximums : list[float] = None # pyright: ignore[reportAssignmentType]
+        minimums : list[float] = None # pyright: ignore[reportAssignmentType]
+        isGuess  : list[bool] = None # pyright: ignore[reportAssignmentType]
+        names    : list[str]   = None # pyright: ignore[reportAssignmentType]
+        xAxisValue : float   = 0
+
+        if X_AXIS_VALUE_KEY in gameData:
+            xAxisValue = gameData[X_AXIS_VALUE_KEY]
+            if not isinstance(xAxisValue,float) and not isinstance(xAxisValue, int):
+                raise InvalidDataFormatException(f"Value under \"{X_AXIS_VALUE_KEY}\" must be float.",X_AXIS_VALUE_KEY)
+        
+        if OPENINGS_KEY in gameData:
+            openings = gameData[OPENINGS_KEY]
+        else:
+            raise InvalidDataConfigSectionException(OPENINGS_KEY, CANDLESTICK_DATA_CONFIG_SECTION_HEADER)
+        
+        if CLOSINGS_KEY in gameData:
+            closings = gameData[CLOSINGS_KEY]
+        else:
+            raise InvalidDataConfigSectionException(CLOSINGS_KEY,CANDLESTICK_DATA_CONFIG_SECTION_HEADER)
+        
+        if MAXIMUMS_KEY in gameData:
+            maximums = gameData[MAXIMUMS_KEY]
+        else:
+            raise InvalidDataConfigSectionException(MAXIMUMS_KEY,CANDLESTICK_DATA_CONFIG_SECTION_HEADER)
+        
+        if MINIMUMS_KEY in gameData:
+            minimums = gameData[MINIMUMS_KEY]
+        else:
+            raise InvalidDataConfigSectionException(MINIMUMS_KEY,CANDLESTICK_DATA_CONFIG_SECTION_HEADER)
+        
+        if IS_GUESS_KEY in gameData:
+            isGuess = gameData[IS_GUESS_KEY]
+        else:
+            raise InvalidDataConfigSectionException(IS_GUESS_KEY, CANDLESTICK_DATA_CONFIG_SECTION_HEADER)
+
+        if NAMES_KEY in gameData:
+            names = gameData[NAMES_KEY]
+        else:
+            raise InvalidDataConfigSectionException(NAMES_KEY,CANDLESTICK_DATA_CONFIG_SECTION_HEADER)
+
+        CandlestickChartGameLoader._validateData(openings,closings,minimums,maximums,names,isGuess)
+        userData = CandlestickChartGameLoader._createUserData(openings,closings,minimums,maximums,isGuess)
+
+        metadata : CandlesticPlotMetadata = CreateCandlesticChartMetadata(self.title,self.xAxisLabel,self.yAxisLabel,xAxisValue,openings,closings,minimums,maximums,self.plotHeight)
+        
+        rescaledXAxisValue = xAxisValue*metadata.heightScaleFactor
+        rescaledUserData = self.CandleData(openings=RescaleList(userData.openings,metadata.heightScaleFactor,rescaledXAxisValue), # pyright: ignore[reportArgumentType]
+                                           closings=RescaleList(userData.closings,metadata.heightScaleFactor,rescaledXAxisValue), # pyright: ignore[reportArgumentType]
+                                           minimums=RescaleList(userData.minimums,metadata.heightScaleFactor,rescaledXAxisValue), # pyright: ignore[reportArgumentType]
+                                           maximums=RescaleList(userData.maximums,metadata.heightScaleFactor,rescaledXAxisValue)) # pyright: ignore[reportArgumentType]
+        rescaledSolutionData = self.CandleData(openings=RescaleList(openings,metadata.heightScaleFactor,rescaledXAxisValue), # pyright: ignore[reportArgumentType]
+                                               closings=RescaleList(closings,metadata.heightScaleFactor,rescaledXAxisValue), # pyright: ignore[reportArgumentType]
+                                               minimums=RescaleList(minimums,metadata.heightScaleFactor,rescaledXAxisValue), # pyright: ignore[reportArgumentType]
+                                               maximums=RescaleList(maximums,metadata.heightScaleFactor,rescaledXAxisValue)) # pyright: ignore[reportArgumentType]
+        
+        self.solutionSolver = CandlestickChartSolver(width=INITIAL_WIDTH,
+                                                     initialOpening=rescaledSolutionData.openings, # pyright: ignore[reportArgumentType]
+                                                     initialClosing=rescaledSolutionData.closings, # pyright: ignore[reportArgumentType]
+                                                     initialMinimum=rescaledSolutionData.minimums, # pyright: ignore[reportArgumentType]
+                                                     initialMaximum=rescaledSolutionData.maximums, # pyright: ignore[reportArgumentType]
+                                                     spacing=INITIAL_SPACING,
+                                                     names=names,
+                                                     xCoordinate=self.originX,
+                                                     yCoordinate=self.originY)
+        
+        self.userSolver = CandlestickChartSolver(width=INITIAL_WIDTH,
+                                                     initialOpening=rescaledUserData.openings, # pyright: ignore[reportArgumentType]
+                                                     initialClosing=rescaledUserData.closings, # pyright: ignore[reportArgumentType]
+                                                     initialMinimum=rescaledUserData.minimums, # pyright: ignore[reportArgumentType]
+                                                     initialMaximum=rescaledUserData.maximums, # pyright: ignore[reportArgumentType]
+                                                     spacing=INITIAL_SPACING,
+                                                     names=names,
+                                                     xCoordinate=self.originX,
+                                                     yCoordinate=self.originY)
+        self.plotMetadata = metadata
+        self._lock(isGuess)
+
+    @staticmethod
+    def _validateData(openings : list[float], closings : list[float], minimums : list[float], maximums : list[float], names : list[str], isGuess : list[bool]):
+        ValidateListUnderKeyword(OPENINGS_KEY,openings,Union[int,float]) # pyright: ignore[reportArgumentType]
+        ValidateListUnderKeyword(CLOSINGS_KEY,closings,Union[int,float]) # pyright: ignore[reportArgumentType]
+        ValidateListUnderKeyword(MINIMUMS_KEY,minimums,Union[int,float]) # pyright: ignore[reportArgumentType]
+        ValidateListUnderKeyword(MAXIMUMS_KEY,maximums,Union[int,float]) # pyright: ignore[reportArgumentType]
+        ValidateListUnderKeyword(NAMES_KEY,names,str)
+        ValidateListUnderKeyword(IS_GUESS_KEY,isGuess,bool)
+
+        if len(openings) != len(closings) or len(openings) != len(maximums) or len(openings) != len(minimums) or len(openings) != len(names) or len(openings) != len(isGuess):
+            raise InvalidDataFormatException(f"Lists under \"{OPENINGS_KEY}\" key, \"{CLOSINGS_KEY}\" key, \"{MINIMUMS_KEY}\" key, \"{MAXIMUMS_KEY}\" key, \"{IS_GUESS_KEY}\" key and \"{NAMES_KEY}\" key must be of the same length.",OPENINGS_KEY)
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
         return DefaultCandlestickChartEvaluator
+    
+    @staticmethod
+    def _createUserData(openings : list[float], closings : list[float], minimums : list[float], maximums : list[float], isGuess : list[bool])->CandleData:
+        userOpenings, userClosings, userMinimums, userMaximums = [],[],[],[]
+        for i in range(len(openings)):
+            if isGuess[i]:
+                userOpenings.append(0)
+                userClosings.append(0)
+                userMinimums.append(0)
+                userMaximums.append(0)
+            else:
+                userOpenings.append(openings[i])
+                userClosings.append(closings[i])
+                userMinimums.append(minimums[i])
+                userMaximums.append(maximums[i])
+
+        return CandlestickChartGameLoader.CandleData(userOpenings,userClosings,userMinimums,userMaximums)
+
     @staticmethod
     def GetGameMode() -> GameModes:
         return GameModes.CandlestickChart
+    
+    def _lock(self,isGuess: list[bool]):
+        for i in range(len(isGuess)):
+            if not isGuess[i]:
+                self.userSolver.SwitchCandleLock(i)
 
 class HistogramGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
