@@ -1,4 +1,4 @@
-from tkinter import Event, Text
+from tkinter import Event, Menu, Text
 from typing import Type
 from kiwiplots import CandlesticEventHandler, PlotMetadata, CandlesticPlotMetadata, CandlestickChartSolver, ChartSolver
 from .gameeventhandler import GameEventHandler
@@ -10,9 +10,16 @@ class GameCandlestickChartEventHandler(CandlesticEventHandler,GameEventHandler):
         GameEventHandler.__init__(self)
         self.dataViewer : GameDataViewer = self.dataViewer
         self.dataViewerType : Type[GameDataViewer] = dataViewerClass
+
     def initializeDataView(self, textWindow: Text) -> None:
         self.dataViewer = self.dataViewerType(textWindow)
     
+    def initializeRightClickMenu(self, menu: Menu) -> None:
+        return
+    
+    def initializeDefaultRightClickMenu(self, menu: Menu) -> None:
+        return
+
     def on_left_down(self, event: Event):
         if self.paused:
             return
@@ -24,7 +31,6 @@ class GameCandlestickChartEventHandler(CandlesticEventHandler,GameEventHandler):
         return super().on_mouse_move(event)
     
     def on_right_down(self, event: Event):
-        return
         if self.paused:
             return
         super().on_right_down(event)

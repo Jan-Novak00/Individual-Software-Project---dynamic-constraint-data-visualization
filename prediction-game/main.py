@@ -30,4 +30,4 @@ def test5():
     a.Play()
 
 if __name__ == "__main__":
-    test5()
+    test2()
