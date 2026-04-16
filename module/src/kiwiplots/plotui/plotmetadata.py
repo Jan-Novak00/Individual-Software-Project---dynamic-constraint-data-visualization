@@ -157,4 +157,4 @@ def CreateHistogramMetadata(title: str, xAxisLabel: str, yAxisLabel: str, initia
 
 def CreateLineChartMetadata(title: str, xAxisValue : float, values : list[float], xAxisLabel : str, yAxisLabel : str, height : int)->LineChartMetadata:
     heightScaleFactor : float = CalculateScaleFactor(values,height)
-    return LineChartMetadata(title,INITIAL_COLOR,heightScaleFactor,xAxisValue,xAxisLabel,yAxisLabel)
+    return LineChartMetadata(title,DEFAULT_COLOR,heightScaleFactor,xAxisValue,xAxisLabel,yAxisLabel)

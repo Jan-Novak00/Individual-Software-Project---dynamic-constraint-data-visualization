@@ -16,7 +16,7 @@ INITIAL_INNER_SPACING = 10
 INITIAL_ORIGIN_X : int = 50
 INITIAL_ORIGIN_Y : int = 30
 INITIAL_PADDING : int = 10
-INITIAL_COLOR : Union[str,int] = "blue"
+DEFAULT_COLOR : Union[str,int] = "blue"
 INITIAL_PADDING : int = 10
 
 GENERAL_CONFIG_SECTION_HEADER           = "game_config"
@@ -280,6 +280,8 @@ GROUPS_KEYWORD = "groups"
 class BarChartGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
         super().__init__(data)
+        self.userSolver : BarChartSolver = self.userSolver
+        self.solutionSolver : BarChartSolver = self.solutionSolver
     
     @staticmethod
     def _validateData(data: list[list[float]], whatToGuess: list[list[bool]], names: list[list[str]]):
@@ -369,23 +371,28 @@ class BarChartGameLoader(GameLoader):
                                              rectangleNames=names, 
                                              xCoordinate=self.originX, 
                                              yCoordinate=self.originY)
-        
+
+        self.plotMetadata = metadata
+        self._lock(isGuess)
+    
+    @staticmethod
+    def GetGameMode() -> GameModes:
+        return GameModes.BarChart
+    
+    def _lock(self, isGuess : list[list[bool]]):
         for i in range(len(isGuess)):
             for j in range(len(isGuess[i])):
                 if not isGuess[i][j]:
                     self.userSolver.SwitchRectangleLock(i,j)
 
-        self.plotMetadata = metadata
-    
-    @staticmethod
-    def GetGameMode() -> GameModes:
-        return GameModes.BarChart
 
 POINTS_KEY = "points"
 
 class LineChartGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
         super().__init__(data)
+        self.userSolver : LineChartSolver = self.userSolver
+        self.solutionSolver : LineChartSolver = self.solutionSolver
     
     @staticmethod
     def _validateData(data : list[float], isGuess : list[bool], names : list[str]):
@@ -466,12 +473,17 @@ class LineChartGameLoader(GameLoader):
                                           padding=INITIAL_PADDING)
         self.plotMetadata = metadata
 
+        self._lock(isGuess)
+
+    def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
+        return DefaultLineChartEvaluator
+    
+    def _lock(self, isGuess: list[bool]):
         for i in range(len(isGuess)):
             if not isGuess[i]:
                 self.userSolver.SwitchPointLock(i)
 
-    def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
-        return DefaultLineChartEvaluator
+
     @staticmethod
     def GetGameMode() -> GameModes:
         return GameModes.LineChart

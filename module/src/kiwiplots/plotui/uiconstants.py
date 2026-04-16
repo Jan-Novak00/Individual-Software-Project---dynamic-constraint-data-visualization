@@ -6,5 +6,5 @@ INITIAL_INNER_SPACING = 10
 INITIAL_ORIGIN_X : int = 50
 INITIAL_ORIGIN_Y : int = 30
 INITIAL_PADDING : int = 10
-INITIAL_COLOR : Union[str,int] = "blue"
+DEFAULT_COLOR : Union[str,int] = "blue"
 INITIAL_PADDING : int = 10
