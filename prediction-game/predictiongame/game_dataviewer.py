@@ -143,7 +143,70 @@ class GameCandlestickChartDataViewer(GameDataViewer):
         super().__init__(textWindow)
     
     def Write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str) -> None:
-        pass
+        """
+        Displays all data for the user and highlights which data is being edited
+        """
+        xAxisValue = plotMetadata.xAxisValue
+        scaleFactor = plotMetadata.heightScaleFactor
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        eventType = CandlesticEventHandler.CandleEventRegistersLeftButton.CandleLeftEvents
+        valueEdited = changedStatus in [eventType.closing,eventType.opening,eventType.maximum,eventType.minimum]
+        candles = solver.GetCandleData()
+
+        for i in range(len(candles)-1, -1, -1):
+            candle = candles[i]
+            openingValue = FormatFloat(candle.openingCorner.Y/scaleFactor + xAxisValue)
+            closingValue = FormatFloat(candle.closingCorner.Y/scaleFactor + xAxisValue)
+            maximumValue = FormatFloat(candle.wickTop.Y/scaleFactor + xAxisValue)
+            minimumValue = FormatFloat(candle.wickBottom.Y/scaleFactor + xAxisValue/scaleFactor)
+            
+            string = f"{candle.name}:\t{openingValue}, {closingValue}, {minimumValue}, {maximumValue}\n"
+            if valueEdited and i == changedIndex:
+                self.dataWindow.insert("1.0",f"{string}", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"{string}")
+        self.dataWindow.insert("1.0","candle:\t opening, closing, min, max\n\n","header")
+        self.dataWindow.config(state="disabled")
 
     def WriteSolution(self, userSolver: CandlestickChartSolver, solutionSolver: CandlestickChartSolver, plotMetadata: CandlesticPlotMetadata):
-        pass
+        xAxisValue = plotMetadata.xAxisValue
+        scaleFactor = plotMetadata.heightScaleFactor
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        userCandles = userSolver.GetCandleData()
+        solutionCandles = solutionSolver.GetCandleData()
+
+        assert len(userCandles) == len(solutionCandles)
+
+        for i in range(len(userCandles)-1, -1, -1):
+            userCandle = userCandles[i]
+            solutionCandle = solutionCandles[i]
+
+            UopeningValue = FormatFloat(userCandle.openingCorner.Y/scaleFactor + xAxisValue)
+            UclosingValue = FormatFloat(userCandle.closingCorner.Y/scaleFactor + xAxisValue)
+            UmaximumValue = FormatFloat(userCandle.wickTop.Y/scaleFactor + xAxisValue)
+            UminimumValue = FormatFloat(userCandle.wickBottom.Y/scaleFactor + xAxisValue/scaleFactor)
+            
+            SopeningValue = FormatFloat(solutionCandle.openingCorner.Y/scaleFactor + xAxisValue)
+            SclosingValue = FormatFloat(solutionCandle.closingCorner.Y/scaleFactor + xAxisValue)
+            SmaximumValue = FormatFloat(solutionCandle.wickTop.Y/scaleFactor + xAxisValue)
+            SminimumValue = FormatFloat(solutionCandle.wickBottom.Y/scaleFactor + xAxisValue/scaleFactor)
+            
+            self.dataWindow.insert("1.0",")\n")
+            self.dataWindow.insert("1.0",SmaximumValue,"green_highlight")
+            self.dataWindow.insert("1.0",f"), {UmaximumValue} (")
+            self.dataWindow.insert("1.0",SminimumValue,"green_highlight")
+            self.dataWindow.insert("1.0",f"), {UminimumValue} (")
+            self.dataWindow.insert("1.0",SclosingValue,"green_highlight")
+            self.dataWindow.insert("1.0",f"), {UclosingValue} (")
+            self.dataWindow.insert("1.0",SopeningValue,"green_highlight")
+            self.dataWindow.insert("1.0",f"{userCandle.name}:\t{UopeningValue} (")
+
+        self.dataWindow.insert("1.0","Green values represent the solution\n\n","green_highlight")
+        self.dataWindow.insert("1.0","candle:\t opening, closing, min, max\n","header")
+        self.dataWindow.config(state="disabled")
