@@ -26,7 +26,7 @@ class ValueRectangle:
     
     def __str__(self):
         return f"{self.name} LB: ({self.leftBottom.X}, {self.leftBottom.Y}), RT: ({self.rightTop.X}, {self.rightTop.Y})"
-    def GetHeight(self):
+    def GetHeight(self)->float:
         return self.rightTop.Y-self.leftBottom.Y
 
 class VariablePoint2D:
@@ -63,7 +63,7 @@ class VariableRectangle(VariableElement):
         color - color of the ractangle
         widthScale - scale of the width. Resulting pixel width of the rectangle is widthScale*width.value()
     """
-    def __init__(self, width: Variable, name: str, color = "blue", widthScale : float = 1):
+    def __init__(self, width: Variable, name: str, color : Union[str,int] = "blue", widthScale : float = 1):
         self.height = Variable(f"{name}_height")
         self.width = width
         self.widthScale = widthScale
@@ -76,12 +76,13 @@ class VariableRectangle(VariableElement):
         self.horizontalPositionConstraint : Constraint = ((self.leftBottom.X + self.width * self.widthScale == self.rightTop.X) | "required")
         self.verticalPositionConstraint : Constraint = ((self.leftBottom.Y + self.height == self.rightTop.Y) | "required")
 
-        self.bottomLeftXPositionConstraint : Constraint = None # pyright: ignore[reportAttributeAccessIssue]
-        self.bottomLeftYPositionConstraint : Constraint = None # pyright: ignore[reportAttributeAccessIssue]
+        self.bottomLeftXPositionConstraint : Constraint | None = None
+        self.bottomLeftYPositionConstraint : Constraint | None = None
 
-        self.spacingConstraint : Constraint = None # pyright: ignore[reportAttributeAccessIssue]
-    
-    def ChangeName(self, name: str) -> None:
+        self.spacingConstraint : Constraint | None = None 
+
+
+    def ChangeName(self, name: str):
         self.name = name
     
     def ChangeColor(self, color: Union[str,int]):
@@ -110,19 +111,19 @@ class VariableRectangle(VariableElement):
         self.spacingConstraint = spacingConstraint
     
 
-    def GetAllConstraints(self):
+    def GetAllConstraints(self)->list[Constraint]:
         """
         Returns all constraints, both from __iter__ method and constraints which specify domain of variables
         """
         return self._getShapeConstraints() + self._getPositionConstraints()
     
-    def Value(self):
+    def Value(self)->ValueRectangle:
         """
         Returns ValueRectangle representation of the instance.
         """
         return ValueRectangle(self.leftBottom.Value(), self.rightTop.Value(), self.color, self.name)
     
-    def GetName(self):
+    def GetName(self)->str:
         return self.name
     
     def GetHeightVariable(self) -> Variable:
@@ -132,8 +133,11 @@ class VariableRectangleGroup(VariableElement):
     """
     Represents a group of rectangles. Rectangles are separated by innerSpacing Variable, which is declared globaly.
     """
-    def __init__(self, rectangleWidth: Variable, innerSpacing: Variable, names: list[str], color: str = "blue", widthScales : list[float] = None): # pyright: ignore[reportArgumentType]
-        self.rectangles = [VariableRectangle(rectangleWidth, names[i] if names is not None else "", color, (1 if widthScales is None else widthScales[i])) for i in range(len(names))]
+    def __init__(self, rectangleWidth: Variable, innerSpacing: Variable, names: list[str], color : Union[str,int] = "blue", widthScales : list[float] | None = None):
+        self.rectangles = [VariableRectangle(width      = rectangleWidth, 
+                                             name       = names[i] if names is not None else "", 
+                                             color      = color, 
+                                             widthScale = (1 if widthScales is None else widthScales[i])) for i in range(len(names))]
         self.innerSpacing = innerSpacing
         self.width = rectangleWidth
 
@@ -144,7 +148,7 @@ class VariableRectangleGroup(VariableElement):
         self.rightMostX : Variable = self.rectangles[-1].rightTop.X
         self.bottomY : Variable = self.rectangles[0].leftBottom.Y
 
-        self.spacingConstraint : Constraint = None # pyright: ignore[reportAttributeAccessIssue]
+        self.spacingConstraint : Constraint | None = None
     
     def __iter__(self):
         return iter(self.rectangles)
@@ -184,11 +188,11 @@ class VariableRectangleGroup(VariableElement):
     def NumberOfRectangles(self):
         return len(self.rectangles)
     
-    def ChangeName(self, index : int, name : str) -> None:
-        self.rectangles[index].ChangeName(name)
+    def ChangeName(self, rectangleIndex : int, name : str) -> None:
+        self.rectangles[rectangleIndex].ChangeName(name)
 
-    def ChangeColor(self, index : int, color: Union[str,int])-> None:
-        self.rectangles[index].ChangeColor(color)
+    def ChangeColor(self, rectangleIndex : int, color: Union[str,int])-> None:
+        self.rectangles[rectangleIndex].ChangeColor(color)
 
     def GetName(self, rectangleIndex : int):
         return self.rectangles[rectangleIndex].GetName()
@@ -198,7 +202,7 @@ class VariableRectangleGroup(VariableElement):
     
     def AddRectangle(self, name: str, widthScale: float = 1):
         print("--- rectangleGroup.AddRectangle start ---")
-        #Hint: this method can only be called on a group with at least one rectangle
+        #TODO this method can only be called on a group with at least one rectangle
         newRectangle = VariableRectangle(width=self.width,name=name,widthScale=widthScale)
         lastRectangle = self.rectangles[-1]
         self.rectangles.append(newRectangle)
@@ -211,7 +215,7 @@ class ValueCandle(ValueRectangle):
     """
     Holds information about a given candle.
     """
-    def __init__(self, openingCorner : ValuePoint2D, closingCorner : ValuePoint2D, wickBottom : ValuePoint2D, wickTop : ValuePoint2D, color = "blue", name = "", nameVisible : bool = False):
+    def __init__(self, openingCorner : ValuePoint2D, closingCorner : ValuePoint2D, wickBottom : ValuePoint2D, wickTop : ValuePoint2D, color : Union[str,int] = "blue", name : str = "", nameVisible : bool = False):
         super().__init__(openingCorner, closingCorner, color, name)
         self.openingCorner : ValuePoint2D = self.leftBottom
         self.closingCorner : ValuePoint2D = self.rightTop
@@ -279,9 +283,9 @@ class VariableCandle(VariableRectangle):
         """
         return ValueCandle(self.openingCorner.Value(), self.closingCorner.Value(), self.wickBottom.Value(), self.wickTop.Value(), self.positiveColor if self.height.value() >= 0 else self.negativeColor, self.name, self.nameVisible)
         
-    def ChangePositiveColor(self, color: str):
+    def ChangePositiveColor(self, color: Union[str,int]):
         self.positiveColor = color
-    def ChangeNegativeColor(self, color: str):
+    def ChangeNegativeColor(self, color: Union[str,int]):
         self.negativeColor = color
     def SwitchNameVisibility(self):
         self.nameVisible = not self.nameVisible
@@ -323,7 +327,7 @@ class VariableLine(VariableElement):
         ]
     
     def GetAllConstraints(self):
-        return self.verticalConstraints + [self.horizontalPositionConstraint] #+ self.heightConstraints
+        return self.verticalConstraints + [self.horizontalPositionConstraint]
     
     def Value(self):
         return ValueLine(self.leftEnd.Value(), self.rightEnd.Value(), self.leftHeight.value(), self.rightHeight.value())

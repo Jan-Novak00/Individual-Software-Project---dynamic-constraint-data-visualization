@@ -3,6 +3,7 @@ from kiwisolver import Variable, Constraint
 from typing import Union
 from abc import ABC, abstractmethod
 from .utils import *
+from .plotui.uiconstants import DEFAULT_COLOR
 
 
 MINIMAL_WIDTH : float = 10
@@ -34,19 +35,23 @@ class VariableBarChart(VariableChart):
     """
     VariableChart version for bar chart and histogram
     """
-    def __init__(self, rectangleNames : list[list[str]], widthScalesForGroups : list[list[float]] = None): # type: ignore
+    def __init__(self, rectangleNames : list[list[str]], widthScalesForGroups : list[list[float]] | None = None):
         
         super().__init__()
 
         self.innerSpacing = Variable("global_inner_spacing")
         
-        self.groups : list[VariableRectangleGroup] = [VariableRectangleGroup(self.width,self.innerSpacing, rectangleNames[i] if rectangleNames is not None else None, "blue" ,None if widthScalesForGroups is None else widthScalesForGroups[i]) for i, heights in enumerate(rectangleNames)] # type: ignore
-        self._createGroupSpacingConstraints()
+        self.groups : list[VariableRectangleGroup] = [VariableRectangleGroup(rectangleWidth=self.width,
+                                                                             innerSpacing = self.innerSpacing, 
+                                                                             names        = rectangleNames[i] if rectangleNames is not None else [], 
+                                                                             color        = DEFAULT_COLOR,
+                                                                             widthScales  = None if widthScalesForGroups is None else widthScalesForGroups[i]) 
+                                                                             for i, heights in enumerate(rectangleNames)]
 
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
     
-    def SetIntervalValues(self, intervals: list[tuple[float,float]]): # type: ignore
+    def SetIntervalValues(self, intervals: list[tuple[float,float]]):
         """
         Sets interval scales for histogram.
         """
@@ -67,7 +72,6 @@ class VariableBarChart(VariableChart):
     
     def Value(self):
         return [group.Value() for group in self.groups]
-    
     
     def _getGroupConstraints(self) -> list[Constraint]:
         result = []
@@ -95,16 +99,13 @@ class VariableBarChart(VariableChart):
         return self.groups[groupIndex].GetHeightVariable(rectangleIndex)
     
     def AddGroup(self,firstRectangleName : str):
-        print("--- chart.AddGroup method start ---")
         lastGroup = self.groups[-1] #TODO first one
         newGroup = VariableRectangleGroup(self.width, self.innerSpacing, [firstRectangleName])
         self.groups.append(newGroup)
         newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
-        print("--- chart.AddGroup method end ---")
         return newGroup, newGroup.GetAllConstraints() + [(self.origin.Y == newGroup.bottomY) | "required"]
 
     def AddRectangle(self,name: str, groupIndex: int):
-        print("--- chart.AddRectangle start ---")
         currentGroup = self.groups[groupIndex]
         nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
         constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
@@ -116,11 +117,9 @@ class VariableBarChart(VariableChart):
         newRec = currentGroup.rectangles[-1]
         constraintsToAdd.extend(newRec.GetAllConstraints())
         constraintsToAdd.append((currentGroup.rectangles[0].leftBottom.Y == newRec.leftBottom.Y)|"required")
-        print("--- chart.AddRectangle end ---")
         return newRec.height, constraintsToAdd, constraintsToRemove
     
     def AddRectangleAsInterval(self,groupIndex: int, widthScale: float, intervalStart: float, intervalEnd: float):
-        print("--- chart.AddRectangleAsInterval start ---")
         currentGroup = self.groups[groupIndex]
         nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
         constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
@@ -134,7 +133,6 @@ class VariableBarChart(VariableChart):
         newRec = currentGroup.rectangles[-1]
         constraintsToAdd.extend(newRec.GetAllConstraints())
         constraintsToAdd.append((currentGroup.rectangles[0].leftBottom.Y == newRec.leftBottom.Y)|"required")
-        print("--- chart.AddRectangleAsInterval end ---")
         return newRec.height, constraintsToAdd, constraintsToRemove
 
 class VariableCandlesticChart(VariableChart):
@@ -175,11 +173,11 @@ class VariableCandlesticChart(VariableChart):
     
     def ChangePositiveColor(self, color : Union[str,int]):
         for candle in self.candles:
-            candle.ChangePositiveColor(color) # type: ignore
+            candle.ChangePositiveColor(color)
     
     def ChangeNegativeColor(self, color : Union[str,int]):
         for candle in self.candles:
-            candle.ChangeNegativeColor(color) # type: ignore
+            candle.ChangeNegativeColor(color)
     
     def SwitchNameVisibility(self, index : int):
         self.candles[index].SwitchNameVisibility()
@@ -206,19 +204,16 @@ class VariableCandlesticChart(VariableChart):
         return self.candles[index].GetWickTop()
     
     def AddCandle(self,name: str, isPositive: bool):
-        print("--- chart.AddCandle method start ---")
         lastCandle = self.candles[-1]
-        newCandle = VariableCandle(self.width,True,name) #0 here for height is a placeholder
+        newCandle = VariableCandle(self.width,True,name)
         newCandle.SetSpacingConstraint((lastCandle.closingCorner.X + self.spacing == newCandle.openingCorner.X) | "required")
         self.candles.append(newCandle)
-        print("--- chart.AddCandle method end ---")
         return newCandle, newCandle.GetAllConstraints()
-        pass
 
 class VariableLineChart(VariableChart):
     def __init__(self,pointNames : list[str]):
         super().__init__()
-        #can not handle only one point ToDo
+        #can not handle only one point TODO
         self.pointNames : list[str] = pointNames
         self.lines : list[VariableLine] = []
 
@@ -265,6 +260,6 @@ class VariableLineChart(VariableChart):
     def Value(self):
         return [line.Value() for line in self.lines]
     
-    def GetHeightList(self): # better less coupled implementation required
+    def GetHeightList(self): # better less coupled implementation required TODO
         return [line.leftHeight for line in self.lines] + [self.lines[-1].rightHeight]
 
