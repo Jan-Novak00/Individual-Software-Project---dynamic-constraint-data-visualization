@@ -705,7 +705,7 @@ class LineChartSolver(ChartSolver):
 
 class HistogramSolver(ChartSolver):
     @classmethod
-    def new(cls,width: int, initialHeights: list[int], intervals: list[tuple[float,float]], paddingLeft: int, widhtScalesForGroups : list[list[float]], xCoordinate : int = 0, yCoordinate : int = 0):
+    def new(cls,width: int, initialHeights: list[int], intervals: list[tuple[float,float]], paddingLeft: int, widthScalesForGroups : list[list[float]], xCoordinate : int = 0, yCoordinate : int = 0):
         solver : BarChartSolver = BarChartSolver(width=width,
                                                            initialHeights=initialHeights,
                                                            spacing=paddingLeft,
@@ -713,7 +713,7 @@ class HistogramSolver(ChartSolver):
                                                            rectangleNames=[["" for _ in initialHeights]],
                                                            xCoordinate=xCoordinate,
                                                            yCoordinate=yCoordinate,
-                                                           widthScalesForGroups=widhtScalesForGroups)
+                                                           widthScalesForGroups=widthScalesForGroups)
         solver.SetIntervalValues(intervals=intervals)
         return cls(solver)
         
@@ -736,6 +736,9 @@ class HistogramSolver(ChartSolver):
     
     def _initialSuggest(self):
         return
+    
+    def SwitchBucketLock(self, index: int):
+        self.innerSolver.SwitchRectangleLock(0,index)
     
     def Feed(self, otherSolver: "HistogramSolver"):
         ChartSolver.Feed(self,otherSolver)
