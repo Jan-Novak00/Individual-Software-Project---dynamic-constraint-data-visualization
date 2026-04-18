@@ -419,9 +419,9 @@ class LineChartGameLoader(GameLoader):
             raise InvalidDataFormatException(f"Lists under \"{POINTS_KEY}\" key, \"{IS_GUESS_KEY}\" key and \"{NAMES_KEY}\" key must be of the same length.",POINTS_KEY)
     
     @staticmethod
-    def _createUserData(data: list[float], isGuess: list[bool])->list[float]:
+    def _createUserData(data: list[float], isGuess: list[bool], xAxisValue : float = 0)->list[float]:
         assert len(data) == len(isGuess)
-        return [data[i] if not isGuess[i] else 0 for i in range(len(data))]
+        return [data[i] if not isGuess[i] else xAxisValue for i in range(len(data))]
     
     def _loadData(self, data: dict[str, Any]):
         gameData = data[LINECHART_DATA_CONFIG_SECTION_HEADER]
@@ -455,12 +455,12 @@ class LineChartGameLoader(GameLoader):
         assert names   is not None
 
         LineChartGameLoader._validateData(points, isGuess, names)
-        userData = LineChartGameLoader._createUserData(points,isGuess)
         solutionData = points
 
         metadata: LineChartMetadata = CreateLineChartMetadata(self.title, xAxisValue, solutionData, self.xAxisLabel, self.yAxisLabel, self.plotHeight)
 
         rescaledXAxisValue = xAxisValue*metadata.heightScaleFactor
+        userData = LineChartGameLoader._createUserData(points,isGuess, xAxisValue)
 
         rescaledUserData = RescaleList(userData, metadata.heightScaleFactor, rescaledXAxisValue)
         rescaledSolutionData = RescaleList(solutionData, metadata.heightScaleFactor, rescaledXAxisValue)
@@ -566,7 +566,7 @@ class CandlestickChartGameLoader(GameLoader):
         assert isGuess  is not None
 
         CandlestickChartGameLoader._validateData(openings,closings,minimums,maximums,names,isGuess)
-        userData = CandlestickChartGameLoader._createUserData(openings,closings,minimums,maximums,isGuess)
+        userData = CandlestickChartGameLoader._createUserData(openings,closings,minimums,maximums,isGuess, xAxisValue)
 
         metadata : CandlesticPlotMetadata = CreateCandlesticChartMetadata(self.title,self.xAxisLabel,self.yAxisLabel,xAxisValue,openings,closings,minimums,maximums,self.plotHeight)
         
@@ -618,14 +618,14 @@ class CandlestickChartGameLoader(GameLoader):
         return DefaultCandlestickChartEvaluator
     
     @staticmethod
-    def _createUserData(openings : list[float], closings : list[float], minimums : list[float], maximums : list[float], isGuess : list[bool])->CandleData:
+    def _createUserData(openings : list[float], closings : list[float], minimums : list[float], maximums : list[float], isGuess : list[bool], xAxisValue : float =0)->CandleData:
         userOpenings, userClosings, userMinimums, userMaximums = [],[],[],[]
         for i in range(len(openings)):
             if isGuess[i]:
-                userOpenings.append(0)
-                userClosings.append(0)
-                userMinimums.append(0)
-                userMaximums.append(0)
+                userOpenings.append(xAxisValue)
+                userClosings.append(xAxisValue)
+                userMinimums.append(xAxisValue)
+                userMaximums.append(xAxisValue)
             else:
                 userOpenings.append(openings[i])
                 userClosings.append(closings[i])
@@ -665,9 +665,15 @@ class HistogramGameLoader(GameLoader):
         if len(values) != len(isGuess):
             raise InvalidDataFormatException(f"Lists under \"{BUCKET_VALUE_KEY}\" key and \"{IS_GUESS_KEY}\" key msut be of the same length.",BUCKET_VALUE_KEY)
         
-        if len(intervals) != len(values)-1:
+        if len(intervals)-1 != len(values):
             raise InvalidDataFormatException(f"Invalid amount of interval boundaries. List under \"{INTERVALS_KEY}\" key must contain one less item than list under \"{BUCKET_VALUE_KEY}\" key.", INTERVALS_KEY) 
-    
+
+        boundary = intervals[0]
+        for b in intervals:
+            if b <= boundary:
+                raise InvalidDataFormatException(f"Interval boundries in under \"{INTERVALS_KEY}\" key must be ordered.",INTERVALS_KEY)
+            boundary = b
+
     @staticmethod
     def _getUserData(data: list[float], isGuess : list[bool]):
         assert len(data) == len(isGuess)
@@ -734,6 +740,7 @@ class HistogramGameLoader(GameLoader):
                                                   xCoordinate=self.originX,
                                                   yCoordinate=self.originY)
         self.plotMetadata = metadata
+        self._lock(isGuess)
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
         return DefaultHistogramEvaluator

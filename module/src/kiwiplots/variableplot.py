@@ -46,7 +46,8 @@ class VariableBarChart(VariableChart):
                                                                              names        = rectangleNames[i] if rectangleNames is not None else [], 
                                                                              color        = DEFAULT_COLOR,
                                                                              widthScales  = None if widthScalesForGroups is None else widthScalesForGroups[i]) 
-                                                                             for i, heights in enumerate(rectangleNames)]
+                                                                             for i, name in enumerate(rectangleNames)]
+        self._createGroupSpacingConstraints()
 
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"

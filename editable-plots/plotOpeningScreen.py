@@ -32,6 +32,7 @@ class MenuScreen:
 
         self._setDataInput()
         self._setPlotTypeMenu()
+        self._setPlotTitleMenu()
 
         self.dimentionsAndLabelsFrame = tk.Frame(self.mainMenu, bg="bisque2")
         self.dimentionsAndLabelsFrame.pack()
@@ -104,6 +105,19 @@ class MenuScreen:
         self.chosenPlotType.set("Histogram")
         self.plotMenu = tk.OptionMenu(self.plotTypeMenu, self.chosenPlotType,"Candlestick chart","Bar chart", "Histogram", "Line chart")
         self.plotMenu.pack(pady=20)
+    
+    def _setPlotTitleMenu(self):
+        self.titleMenuFrame = tk.Frame(self.mainMenu, bg="bisque2")
+        self.titleMenuFrame.pack()
+
+        label = tk.Label(self.titleMenuFrame, text="Plot title", font=("Arial", 15), bg="bisque2")
+        label.pack()
+
+        self.plotTitle = tk.StringVar()
+        self.plotTitle.set("My chart")
+
+        self.titleEntry = tk.Entry(self.titleMenuFrame, textvariable=self.plotTitle)
+        self.titleEntry.pack()
         
     def _setPlotDimentionsMenu(self):
         """
@@ -206,15 +220,15 @@ class MenuScreen:
         print("plotType = "+"\""+plotType+"\"")
         xLabel = self.xAxisEntry.get()
         yLabel = self.yAxisEntry.get()
+        title = self.plotTitle.get()
         if plotType == "Bar chart":
-            self._runBarChart(input, width, height, xLabel, yLabel)
+            self._runBarChart(input, width, height, xLabel, yLabel,title)
         elif plotType == "Histogram":
-            self._runHistogram(input, width, height, xLabel, yLabel)
+            self._runHistogram(input, width, height, xLabel, yLabel,title)
         elif plotType == "Candlestick chart":
-            self._runCandlestickChart(input, width, height, xLabel, yLabel)
+            self._runCandlestickChart(input, width, height, xLabel, yLabel,title)
         elif plotType == "Line chart":
-            print("Line chart checkpoint 2")
-            self._runLineChart(input, width, height, xLabel, yLabel)
+            self._runLineChart(input, width, height, xLabel, yLabel,title)
 
     @staticmethod
     def _csvToListOfLists(fileString : str):
@@ -425,7 +439,7 @@ class MenuScreen:
         return [names,values]
         
 
-    def _runBarChart(self, input : str, width : int, height : int, xLabel : str, yLabel : str):
+    def _runBarChart(self, input : str, width : int, height : int, xLabel : str, yLabel : str, title: str):
         """
         Generate and display a bar chart.
 
@@ -445,9 +459,9 @@ class MenuScreen:
             return
         names, values = data[0], data[1]
         self.root.destroy()
-        UIFactory.CreateBarChart("Title (ToDo)",xLabel,yLabel,values,names,width,height).View()
+        UIFactory.CreateBarChart(title,xLabel,yLabel,values,names,width,height).View()
     
-    def _runHistogram(self, input : str, width : int, height : int, xLabel : str, yLabel : str):
+    def _runHistogram(self, input : str, width : int, height : int, xLabel : str, yLabel : str, title: str):
         """
         Generate and display a histogram.
 
@@ -467,10 +481,10 @@ class MenuScreen:
             return
         
         self.root.destroy()
-        UIFactory.CreateHistogram("Title (ToDo)",xLabel,yLabel,data[0],data[1],width,height).View()
+        UIFactory.CreateHistogram(title,xLabel,yLabel,data[0],data[1],width,height).View()
         
 
-    def _runCandlestickChart(self, input : str, width : int, height : int, xLabel : str, yLabel : str):
+    def _runCandlestickChart(self, input : str, width : int, height : int, xLabel : str, yLabel : str, title: str):
         """
         Generate and display a candlestick chart.
 
@@ -492,9 +506,9 @@ class MenuScreen:
         names, openings, closings, minima, maxima = data[0], data[1], data[2], data[3], data[4]
         xAxisValue = float(self.xAxisValueEntry.get()) # pyright: ignore[reportOptionalMemberAccess]
         self.root.destroy()
-        UIFactory.CreateCandlesticChart("Title (ToDo)",xLabel,yLabel,xAxisValue,openings,closings,minima,maxima,names,width,height).View()
+        UIFactory.CreateCandlesticChart(title,xLabel,yLabel,xAxisValue,openings,closings,minima,maxima,names,width,height).View()
     
-    def _runLineChart(self, input : str, width : int, height : int, xLabel : str, yLabel : str):
+    def _runLineChart(self, input : str, width : int, height : int, xLabel : str, yLabel : str, title: str):
         print("Line chart checkpoint 1")
         data = self._prepareInput_LineChart(input)
         if data is None:
@@ -503,5 +517,5 @@ class MenuScreen:
         names, values = data[0], data[1]
         xAxisValue = float(self.xAxisValueEntry.get()) # pyright: ignore[reportOptionalMemberAccess]
         self.root.destroy()
-        UIFactory.CreateLineChart("Title (ToDo)", xLabel,yLabel,xAxisValue,values,names,width,height).View()
+        UIFactory.CreateLineChart(title, xLabel,yLabel,xAxisValue,values,names,width,height).View()
         pass

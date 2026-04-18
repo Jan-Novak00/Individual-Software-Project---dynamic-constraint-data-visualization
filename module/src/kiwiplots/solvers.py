@@ -168,6 +168,10 @@ class BarChartSolver(ChartSolver):
             for ir, rec in enumerate(group):
                 self.solver.suggestValue(rec.height,self.initialHeights[ig][ir]) # pyright: ignore[reportIndexIssue] #TODO type safety
     
+    def Solve(self):
+        super().Solve()
+        print("spacing = ",self.GetSpacing())
+    
     def _refreshSuggestions(self):
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
         self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
@@ -207,6 +211,7 @@ class BarChartSolver(ChartSolver):
         return self.variableChart.GetName(groupIndex, rectangleIndex)
     
     def ChangeHeight(self, groupIndex: int, rectangleIndex: int, newHeight: int):
+        print("changing rectangle height at ",groupIndex,rectangleIndex)
         if (groupIndex, rectangleIndex) in self.lockedRectangles:
             return
         self.solver.suggestValue(self.variableChart.GetHeightVariable(groupIndex, rectangleIndex), newHeight)
