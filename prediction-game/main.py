@@ -29,5 +29,11 @@ def test5():
     a = GameFactory.LoadGameFromConfig(str(config_path))
     a.Play()
 
+def test6():
+    base_dir = Path(__file__).resolve().parent
+    config_path = base_dir / "histogram.test.toml"
+    a = GameFactory.LoadGameFromConfig(str(config_path))
+    a.Play()
+
 if __name__ == "__main__":
-    test2()
+    test6()

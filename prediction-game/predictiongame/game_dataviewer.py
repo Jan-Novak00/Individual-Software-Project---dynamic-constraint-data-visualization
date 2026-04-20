@@ -210,3 +210,9 @@ class GameCandlestickChartDataViewer(GameDataViewer):
         self.dataWindow.insert("1.0","Green values represent the solution\n\n","green_highlight")
         self.dataWindow.insert("1.0","candle:\t opening, closing, min, max\n","header")
         self.dataWindow.config(state="disabled")
+
+class GameHistogramDataViewer(GameDataViewer):
+    def Write(self, plotMetadata: HistogramMetadata, solver: HistogramSolver, changedIndex: int, changedStatus: str) -> None:
+        self.dataWindow.insert("1.0","TODO")
+    def WriteSolution(self, userSolver: HistogramMetadata, solutionSolver: HistogramMetadata, plotMetadata: HistogramMetadata):
+        self.dataWindow.insert("1.0","TODO")

@@ -669,10 +669,11 @@ class HistogramGameLoader(GameLoader):
             raise InvalidDataFormatException(f"Invalid amount of interval boundaries. List under \"{INTERVALS_KEY}\" key must contain one less item than list under \"{BUCKET_VALUE_KEY}\" key.", INTERVALS_KEY) 
 
         boundary = intervals[0]
-        for b in intervals:
-            if b <= boundary:
-                raise InvalidDataFormatException(f"Interval boundries in under \"{INTERVALS_KEY}\" key must be ordered.",INTERVALS_KEY)
-            boundary = b
+        for i in range(1,len(intervals)):
+            current = intervals[i]
+            if current <= boundary:
+                raise InvalidDataFormatException(f"Interval boundries in under \"{INTERVALS_KEY}\" key must be ordered and non-equal. Values {boundary} and {current} are either equal or in wrong order.",INTERVALS_KEY)
+            boundary = current
 
     @staticmethod
     def _getUserData(data: list[float], isGuess : list[bool]):
@@ -721,8 +722,13 @@ class HistogramGameLoader(GameLoader):
                                            intervals=intervalTuples,
                                            plotHeight=self.plotHeight)
         
-        rescaledUserValues = RescaleList(userValues,metadata.heightScaleFactor)
-        rescaledSolutionValues = RescaleList(values,metadata.heightScaleFactor)
+        rescaledUserValues = [RescaleList(userValues,metadata.heightScaleFactor)]
+        rescaledSolutionValues = [RescaleList(values,metadata.heightScaleFactor)]
+
+        print("user data", rescaledUserValues)
+        print("solution data", rescaledSolutionValues)
+        print("intervals",intervalTuples)
+        input()
         
         self.solutionSolver = HistogramSolver.new(width=INITIAL_WIDTH,
                                                   initialHeights=rescaledSolutionValues,

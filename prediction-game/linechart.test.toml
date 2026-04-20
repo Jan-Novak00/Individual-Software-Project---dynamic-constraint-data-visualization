@@ -1,0 +1,17 @@
+[game_config]
+title = "This is a title"
+x_axis_label = "x axis"
+y_axis_label = "z axis"
+instructions = "Line chart of numbers from 1 to 4"
+plot_width = 1000
+plot_height = 500
+
+[game_config.origin]
+x = 50
+y = 30
+
+[line_chart]
+points = [1,2,3,4]
+is_guess = [false,false,true,true]
+names = ["a","b","c","d"]
+x_axis_value = 1

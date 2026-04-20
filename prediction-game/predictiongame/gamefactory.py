@@ -3,6 +3,7 @@ from .gameloader import *
 from .game_barcharteventhandler import GameBarChartEventHandler
 from .game_linecharteventhandler import GameLineChartEventHandler
 from .game_candelstickeventhandler import GameCandlestickChartEventHandler
+from .game_histogramhandler import GameHistogramEventHandler
 from .game_dataviewer import *
 from .game_uicore import GameUI
 from .defaultevaluators import *
@@ -93,7 +94,7 @@ class GameFactory(UIFactory):
         elif (loader.GetGameMode() == GameModes.CandlestickChart):
             eventHandler = GameCandlestickChartEventHandler(metadata,userSolver,GameCandlestickChartDataViewer) # pyright: ignore[reportArgumentType]
         elif (loader.GetGameMode() == GameModes.Histogram):
-            raise NotImplementedError()
+            eventHandler = GameHistogramEventHandler(metadata,userSolver,GameHistogramDataViewer) # pyright: ignore[reportArgumentType]
         else:
             assert False, "Unreachable reached"
         

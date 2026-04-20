@@ -1,0 +1,17 @@
+[game_config]
+title = "Histogram title"
+x_axis_label = "x axis"
+y_axis_label = "y axis"
+instructions = "Instructions for the user here."
+plot_width = 1000
+plot_height = 500
+
+[game_config.origin]
+x = 50
+y = 30
+
+
+[histogram]
+interval_boundries = [1,2,4,5]
+values = [5,6,3]
+is_guess = [false,false,true]

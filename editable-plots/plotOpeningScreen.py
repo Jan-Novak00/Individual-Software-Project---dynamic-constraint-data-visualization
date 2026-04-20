@@ -181,7 +181,7 @@ class MenuScreen:
         calling the on_generateButton_click method.
         """
         self.generateButton = tk.Button(self.mainMenu, text="GENERATE", command=self.on_generateButton_click)
-        self.generateButton.pack(pady=100)
+        self.generateButton.pack(pady=10)
 
 
     
