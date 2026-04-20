@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 import itertools as it
 from .utils import *
 import time
-from warnings import deprecated
+#from warnings import deprecated
 import warnings
 import faulthandler
 faulthandler.enable()
@@ -43,7 +43,7 @@ class ChartSolver(ABC):
     def _setConstraints(self):
         raise NotImplementedError("Method must be declared in subclass")
 
-    @deprecated("Use switchConstraintLock instead. This method somethimes does not work due to an internal error of kiwisolver.removeEditVariable")
+    #@deprecated("Use switchConstraintLock instead. This method somethimes does not work due to an internal error of kiwisolver.removeEditVariable")
     def switchEditVariableLock(self, variable: Variable, locked: bool, defaultStrength = "strong"):
         value = variable.value()
         locked = not locked
@@ -168,10 +168,6 @@ class BarChartSolver(ChartSolver):
             for ir, rec in enumerate(group):
                 self.solver.suggestValue(rec.height,self.initialHeights[ig][ir]) # pyright: ignore[reportIndexIssue] #TODO type safety
     
-    def Solve(self):
-        super().Solve()
-        print("spacing = ",self.GetSpacing())
-    
     def _refreshSuggestions(self):
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
         self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
@@ -211,7 +207,6 @@ class BarChartSolver(ChartSolver):
         return self.variableChart.GetName(groupIndex, rectangleIndex)
     
     def ChangeHeight(self, groupIndex: int, rectangleIndex: int, newHeight: int):
-        print("changing rectangle height at ",groupIndex,rectangleIndex)
         if (groupIndex, rectangleIndex) in self.lockedRectangles:
             return
         self.solver.suggestValue(self.variableChart.GetHeightVariable(groupIndex, rectangleIndex), newHeight)
@@ -588,7 +583,6 @@ class CandlestickChartSolver(ChartSolver):
         print("--- solver.AddCandle method end ---")
         pass
 
-
 class LineChartSolver(ChartSolver):
     def __init__(self, width : int, initialValues : list[float], pointNames : list[str], xCoordinate : int = 0, yCoordinate : int = 0, padding : float = 0):
         self.initialWidth : int = width
@@ -700,17 +694,11 @@ class LineChartSolver(ChartSolver):
             self.solver.addConstraint(constr)
         self.solver.suggestValue(newLine.leftHeight,lastPointValue)
         self.solver.suggestValue(newLine.rightHeight,value)
-        print("new constraints added -> solving")
         self.Solve()
-        print("last line =",self.GetLineData()[-1])
-        print(self.solver.dumps())
-        print("--- solver.AddPoint method end ---")
-        pass
-
 
 class HistogramSolver(ChartSolver):
     @classmethod
-    def new(cls,width: int, initialHeights: list[int], intervals: list[tuple[float,float]], paddingLeft: int, widthScalesForGroups : list[list[float]], xCoordinate : int = 0, yCoordinate : int = 0):
+    def new(cls,width: int, initialHeights: list[int], intervals: list[tuple[float,float]], paddingLeft: int, widhtScalesForGroups : list[list[float]], xCoordinate : int = 0, yCoordinate : int = 0):
         solver : BarChartSolver = BarChartSolver(width=width,
                                                            initialHeights=initialHeights,
                                                            spacing=paddingLeft,
@@ -718,7 +706,7 @@ class HistogramSolver(ChartSolver):
                                                            rectangleNames=[["" for _ in initialHeights]],
                                                            xCoordinate=xCoordinate,
                                                            yCoordinate=yCoordinate,
-                                                           widthScalesForGroups=widthScalesForGroups)
+                                                           widthScalesForGroups=widhtScalesForGroups)
         solver.SetIntervalValues(intervals=intervals)
         return cls(solver)
         
@@ -741,9 +729,6 @@ class HistogramSolver(ChartSolver):
     
     def _initialSuggest(self):
         return
-    
-    def SwitchBucketLock(self, index: int):
-        self.innerSolver.SwitchRectangleLock(0,index)
     
     def Feed(self, otherSolver: "HistogramSolver"):
         ChartSolver.Feed(self,otherSolver)
