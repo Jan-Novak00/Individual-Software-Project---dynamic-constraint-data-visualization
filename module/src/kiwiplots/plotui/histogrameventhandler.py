@@ -6,7 +6,7 @@ from kiwiplots.solvers import HistogramSolver
 from .plotmetadata import BarChartMetadata, HistogramMetadata
 from .plotmath import isNear
 from .dataviewers import HistogramDataViewer
-from kiwiplots.plotelement import ValueRectangle, ValuePoint2D
+from kiwiplots.chartelements import ValueRectangle, ValuePoint2D
 from tkinter import simpledialog
 from tkinter import colorchooser
 from .barcharteventhandler import BarChartEventHandler

@@ -2,7 +2,7 @@ from .chartsolver import ChartSolver
 from kiwisolver import Constraint, Solver
 from kiwiplots.variablechart import VariableLineChart, VariableChart
 from typing import Union
-from kiwiplots.plotelement import ValueRectangle, VariableRectangle
+from kiwiplots.chartelements import ValueRectangle, VariableRectangle
 from kiwiplots.utils import *
 
 class LineChartSolver(ChartSolver):

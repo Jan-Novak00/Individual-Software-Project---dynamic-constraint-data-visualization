@@ -1,5 +1,5 @@
 from kiwisolver import Constraint, Variable
-from kiwiplots.plotelement import VariableLine
+from kiwiplots.chartelements import VariableLine
 from kiwiplots.utils import pairwise
 from .variablechart import VariableChart
 

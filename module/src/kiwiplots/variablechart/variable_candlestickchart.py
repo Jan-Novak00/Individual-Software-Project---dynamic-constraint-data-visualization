@@ -1,6 +1,6 @@
 
 from .variablechart import VariableChart, MINIMAL_WIDTH
-from kiwiplots.plotelement import ValueCandle, VariableCandle, VariablePoint2D
+from kiwiplots.chartelements import ValueCandle, VariableCandle, VariablePoint2D
 from kiwisolver import Constraint, Variable
 from typing import Union
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from kiwisolver import Variable, Constraint
-from kiwiplots.plotelement import VariablePoint2D, ValuePoint2D
+from kiwiplots.chartelements import VariablePoint2D, ValuePoint2D
 
 MINIMAL_WIDTH : float = 10
 

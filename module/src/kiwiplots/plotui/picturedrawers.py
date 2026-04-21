@@ -1,7 +1,7 @@
 from abc import ABC
 from .plotmetadata import *
 from kiwiplots.solvers import *
-from kiwiplots.plotelement import ValuePoint2D
+from kiwiplots.chartelements import ValuePoint2D
 from PIL import Image, ImageDraw, ImageFont
 from .plotmath import ceilToNearestTen, divideInterval
 

@@ -1,7 +1,7 @@
 from .chartsolver import ChartSolver
 from kiwiplots.variablechart import VariableCandlesticChart, VariableChart
 from typing import Union
-from kiwiplots.plotelement import ValueCandle, VariableCandle
+from kiwiplots.chartelements import ValueCandle, VariableCandle
 
 class CandlestickChartSolver(ChartSolver):
     """

@@ -1,4 +1,4 @@
-from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
+from .chartelements import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
 from .variablechart import VariableBarChart, VariableCandlesticChart
 from .solvers import BarChartSolver, CandlestickChartSolver
 from kiwisolver import Variable, Constraint, Solver

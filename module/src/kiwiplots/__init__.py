@@ -1,4 +1,4 @@
-from .plotelement import *
+from .chartelements import *
 from .solvers import *
 from .tkinterface import *
 from .variablechart import *
@@ -17,4 +17,4 @@ from kiwiplots.plotui.histogrameventhandler import *
 
 from kiwiplots.plotui.barcharteventhandler import *
 from kiwiplots.plotui.plotmetadata import *
-from kiwiplots.plotui.datautils import *
+from kiwiplots.plotui.datautils import * #TODO better location

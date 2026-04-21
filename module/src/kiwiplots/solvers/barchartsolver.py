@@ -1,7 +1,7 @@
 from .chartsolver import ChartSolver
 from kiwiplots.variablechart import VariableBarChart, VariableChart
 from typing import Union
-from kiwiplots.plotelement import ValueRectangle, VariableRectangle
+from kiwiplots.chartelements import ValueRectangle, VariableRectangle
 
 class BarChartSolver(ChartSolver):
     """

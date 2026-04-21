@@ -1,6 +1,6 @@
 from .variablechart import VariableChart, MINIMAL_WIDTH
 from kiwisolver import Variable, Constraint
-from kiwiplots.plotelement import VariableRectangle, VariableRectangleGroup, ValueRectangle
+from kiwiplots.chartelements import VariableRectangle, VariableRectangleGroup, ValueRectangle
 from kiwiplots.plotui.uiconstants import DEFAULT_COLOR
 from typing import Union
 

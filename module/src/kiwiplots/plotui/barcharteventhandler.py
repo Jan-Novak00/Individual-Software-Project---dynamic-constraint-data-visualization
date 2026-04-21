@@ -6,7 +6,7 @@ from kiwiplots.solvers import BarChartSolver
 from .plotmetadata import BarChartMetadata
 from .plotmath import isNear
 from .dataviewers import BarChartDataViewer
-from kiwiplots.plotelement import ValueRectangle, ValuePoint2D
+from kiwiplots.chartelements import ValueRectangle, ValuePoint2D
 from tkinter import simpledialog
 from tkinter import colorchooser
 from enum import Enum
