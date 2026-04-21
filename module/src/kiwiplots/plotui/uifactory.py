@@ -6,6 +6,7 @@ from .candlesticeventhandler import CandlesticEventHandler
 from .barcharteventhandler import BarChartEventHandler
 from .histogrameventhandler import HistogramEventHandler
 from .linecharteventhandler import LineChartEventHandler
+from kiwiplots.variablechart import *
 from .picturedrawers import *
 from .datawriters import *
 from numpy import abs
@@ -87,13 +88,15 @@ class UIFactory:
         
         rescaledXAxisValue : float = metadata.xAxisValue*metadata.heightScaleFactor
 
-        return CandlestickChartSolver(INITIAL_WIDTH,
+        chart : VariableCandlesticChart = VariableCandlesticChart([initialOpening[i] - initialClosing[i] >= 0 for i in range(len(initialOpening))], names)
+
+        return CandlestickChartSolver(chart,
+                                      INITIAL_WIDTH,
                                       RescaleList(initialOpening, metadata.heightScaleFactor,rescaledXAxisValue),
                                       RescaleList(initialClosing, metadata.heightScaleFactor,rescaledXAxisValue),
                                       RescaleList(initialMinimum, metadata.heightScaleFactor,rescaledXAxisValue),
                                       RescaleList(initialMaximum, metadata.heightScaleFactor,rescaledXAxisValue),
                                       INITIAL_SPACING,
-                                      names,
                                       INITIAL_ORIGIN_X,
                                       INITIAL_ORIGIN_Y)
 
@@ -134,7 +137,12 @@ class UIFactory:
     
     
     @staticmethod
-    def _createBarChartSolver(metadata: BarChartMetadata, initialValues: list[list[float]], rectangleNames : list[list[str]], initialSpacing : int = INITIAL_SPACING, initialInnerSpacing : int = INITIAL_INNER_SPACING, widhtScales : list[list[float]] = None)->BarChartSolver: # pyright: ignore[reportArgumentType]
+    def _createBarChartSolver(metadata: BarChartMetadata, 
+                              initialValues: list[list[float]], 
+                              rectangleNames : list[list[str]], 
+                              initialSpacing : int = INITIAL_SPACING, 
+                              initialInnerSpacing : int = INITIAL_INNER_SPACING, 
+                              widthScales : list[list[float]] | None = None)->BarChartSolver:
         """
         Create a `BarChartSolver` from grouped values and names.
 
@@ -155,7 +163,9 @@ class UIFactory:
         for group in initialValues:
             rescaledGroupValues.append([int(metadata.heightScaleFactor*value) for value in group])
         
-        return BarChartSolver(INITIAL_WIDTH,rescaledGroupValues,initialSpacing,initialInnerSpacing,rectangleNames,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y, widhtScales)
+        chart : VariableBarChart = VariableBarChart(rectangleNames,widthScales)
+
+        return BarChartSolver(chart, INITIAL_WIDTH,rescaledGroupValues,initialSpacing,initialInnerSpacing,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y)
         
 
     @staticmethod
@@ -214,8 +224,8 @@ class UIFactory:
                                                                  rectangleNames=[["" for _ in initialValues]],
                                                                  initialSpacing=INITIAL_PADDING,
                                                                  initialInnerSpacing=0,
-                                                                 widhtScales=[CreateIntervalScales(intervals)])
-        solver.SetIntervalValues(intervals) # pyright: ignore[reportArgumentType]
+                                                                 widthScales=[CreateIntervalScales(intervals)])
+        solver.SetIntervalValues(intervals)
         return HistogramSolver(solver)
     
     @staticmethod
@@ -236,8 +246,11 @@ class UIFactory:
         return UICore(metadata,solver,eventHandler,pictureDrawer,dataWriter,plotWidth,plotHeight)
     
     @staticmethod
-    def _createLineChartSolver(metadata : LineChartMetadata, initialValues : list[float], names : list[str]):
-        rescaledValues : list[int] = RescaleList(initialValues,metadata.heightScaleFactor,metadata.xAxisValue)
-        return LineChartSolver(INITIAL_WIDTH,rescaledValues,names,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y,INITIAL_PADDING) # pyright: ignore[reportArgumentType]
+    def _createLineChartSolver(metadata : LineChartMetadata, 
+                               initialValues : list[float], 
+                               names : list[str]):
+        rescaledValues : list[float] = RescaleList(initialValues,metadata.heightScaleFactor,metadata.xAxisValue)
+        chart : VariableLineChart = VariableLineChart(names)
+        return LineChartSolver(chart,INITIAL_WIDTH,rescaledValues,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y,INITIAL_PADDING)
         
     

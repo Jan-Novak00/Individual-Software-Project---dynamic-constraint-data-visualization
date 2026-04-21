@@ -23,7 +23,7 @@ class MenuScreen:
         axis labels, and the generate button.
         """
         self.root = tk.Tk()
-        self.root.state("zoomed") # ToDo: zoomed is for Windows only :(
+        self.root.state("zoomed") # TODO: zoomed is for Windows only :(
         self.root.title("Data visualisation")
         
         self.mainMenu = tk.Frame(self.root, bg="bisque2")

@@ -1,10 +1,10 @@
-from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
-from .variableplot import *
+from kiwiplots.plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
+from kiwiplots.variableplot import *
 from kiwisolver import Variable, Constraint, Solver
 from typing import Union
 from abc import ABC, abstractmethod
 import itertools as it
-from .utils import *
+from kiwiplots.utils import *
 import time
 #from warnings import deprecated
 import warnings
