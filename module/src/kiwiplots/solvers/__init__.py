@@ -1,5 +1,3 @@
-#from .solvers import *
-
 from .chartsolver import ChartSolver
 from .candlesticksolver import CandlestickChartSolver
 from .barchartsolver import BarChartSolver
