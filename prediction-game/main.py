@@ -31,4 +31,4 @@ def test6():
     a.Play()
 
 if __name__ == "__main__":
-    test4()
+    test6()
