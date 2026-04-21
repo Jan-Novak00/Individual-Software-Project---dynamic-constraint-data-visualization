@@ -22,7 +22,7 @@ def CalculateScaleFactor(values: list[float],height: int)->float:
     return scaleFactor
 
 
-def RescaleList(inputList : list[float], scaleFactor : float, scaledXAxisValue: float = 0) -> list[int]:
+def RescaleList(inputList : list[float], scaleFactor : float, scaledXAxisValue: float = 0) -> list[float]:
     """
     Rescale a list of float values to integers using a scale factor and optional offset.
 

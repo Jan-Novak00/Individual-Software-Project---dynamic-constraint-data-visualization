@@ -6,7 +6,7 @@ from kiwiplots.solvers import LineChartSolver
 from .plotmetadata import LineChartMetadata
 from .plotmath import isNear
 from .dataviewers import *
-from kiwiplots.plotelement import ValueLine, ValuePoint2D
+from kiwiplots.chartelements import ValueLine, ValuePoint2D
 from tkinter import messagebox
 from tkinter import colorchooser
 

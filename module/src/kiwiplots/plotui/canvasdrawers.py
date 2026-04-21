@@ -6,7 +6,7 @@ from kiwiplots.solvers import *
 from kiwiplots.solvers import ChartSolver
 from .plotmetadata import *
 from .plotmath import ceilToNearestTen, divideInterval
-from kiwiplots.plotelement import ValuePoint2D
+from kiwiplots.chartelements import ValuePoint2D
 
 class CanvasDrawer(ABC):
     """

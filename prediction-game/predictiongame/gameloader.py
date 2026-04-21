@@ -372,21 +372,25 @@ class BarChartGameLoader(GameLoader):
         rescaledUserData = RescaleListOfLists(userData,metadata.heightScaleFactor)
         rescaledSolutionData = RescaleListOfLists(solutionData,metadata.heightScaleFactor)
 
-        self.solutionSolver = BarChartSolver(width=INITIAL_WIDTH,
+        solutionChart : VariableBarChart = VariableBarChart(names,None)
+        userChart : VariableBarChart = VariableBarChart(names,None)
+
+
+        self.solutionSolver = BarChartSolver(variableChart=solutionChart,
+                                             width=INITIAL_WIDTH,
                                              initialHeights=rescaledSolutionData,
                                              spacing=INITIAL_SPACING, 
                                              innerSpacing=INITIAL_INNER_SPACING, 
-                                             rectangleNames=names, 
                                              xCoordinate=self.originX, 
                                              yCoordinate=self.originY)
         
-        self.userSolver = BarChartSolver(width=INITIAL_WIDTH,
-                                             initialHeights=rescaledUserData,
-                                             spacing=INITIAL_SPACING, 
-                                             innerSpacing=INITIAL_INNER_SPACING, 
-                                             rectangleNames=names, 
-                                             xCoordinate=self.originX, 
-                                             yCoordinate=self.originY)
+        self.userSolver = BarChartSolver(variableChart=userChart,
+                                         width=INITIAL_WIDTH,
+                                         initialHeights=rescaledUserData,
+                                         spacing=INITIAL_SPACING, 
+                                         innerSpacing=INITIAL_INNER_SPACING,  
+                                         xCoordinate=self.originX, 
+                                         yCoordinate=self.originY)
 
         self.plotMetadata = metadata
         self._lock(isGuess)
@@ -465,16 +469,19 @@ class LineChartGameLoader(GameLoader):
         rescaledUserData = RescaleList(userData, metadata.heightScaleFactor, rescaledXAxisValue)
         rescaledSolutionData = RescaleList(solutionData, metadata.heightScaleFactor, rescaledXAxisValue)
 
-        self.solutionSolver = LineChartSolver(width=INITIAL_WIDTH, 
-                                              initialValues=rescaledSolutionData, # pyright: ignore[reportArgumentType]
-                                              pointNames=names, 
+        solutionChart : VariableLineChart = VariableLineChart(names)
+        userChart : VariableLineChart = VariableLineChart(names)
+
+        self.solutionSolver = LineChartSolver(variableChart=solutionChart,
+                                              width=INITIAL_WIDTH, 
+                                              initialValues=rescaledSolutionData, 
                                               xCoordinate=self.originX,
                                               yCoordinate=self.originY,
                                               padding=INITIAL_PADDING)
         
-        self.userSolver = LineChartSolver(width=INITIAL_WIDTH,
-                                          initialValues=rescaledUserData, # pyright: ignore[reportArgumentType]
-                                          pointNames=names,
+        self.userSolver = LineChartSolver(variableChart=userChart,
+                                          width=INITIAL_WIDTH,
+                                          initialValues=rescaledUserData,
                                           xCoordinate=self.originX,
                                           yCoordinate=self.originY,
                                           padding=INITIAL_PADDING)
@@ -580,25 +587,29 @@ class CandlestickChartGameLoader(GameLoader):
                                                minimums=RescaleList(minimums,metadata.heightScaleFactor,rescaledXAxisValue), # pyright: ignore[reportArgumentType]
                                                maximums=RescaleList(maximums,metadata.heightScaleFactor,rescaledXAxisValue)) # pyright: ignore[reportArgumentType]
         
-        self.solutionSolver = CandlestickChartSolver(width=INITIAL_WIDTH,
-                                                     initialOpening=rescaledSolutionData.openings, # pyright: ignore[reportArgumentType]
-                                                     initialClosing=rescaledSolutionData.closings, # pyright: ignore[reportArgumentType]
-                                                     initialMinimum=rescaledSolutionData.minimums, # pyright: ignore[reportArgumentType]
-                                                     initialMaximum=rescaledSolutionData.maximums, # pyright: ignore[reportArgumentType]
+        isPositive = [openings[i] - closings[i] >= 0 for i in range(len(openings))]
+        solutionChart : VariableCandlesticChart = VariableCandlesticChart(isPositive,names)
+        userChart : VariableCandlesticChart = VariableCandlesticChart(isPositive,names)
+
+        self.solutionSolver = CandlestickChartSolver(variableChart=solutionChart,
+                                                     width=INITIAL_WIDTH,
+                                                     initialOpening=rescaledSolutionData.openings, 
+                                                     initialClosing=rescaledSolutionData.closings, 
+                                                     initialMinimum=rescaledSolutionData.minimums, 
+                                                     initialMaximum=rescaledSolutionData.maximums, 
                                                      spacing=INITIAL_SPACING,
-                                                     names=names,
                                                      xCoordinate=self.originX,
                                                      yCoordinate=self.originY)
         
-        self.userSolver = CandlestickChartSolver(width=INITIAL_WIDTH,
-                                                     initialOpening=rescaledUserData.openings, # pyright: ignore[reportArgumentType]
-                                                     initialClosing=rescaledUserData.closings, # pyright: ignore[reportArgumentType]
-                                                     initialMinimum=rescaledUserData.minimums, # pyright: ignore[reportArgumentType]
-                                                     initialMaximum=rescaledUserData.maximums, # pyright: ignore[reportArgumentType]
-                                                     spacing=INITIAL_SPACING,
-                                                     names=names,
-                                                     xCoordinate=self.originX,
-                                                     yCoordinate=self.originY)
+        self.userSolver = CandlestickChartSolver(variableChart=userChart,
+                                                 width=INITIAL_WIDTH,
+                                                 initialOpening=rescaledUserData.openings, 
+                                                 initialClosing=rescaledUserData.closings, 
+                                                 initialMinimum=rescaledUserData.minimums, 
+                                                 initialMaximum=rescaledUserData.maximums, 
+                                                 spacing=INITIAL_SPACING,
+                                                 xCoordinate=self.originX,
+                                                 yCoordinate=self.originY)
         self.plotMetadata = metadata
         self._lock(isGuess)
 
@@ -728,7 +739,9 @@ class HistogramGameLoader(GameLoader):
         print("user data", rescaledUserValues)
         print("solution data", rescaledSolutionValues)
         print("intervals",intervalTuples)
-        input()
+        #input()
+
+        
         
         self.solutionSolver = HistogramSolver.new(width=INITIAL_WIDTH,
                                                   initialHeights=rescaledSolutionValues,

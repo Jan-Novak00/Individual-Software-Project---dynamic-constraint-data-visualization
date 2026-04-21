@@ -5,7 +5,7 @@ from kiwiplots.solvers import CandlestickChartSolver
 from .plotmetadata import CandlesticPlotMetadata
 from .plotmath import isNear
 from .dataviewers import CandlesticDataViewer
-from kiwiplots.plotelement import ValueCandle, ValuePoint2D
+from kiwiplots.chartelements import ValueCandle, ValuePoint2D
 from tkinter import simpledialog
 from tkinter import colorchooser
 from enum import Enum

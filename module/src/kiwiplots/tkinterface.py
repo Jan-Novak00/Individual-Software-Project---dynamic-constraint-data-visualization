@@ -1,5 +1,5 @@
-from .plotelement import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
-from .variableplot import VariableBarChart, VariableCandlesticChart
+from .chartelements import VariableRectangleGroup, VariablePoint2D, VariableCandle, ValueRectangle, ValuePoint2D, ValueCandle
+from .variablechart import VariableBarChart, VariableCandlesticChart
 from .solvers import BarChartSolver, CandlestickChartSolver
 from kiwisolver import Variable, Constraint, Solver
 from PIL import Image, ImageDraw, ImageFont
