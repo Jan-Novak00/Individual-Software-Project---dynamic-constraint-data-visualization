@@ -5,7 +5,7 @@ from kiwisolver import Solver, Constraint
 
 class HistogramSolver(ChartSolver):
     @classmethod
-    def new(cls,width: int, initialHeights: list[int], intervals: list[tuple[float,float]], paddingLeft: int, widthScalesForGroups : list[list[float]], xCoordinate : int = 0, yCoordinate : int = 0):
+    def new(cls,width: int, initialHeights: list[float], intervals: list[tuple[float,float]], paddingLeft: int, widthScalesForGroups : list[list[float]], xCoordinate : int = 0, yCoordinate : int = 0):
         chart : VariableBarChart = VariableBarChart([["" for _ in initialHeights]], widthScalesForGroups)
         solver : BarChartSolver = BarChartSolver(variableChart=chart,
                                                  width=width,

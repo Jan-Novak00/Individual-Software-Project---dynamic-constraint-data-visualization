@@ -7,7 +7,7 @@ class BarChartSolver(ChartSolver):
     """
     ChartSolver version for bar chart and histogram.
     """
-    def __init__(self, variableChart : VariableBarChart, width: int, initialHeights: Union[list[int], list[list[int]]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0):
+    def __init__(self, variableChart : VariableBarChart, width: int, initialHeights: Union[list[float], list[list[float]]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0):
         self.initialHeights = initialHeights
         self.initialWidth = width
         self.initialSpacing = spacing
