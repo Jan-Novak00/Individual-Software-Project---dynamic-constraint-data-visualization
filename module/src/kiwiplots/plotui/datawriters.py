@@ -2,12 +2,13 @@ from abc import ABC
 from .plotmetadata import *
 from kiwiplots.solvers import *
 
+
 class DataWriter(ABC):
     """
     Abstract class for exporting plot data to file formats.
     """
 
-    def write(self, plotMetada : PlotMetadata, solver: ChartSolver):
+    def write(self, plotMetada : PlotMetadata, solver: ChartSolver, file: str):
         """
         Exports plot data to a file.
         
@@ -21,7 +22,7 @@ class DataWriter(ABC):
         raise NotImplementedError("Method DataWriter.write must be declared in subclass")
 
 class CandlesticDataWriter(DataWriter):
-    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, file: str): # pyright: ignore[reportIncompatibleMethodOverride]
+    def write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, file: str):
         with open(file,"w") as output:
             candles = solver.GetCandleData()
             for candle in candles:
@@ -29,7 +30,7 @@ class CandlesticDataWriter(DataWriter):
                 output.write("\n")
 
 class BarChartDataWriter(DataWriter):
-    def write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, file: str): # pyright: ignore[reportIncompatibleMethodOverride]
+    def write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, file: str):
         with open(file,"w") as output:
             groups = solver.GetRectangleData()
             for group in groups: # pyright: ignore[reportOptionalIterable]
@@ -43,7 +44,7 @@ class BarChartDataWriter(DataWriter):
                 output.write("\n")
 
 class HistogramDataWriter(DataWriter):
-    def write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, file: str): # pyright: ignore[reportIncompatibleMethodOverride]
+    def write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, file: str):
         with open(file,"w") as output:
             rectangles = solver.GetRectangleDataAsList()
             for rec in rectangles:

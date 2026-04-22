@@ -1,6 +1,6 @@
 from typing import Union
 import tkinter as tk
-from tkinter import simpledialog
+from tkinter import simpledialog, filedialog
 from kiwiplots.solvers import ChartSolver
 from .plotmetadata import PlotMetadata
 from .eventhandlers import EventHandler
@@ -35,8 +35,6 @@ class UICore:
         self.dataWriter : DataWriter = dataWriter
         self.plotWidth = plotWidth
         self.plotHeight = plotHeight
-        self.picturePathBuffer : Union[str,None] = None
-        self.dataPathBuffer : Union[str,None] = None
         self.plotMetadata : PlotMetadata = plotMetadata 
 
 
@@ -82,15 +80,9 @@ class UICore:
         
         Prompts the user for a file path and exports the plot data.
         """
-        if self.dataPathBuffer == None:
-            self.dataPathBuffer = os.path.join(os.getcwd(), self.plotMetadata.title)
-        fileName = simpledialog.askstring("Save data", "File name (without extension): ", initialvalue=self.dataPathBuffer)
-        if fileName == None:
-            return
-        else:
-            self.dataPathBuffer = fileName
 
-        self.dataWriter.write(self.plotMetadata, self.solver, self.dataPathBuffer + ".csv") # type: ignore    
+        fileName = filedialog.asksaveasfilename(title="Save data as csv", defaultextension=".csv", filetypes=[("CSV file","*.csv"),("All files","*.*")],parent=self.root)        
+        self.dataWriter.write(self.plotMetadata, self.solver, fileName)
     
     def on_savePictureButton_click(self):
         """
@@ -99,18 +91,11 @@ class UICore:
         Prompts the user for a file path and saves the plot as a PNG image.
         """
         self.canvasHandler.UpdateUI()
-        if self.picturePathBuffer == None:
-            self.picturePathBuffer = os.path.join(os.getcwd(), self.plotMetadata.title)  
         
-        pictureName = simpledialog.askstring("Save plot", "Image name (without extension): ", initialvalue=self.picturePathBuffer)
+        pictureAddress = filedialog.asksaveasfilename(parent=self.root,title="Save chart",defaultextension=".png",filetypes=[("PNG image","*.png"),("JPG image","*.jpg"),("All files","*.*")])
 
-        if pictureName == None:
-            return
-        else:
-            self.picturePathBuffer = pictureName 
-
-        print("Saving canvas to", pictureName + ".png")
-        self.pictureDrawer.draw(self.plotMetadata, self.solver, self.plotWidth, self.plotHeight)
+        print("Saving canvas to", pictureAddress)
+        self.pictureDrawer.draw(self.plotMetadata, self.solver, self.plotWidth, self.plotHeight, pictureAddress)
     
     def View(self):
         """

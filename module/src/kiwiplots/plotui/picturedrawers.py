@@ -10,7 +10,7 @@ class PictureDrawer(ABC):
     Abstract class for generating image output of plots.
     """
     
-    def draw(self, plotMetada : PlotMetadata, solver: ChartSolver, width: int, height: int):
+    def draw(self, plotMetada : PlotMetadata, solver: ChartSolver, width: int, height: int, file : str):
         """
         Generates and saves a PNG image of the plot.
         
@@ -122,7 +122,7 @@ class CandlesticPictureDrawer(PictureDrawer):
                     fill="black",
                     font=font)
     
-    def draw(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, width: int, height: int): # pyright: ignore[reportIncompatibleMethodOverride]
+    def draw(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, width: int, height: int, file : str): # pyright: ignore[reportIncompatibleMethodOverride]
         candles = solver.GetCandleData()
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         img = Image.new("RGB", (width, height), color="white")
@@ -130,7 +130,7 @@ class CandlesticPictureDrawer(PictureDrawer):
         self._drawCandlesPNG(solver, draw, height)
         self._drawAxesPNG(plotMetadata.heightScaleFactor,height, plotMetadata.xAxisValue,draw, solver.GetAxisHeight(), candles[-1].rightTop.X, solver.GetOrigin(), min(0, lowestWickHeight))
         self._writePlotTitlePNG(draw,solver,width,plotMetadata.title)
-        img.save(f"{plotMetadata.title}.png")
+        img.save(file)
 
 class BarChartPictureDrawer(PictureDrawer):
     def _drawRectanglesPNG(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
@@ -162,7 +162,7 @@ class BarChartPictureDrawer(PictureDrawer):
                 font=font)
 
 
-    def draw(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, width:int, height: int):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def draw(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, width:int, height: int, file : str):  # pyright: ignore[reportIncompatibleMethodOverride]
         rectangles = solver.GetRectangleDataAsList()
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
@@ -178,7 +178,7 @@ class BarChartPictureDrawer(PictureDrawer):
                           plotMetadata.xAxisLabel, 
                           plotMetadata.yAxisLabel)
         self._writePlotTitlePNG(draw, solver,width,plotMetadata.title)
-        img.save(f"{plotMetadata.title}.png")
+        img.save(file)
 
 class HistorgramPictureDrawer(BarChartPictureDrawer):
     def _drawRectanglesPNG(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
