@@ -14,4 +14,4 @@ y = 30
 points = [1,2,3,4]
 is_guess = [false,false,true,true]
 names = ["a","b","c","d"]
-x_axis_value = 1
+x_axis_value = 0

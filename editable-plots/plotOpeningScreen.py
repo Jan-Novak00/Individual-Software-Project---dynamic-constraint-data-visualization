@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import simpledialog
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from kiwiplots import *
 import csv
 import kiwisolver
@@ -192,7 +192,8 @@ class MenuScreen:
         Opens a dialog for the user to enter a file path, reads the CSV file,
         and populates the data input text field with its contents.
         """
-        fileAddress = simpledialog.askstring("Enter address of the file","File path: ")
+        #fileAddress = simpledialog.askstring("Enter address of the file","File path: ")
+        fileAddress = filedialog.askopenfilename(parent=self.root,title="Load data from csv", filetypes=[("CSV files","*.csv"),("All files","*.*")])
         if fileAddress is None:
             return
         

@@ -1,9 +1,8 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox, filedialog
-from pathlib import Path
+from tkinter import messagebox, filedialog
 from predictiongame import GameFactory, GameUI, LoadFailedException
+from tomllib import TOMLDecodeError
 
-BASE_DIR = Path(__file__).resolve().parent
 
 def StartGame():
     root = tk.Tk()
@@ -18,7 +17,11 @@ def StartGame():
         try:
            gameUI = GameFactory.LoadGameFromConfig(path)
         except LoadFailedException as e:
-            messagebox.showwarning("Warning", str(e), parent=root)
+            messagebox.showerror("Error: invalid format", str(e), parent=root)
+        except TOMLDecodeError as e:
+            messagebox.showerror("Error: not TOML",str(e),parent=root)
+        except Exception as e:
+            messagebox.showerror("Error: unknown error",f"Unknown error has occured while loading the configuration file.\nError message:\n{str(e)}",parent=root)
         else:
             assert gameUI is not None
             root.destroy()
@@ -28,32 +31,6 @@ def StartGame():
     btn.pack(expand=True)
 
     root.mainloop()
-
-
-def test2():
-    base_dir = Path(__file__).resolve().parent
-    config_path = base_dir / "barchart.test.toml"
-    a = GameFactory.LoadGameFromConfig(str(config_path))
-    a.Play()
-
-
-def test4():
-    base_dir = Path(__file__).resolve().parent
-    config_path = base_dir / "linechart.test.toml"
-    a = GameFactory.LoadGameFromConfig(str(config_path))
-    a.Play()
-
-def test5():
-    base_dir = Path(__file__).resolve().parent
-    config_path = base_dir / "candlestick.test.toml"
-    a = GameFactory.LoadGameFromConfig(str(config_path))
-    a.Play()
-
-def test6():
-    base_dir = Path(__file__).resolve().parent
-    config_path = base_dir / "histogram.test.toml"
-    a = GameFactory.LoadGameFromConfig(str(config_path))
-    a.Play()
 
 if __name__ == "__main__":
     StartGame()
