@@ -1,6 +1,5 @@
 from .chartelements import *
 from .solvers import *
-from .tkinterface import *
 from .variablechart import *
 from kiwiplots.plotui.uicore import *
 from kiwiplots.plotui.uifactory import UIFactory
