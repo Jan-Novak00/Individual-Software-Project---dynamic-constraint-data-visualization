@@ -1,4 +1,5 @@
 from itertools import tee as _tee
+import warnings
 
 def pairwise(iterable):
     try:
@@ -8,3 +9,7 @@ def pairwise(iterable):
         a, b = _tee(iterable)
         next(b, None)
         return zip(a, b)
+
+class MethodWithoutEffectWarning(UserWarning):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)

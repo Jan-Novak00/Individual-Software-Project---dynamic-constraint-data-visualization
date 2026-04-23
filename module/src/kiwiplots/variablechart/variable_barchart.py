@@ -1,6 +1,6 @@
 from .variablechart import VariableChart, MINIMAL_WIDTH
 from kiwisolver import Variable, Constraint
-from kiwiplots.chartelements import VariableRectangle, VariableRectangleGroup, ValueRectangle
+from kiwiplots.chartelements import VariableRectangle, VariableRectangleGroup, ValueRectangle, VariableBarGroup
 from kiwiplots.plotui.uiconstants import DEFAULT_COLOR
 from typing import Union
 
@@ -8,17 +8,16 @@ class VariableBarChart(VariableChart):
     """
     VariableChart version for bar chart and histogram
     """
-    def __init__(self, rectangleNames : list[list[str]], widthScalesForGroups : list[list[float]] | None = None):
+    def __init__(self, rectangleNames : list[list[str]]):
         
         super().__init__()
 
         self.innerSpacing = Variable("global_inner_spacing")
         
-        self.groups : list[VariableRectangleGroup] = [VariableRectangleGroup(rectangleWidth=self.width,
+        self.groups : list[VariableBarGroup] = [VariableBarGroup(rectangleWidth=self.width,
                                                                              innerSpacing = self.innerSpacing, 
                                                                              names        = rectangleNames[i] if rectangleNames is not None else [], 
-                                                                             color        = DEFAULT_COLOR,
-                                                                             widthScales  = None if widthScalesForGroups is None else widthScalesForGroups[i]) 
+                                                                             color        = DEFAULT_COLOR) 
                                                                              for i, name in enumerate(rectangleNames)]
         self._createGroupSpacingConstraints()
 
@@ -74,7 +73,7 @@ class VariableBarChart(VariableChart):
     
     def AddGroup(self,firstRectangleName : str):
         lastGroup = self.groups[-1] #TODO first one
-        newGroup = VariableRectangleGroup(self.width, self.innerSpacing, [firstRectangleName])
+        newGroup = VariableBarGroup(self.width, self.innerSpacing, [firstRectangleName])
         self.groups.append(newGroup)
         newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
         return newGroup, newGroup.GetAllConstraints() + [(self.origin.Y == newGroup.bottomY) | "required"]
@@ -84,7 +83,7 @@ class VariableBarChart(VariableChart):
         nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
         constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
         constraintsToAdd = []
-        currentGroup.AddRectangle(name)
+        currentGroup.AddBar(name)
         if nextGroup != None:
             nextGroup.SetSpacingConstraint((currentGroup.rightMostX + self.spacing == nextGroup.leftMostX)|"required")
             constraintsToAdd.append(nextGroup.spacingConstraint)
