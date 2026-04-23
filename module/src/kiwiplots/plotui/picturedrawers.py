@@ -134,7 +134,7 @@ class CandlesticPictureDrawer(PictureDrawer):
 
 class BarChartPictureDrawer(PictureDrawer):
     def _drawRectanglesPNG(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
-        rectangles = solver.GetRectangleDataAsList()
+        rectangles = solver.GetBarDataAsList()
         origin = solver.GetOrigin()
         for rec in rectangles:
             x1 = rec.leftBottom.X
@@ -163,7 +163,7 @@ class BarChartPictureDrawer(PictureDrawer):
 
 
     def draw(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, width:int, height: int, file : str):  # pyright: ignore[reportIncompatibleMethodOverride]
-        rectangles = solver.GetRectangleDataAsList()
+        rectangles = solver.GetBarDataAsList()
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
         self._drawRectanglesPNG(draw,solver, height)
@@ -182,7 +182,7 @@ class BarChartPictureDrawer(PictureDrawer):
 
 class HistorgramPictureDrawer(BarChartPictureDrawer):
     def _drawRectanglesPNG(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
-        rectangles = solver.GetRectangleDataAsList()
+        rectangles = solver.GetBarDataAsList()
         for rec in rectangles:
             x1 = rec.leftBottom.X
             y1 = height - rec.leftBottom.Y

@@ -141,8 +141,7 @@ class UIFactory:
                               initialValues: list[list[float]], 
                               rectangleNames : list[list[str]], 
                               initialSpacing : int = INITIAL_SPACING, 
-                              initialInnerSpacing : int = INITIAL_INNER_SPACING, 
-                              widthScales : list[list[float]] | None = None)->BarChartSolver:
+                              initialInnerSpacing : int = INITIAL_INNER_SPACING)->BarChartSolver:
         """
         Create a `BarChartSolver` from grouped values and names.
 
@@ -159,14 +158,14 @@ class UIFactory:
         Returns:
             BarChartSolver: Solver configured with rescaled integer bar heights.
         """
-        rescaledGroupValues : list[list[int]] = []
+        rescaledGroupValues : list[list[float]] = []
         for group in initialValues:
             rescaledGroupValues.append([int(metadata.heightScaleFactor*value) for value in group])
         
         chart : VariableBarChart = VariableBarChart(rectangleNames)
 
         return BarChartSolver(chart, INITIAL_WIDTH,rescaledGroupValues,initialSpacing,initialInnerSpacing,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y)
-        
+    
 
     @staticmethod
     def CreateHistogram(title: str,
@@ -219,14 +218,16 @@ class UIFactory:
         Returns:
             BarChartSolver: Solver prepared for histogram visualization.
         """
-        solver: BarChartSolver = UIFactory._createBarChartSolver(metadata=plotMetadata,
-                                                                 initialValues=[initialValues],
-                                                                 rectangleNames=[["" for _ in initialValues]],
-                                                                 initialSpacing=INITIAL_PADDING,
-                                                                 initialInnerSpacing=0,
-                                                                 widthScales=[CreateIntervalScales(intervals)])
-        solver.SetIntervalValues(intervals)
-        return HistogramSolver(solver)
+        chart : VariableHistogram = VariableHistogram(intervals=intervals, widthScales=CreateIntervalScales(intervals))
+
+        solver = HistogramSolver(variableChart=chart,
+                                 width=INITIAL_WIDTH,
+                                 initialHeights=RescaleList(initialValues,plotMetadata.heightScaleFactor),
+                                 padding=INITIAL_PADDING,
+                                 xCoordinate=INITIAL_ORIGIN_X,
+                                 yCoordinate=INITIAL_ORIGIN_Y)
+
+        return solver
     
     @staticmethod
     def CreateLineChart(title: str, 

@@ -16,7 +16,7 @@ from tkinter import messagebox
 
 class HistogramEventHandler(BarChartEventHandler):
 
-    LeftEvents: TypeAlias = BarChartEventHandler.BarEventRegistersLeftButton.BarLeftEvents
+    LeftEvents: TypeAlias = BarChartEventHandler.RectangleEventRegistersLeftButton.RectangleLeftEvents
     def __init__(self, plotMetadata: HistogramMetadata, solver: HistogramSolver):
         super().__init__(plotMetadata, solver) #pyright: ignore
         self.plotSolver : HistogramSolver = solver
@@ -81,12 +81,12 @@ class HistogramEventHandler(BarChartEventHandler):
         newEnd, newValue = createPopUp()
         if newEnd == None or newValue == None:
             return
-        self.plotSolver.AddRectangle(endOfLastInterval,newEnd,newValue*self.plotMetadata.heightScaleFactor)
+        self.plotSolver.AddBucket(endOfLastInterval,newEnd,newValue*self.plotMetadata.heightScaleFactor)
         self.UpdateUI()
         self._createTranslationTable(self.plotSolver.GetRectangleData()) # pyright: ignore[reportArgumentType]
 
 
-
+    #   nemazat!
     def _clickedOnLeftEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle): 
         """
         Registers that the user clicked on a left edge of some rectangle

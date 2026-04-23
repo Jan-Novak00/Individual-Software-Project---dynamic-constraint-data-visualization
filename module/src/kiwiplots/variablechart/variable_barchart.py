@@ -3,8 +3,9 @@ from kiwisolver import Variable, Constraint
 from kiwiplots.chartelements import VariableRectangle, VariableRectangleGroup, ValueRectangle, VariableBarGroup
 from kiwiplots.plotui.uiconstants import DEFAULT_COLOR
 from typing import Union
+from .variable_rectanglegroupchart import VariableRectangleGroupChart
 
-class VariableBarChart(VariableChart):
+class VariableBarChart(VariableRectangleGroupChart):
     """
     VariableChart version for bar chart and histogram
     """
@@ -24,14 +25,6 @@ class VariableBarChart(VariableChart):
         self.leftRectangleXCoordinateConstraint : Constraint = (self.groups[0].leftMostX == self.origin.X + self.spacing) | "required"
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
     
-    def SetIntervalValues(self, intervals: list[tuple[float,float]]):
-        """
-        Sets interval scales for histogram.
-        """
-        firstGroup = self.groups[0]
-        for index, rec in enumerate(firstGroup.rectangles):
-            interval = intervals[index]
-            rec.leftBottom.secondaryName, rec.rightTop.secondaryName = f"{interval[0]}", f"{interval[1]}"
 
     def ChangeColor(self, groupIndex: int, rectangleIndex: int, color: Union[str,int]):
         self.groups[groupIndex].ChangeColor(rectangleIndex, color)
@@ -71,14 +64,14 @@ class VariableBarChart(VariableChart):
     def GetHeightVariable(self,groupIndex : int, rectangleIndex : int) -> Variable:
         return self.groups[groupIndex].GetHeightVariable(rectangleIndex)
     
-    def AddGroup(self,firstRectangleName : str):
+    def AddBarGroup(self,firstRectangleName : str):
         lastGroup = self.groups[-1] #TODO first one
         newGroup = VariableBarGroup(self.width, self.innerSpacing, [firstRectangleName])
         self.groups.append(newGroup)
         newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
         return newGroup, newGroup.GetAllConstraints() + [(self.origin.Y == newGroup.bottomY) | "required"]
 
-    def AddRectangle(self,name: str, groupIndex: int):
+    def AddBar(self,name: str, groupIndex: int):
         currentGroup = self.groups[groupIndex]
         nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
         constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system

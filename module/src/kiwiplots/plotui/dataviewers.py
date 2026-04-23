@@ -77,7 +77,7 @@ class BarChartDataViewer(DataViewer):
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
         valueEdited = changedStatus == "top"
-        rectangles = solver.GetRectangleDataAsList()
+        rectangles = solver.GetBarDataAsList()
 
         for i in range(len(rectangles)-1, -1, -1):
             rec = rectangles[i]
@@ -101,7 +101,7 @@ class HistogramDataViewer(DataViewer):
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
         valueEdited = changedStatus == "top"
-        rectangles = solver.GetRectangleDataAsList()
+        rectangles = solver.GetBarDataAsList()
 
         for i in range(len(rectangles)-1, -1, -1):
             rec = rectangles[i]

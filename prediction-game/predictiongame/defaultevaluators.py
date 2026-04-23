@@ -4,8 +4,8 @@ from kiwiplots import ChartSolver, BarChartSolver, PlotMetadata, BarChartMetadat
 class DefaultBarChartEvaluator(GameEvaluator):
     @staticmethod
     def Eval(userSolver: BarChartSolver, solutionSolver: BarChartSolver, plotMetadata : BarChartMetadata) -> int:
-        userGuess = [rec.GetHeight() for rec in userSolver.GetRectangleDataAsList()]
-        realVals = [rec.GetHeight() for rec in solutionSolver.GetRectangleDataAsList()]
+        userGuess = [rec.GetHeight() for rec in userSolver.GetBarDataAsList()]
+        realVals = [rec.GetHeight() for rec in solutionSolver.GetBarDataAsList()]
 
         assert len(realVals) == len(userGuess)
 

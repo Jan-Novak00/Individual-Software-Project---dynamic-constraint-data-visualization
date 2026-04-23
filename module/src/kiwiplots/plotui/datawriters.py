@@ -32,7 +32,7 @@ class CandlesticDataWriter(DataWriter):
 class BarChartDataWriter(DataWriter):
     def write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, file: str):
         with open(file,"w") as output:
-            groups = solver.GetRectangleData()
+            groups = solver.GetBarData()
             for group in groups: # pyright: ignore[reportOptionalIterable]
                 for i in range(len(group)):
                     rec = group[i]
@@ -46,7 +46,7 @@ class BarChartDataWriter(DataWriter):
 class HistogramDataWriter(DataWriter):
     def write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, file: str):
         with open(file,"w") as output:
-            rectangles = solver.GetRectangleDataAsList()
+            rectangles = solver.GetBarDataAsList()
             for rec in rectangles:
                 height = rec.GetHeight()
                 value = height/plotMetadata.heightScaleFactor

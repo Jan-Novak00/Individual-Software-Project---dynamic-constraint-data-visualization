@@ -26,8 +26,8 @@ class GameBarChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
-        valueEdited = changedStatus == BarChartEventHandler.BarEventRegistersLeftButton.BarLeftEvents.height
-        rectangles = solver.GetRectangleDataAsList()
+        valueEdited = changedStatus == BarChartEventHandler.RectangleEventRegistersLeftButton.RectangleLeftEvents.height
+        rectangles = solver.GetBarDataAsList()
         for i in range(len(rectangles)-1, -1, -1):
             rec = rectangles[i]
             trueValue = rec.GetHeight()/plotMetadata.heightScaleFactor
@@ -45,8 +45,8 @@ class GameBarChartDataViewer(GameDataViewer):
         self.dataWindow.delete("1.0", "end")
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
-        userRectangles = userSolver.GetRectangleDataAsList()
-        solutionRectangles = solutionSolver.GetRectangleDataAsList()
+        userRectangles = userSolver.GetBarDataAsList()
+        solutionRectangles = solutionSolver.GetBarDataAsList()
 
         assert len(userRectangles) == len(solutionRectangles)
 
@@ -92,7 +92,7 @@ class GameLineChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
-        valueEdited = changedStatus == BarChartEventHandler.BarEventRegistersLeftButton.BarLeftEvents.height
+        valueEdited = changedStatus == BarChartEventHandler.RectangleEventRegistersLeftButton.RectangleLeftEvents.height
         lines = solver.GetLineData()
         points = GameLineChartDataViewer._getPoints(lines)
         names = GameLineChartDataViewer._getPointNames(lines)
