@@ -163,7 +163,7 @@ class UIFactory:
         for group in initialValues:
             rescaledGroupValues.append([int(metadata.heightScaleFactor*value) for value in group])
         
-        chart : VariableBarChart = VariableBarChart(rectangleNames,widthScales)
+        chart : VariableBarChart = VariableBarChart(rectangleNames)
 
         return BarChartSolver(chart, INITIAL_WIDTH,rescaledGroupValues,initialSpacing,initialInnerSpacing,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y)
         

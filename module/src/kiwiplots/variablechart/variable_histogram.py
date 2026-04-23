@@ -55,11 +55,10 @@ class VariableHistogram(VariableChart):
     def GetAllConstraints(self)-> list[Constraint]:
         return self._getGroupConstraints() + self._getSpacingConstraints()+ self._getVerticalGroupAligmentConstraints() + self._getOriginConstraints()
     
-    
     def GetHeightVariable(self,bucketIndex : int) -> Variable:
         return self.group.GetHeightVariable(bucketIndex)
     
-    def AddRectangleAsInterval(self,widthScale: float, intervalStart: float, intervalEnd: float):
+    def AddBucket(self,widthScale: float, intervalStart: float, intervalEnd: float):
         constraintsToRemove = [] 
         constraintsToAdd = []
         newBucket = self.group.AddBucket((intervalStart,intervalEnd),widthScale)

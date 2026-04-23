@@ -2,12 +2,13 @@ from .chartsolver import ChartSolver
 from kiwiplots.variablechart import VariableBarChart, VariableChart
 from typing import Union
 from kiwiplots.chartelements import ValueRectangle, VariableRectangle
+from kiwisolver import Variable, Solver, Constraint
 
 class BarChartSolver(ChartSolver):
     """
     ChartSolver version for bar chart and histogram.
     """
-    def __init__(self, variableChart : VariableBarChart, width: int, initialHeights: Union[list[float], list[list[float]]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0):
+    def __init__(self, variableChart : VariableBarChart, width: int, initialHeights: list[list[float]], spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0):
         self.initialHeights = initialHeights
         self.initialWidth = width
         self.initialSpacing = spacing
@@ -39,7 +40,7 @@ class BarChartSolver(ChartSolver):
         self.solver.addEditVariable(self.variableChart.yAxisHeight, "strong")
     
     def _initialSuggest(self):
-        self.solver.suggestValue(self.variableChart.yAxisHeight, max(max(group) for group in self.initialHeights)+10) # pyright: ignore[reportArgumentType]
+        self.solver.suggestValue(self.variableChart.yAxisHeight, max(max(group) for group in self.initialHeights)+10)
         self.solver.suggestValue(self.variableChart.origin.X, self.initialxCoordinate)
         self.solver.suggestValue(self.variableChart.origin.Y, self.initialyCoordinate)
         self.solver.suggestValue(self.variableChart.innerSpacing, self.initialInnerSpacing)
@@ -48,7 +49,7 @@ class BarChartSolver(ChartSolver):
         for ig in range(len(self.variableChart.groups)):
             group = self.variableChart.groups[ig]
             for ir, rec in enumerate(group):
-                self.solver.suggestValue(rec.height,self.initialHeights[ig][ir]) # pyright: ignore[reportIndexIssue] #TODO type safety
+                self.solver.suggestValue(rec.height,self.initialHeights[ig][ir])
     
     def _refreshSuggestions(self):
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
@@ -100,11 +101,10 @@ class BarChartSolver(ChartSolver):
 
         self.Solve()
 
-        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)  # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
-    
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) 
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock) 
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock) 
     def ChangeInnerSpacing(self, newInnerSpacing: float):
         self.solver.suggestValue(self.variableChart.innerSpacing, newInnerSpacing)
         self.Solve()
@@ -131,9 +131,9 @@ class BarChartSolver(ChartSolver):
         self.Solve()
         self.solver.removeEditVariable(var)
 
-        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)  # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) 
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)
         self._refreshSuggestions()
 
     
@@ -151,9 +151,9 @@ class BarChartSolver(ChartSolver):
         self.Solve()
         self.solver.removeEditVariable(var)
 
-        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)  # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock)
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock)
         self._refreshSuggestions()
     
     def ChangeInnerSpacingX(self,groupIndex: int, rectangleIndex : int, newX : float):
@@ -170,9 +170,9 @@ class BarChartSolver(ChartSolver):
         self.Solve()
         self.solver.removeEditVariable(var)
 
-        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock)
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock)
         self._refreshSuggestions()
     
     def ChangeOrigin(self, newX: int, newY: int):
@@ -180,9 +180,9 @@ class BarChartSolver(ChartSolver):
         spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
         widthConstrLock = self.switchConstraintLock(self.variableChart.width)
         super().ChangeOrigin(newX, newY)
-        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock) # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock) 
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) 
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock)
         self._refreshSuggestions()
     
     def ChangeAxisHeight(self, newHeight: int):
@@ -191,10 +191,10 @@ class BarChartSolver(ChartSolver):
         widthConstrLock = self.switchConstraintLock(self.variableChart.width)
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
         super().ChangeAxisHeight(newHeight)
-        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock) # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
-        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
+        self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)
+        self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)
+        self.switchConstraintLock(self.variableChart.width, widthConstrLock)
+        self.switchConstraintLock(self.variableChart.origin.X, originConstrLock)
         self._refreshSuggestions()
     
     def AddGroup(self, firstRectangleName: str, firstRectangleHeight: float):
