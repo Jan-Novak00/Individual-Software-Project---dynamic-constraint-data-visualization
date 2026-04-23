@@ -20,6 +20,7 @@ class HistogramEventHandler(BarChartEventHandler):
     def __init__(self, plotMetadata: HistogramMetadata, solver: HistogramSolver):
         super().__init__(plotMetadata, solver) #pyright: ignore
         self.plotSolver : HistogramSolver = solver
+        self.plotMetadata : HistogramMetadata = plotMetadata
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = HistogramDataViewer(textWindow)

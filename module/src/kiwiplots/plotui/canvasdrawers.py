@@ -155,7 +155,7 @@ class BarChartCanvasDrawer(CanvasDrawer):
         if clear:
             self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)
-        rectangles = solver.GetBarDataAsList()
+        rectangles = solver.GetRectangleDataAsList()
 
         origin = solver.GetOrigin()
         
@@ -170,7 +170,7 @@ class HistogramCanvasDrawer(BarChartCanvasDrawer):
         """
         Draws rectangles on the plot and writes their names under them.
         """
-        rectangles = solver.GetBarDataAsList()
+        rectangles = solver.GetRectangleDataAsList()
         for rec in rectangles: 
             x1 = rec.leftBottom.X
             y1 = self.canvasHeight - rec.leftBottom.Y

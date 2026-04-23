@@ -101,7 +101,7 @@ class HistogramDataViewer(DataViewer):
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
         valueEdited = changedStatus == "top"
-        rectangles = solver.GetBarDataAsList()
+        rectangles = solver.GetRectangleDataAsList()
 
         for i in range(len(rectangles)-1, -1, -1):
             rec = rectangles[i]

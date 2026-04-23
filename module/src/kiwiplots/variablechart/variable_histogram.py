@@ -21,7 +21,9 @@ class VariableHistogram(VariableRectangleGroupChart):
         self.leftRectangleYCoordinateConstraint : Constraint = (self.groups[0].bottomY == self.origin.Y) | "required"
     
 
-    def ChangeColor(self, bucketIndex: int, color: Union[str,int]):
+    def ChangeColor(self, groupIndex: int, bucketIndex: int, color: Union[str,int]):
+        if groupIndex !=0:
+            raise ValueError()
         self.groups[0].ChangeColor(bucketIndex, color)
      
     def _createGroupSpacingConstraints(self):
@@ -47,7 +49,9 @@ class VariableHistogram(VariableRectangleGroupChart):
     def GetAllConstraints(self)-> list[Constraint]:
         return self._getGroupConstraints() + self._getSpacingConstraints()+ self._getVerticalGroupAligmentConstraints() + self._getOriginConstraints()
     
-    def GetHeightVariable(self,bucketIndex : int) -> Variable:
+    def GetHeightVariable(self, groupIndex: int, bucketIndex : int) -> Variable:
+        if groupIndex !=0:
+            raise ValueError()
         return self.groups[0].GetHeightVariable(bucketIndex)
     
     def AddBucket(self,widthScale: float, intervalStart: float, intervalEnd: float):
