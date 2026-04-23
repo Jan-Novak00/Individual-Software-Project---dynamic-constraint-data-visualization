@@ -4,6 +4,7 @@ from kiwiplots.plotui.plotmetadata import PlotMetadata
 from kiwiplots.solvers import ChartSolver
 from .plotmetadata import *
 from kiwiplots.solvers import *
+from kiwiplots.chartelements import ValueBucket
 
 class DataViewer(ABC):
     """
@@ -101,7 +102,7 @@ class HistogramDataViewer(DataViewer):
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
         valueEdited = changedStatus == "top"
-        rectangles = solver.GetRectangleDataAsList()
+        rectangles : list[ValueBucket] = solver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
 
         for i in range(len(rectangles)-1, -1, -1):
             rec = rectangles[i]
@@ -114,9 +115,9 @@ class HistogramDataViewer(DataViewer):
 
 
             if valueEdited and i == changedIndex:
-                self.dataWindow.insert("1.0",f"({rec.leftBottom.secondaryName}, {rec.rightTop.secondaryName}) = {valueString}\n", "changing_Value")
+                self.dataWindow.insert("1.0",f"({rec.interval[0]}, {rec.interval[1]}) = {valueString}\n", "changing_Value")
             else:
-                self.dataWindow.insert("1.0",f"({rec.leftBottom.secondaryName}, {rec.rightTop.secondaryName}) = {valueString}\n")
+                self.dataWindow.insert("1.0",f"({rec.interval[0]}, {rec.interval[1]}) = {valueString}\n")
         self.dataWindow.config(state="disabled")
 
 class LineChartDataViewer(DataViewer):

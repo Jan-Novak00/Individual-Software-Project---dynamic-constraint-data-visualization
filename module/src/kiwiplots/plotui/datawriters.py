@@ -44,13 +44,13 @@ class BarChartDataWriter(DataWriter):
                 output.write("\n")
 
 class HistogramDataWriter(DataWriter):
-    def write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, file: str):
+    def write(self, plotMetadata: HistogramMetadata, solver: HistogramSolver, file: str):
         with open(file,"w") as output:
-            rectangles = solver.GetBarDataAsList()
+            rectangles = solver.GetBucketData()
             for rec in rectangles:
                 height = rec.GetHeight()
                 value = height/plotMetadata.heightScaleFactor
-                output.write(f"{rec.leftBottom.secondaryName},{rec.rightTop.secondaryName},{value}\n")
+                output.write(f"{rec.interval[0]},{rec.interval[1]},{value}\n")
 
 class LineChartDataWriter(DataWriter):
     def write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, file: str):

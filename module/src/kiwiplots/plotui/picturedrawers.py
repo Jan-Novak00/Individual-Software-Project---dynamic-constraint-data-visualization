@@ -1,7 +1,7 @@
 from abc import ABC
 from .plotmetadata import *
 from kiwiplots.solvers import *
-from kiwiplots.chartelements import ValuePoint2D
+from kiwiplots.chartelements import ValuePoint2D, ValueBucket
 from PIL import Image, ImageDraw, ImageFont
 from .plotmath import ceilToNearestTen, divideInterval
 
@@ -163,7 +163,7 @@ class BarChartPictureDrawer(PictureDrawer):
 
 
     def draw(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, width:int, height: int, file : str):  # pyright: ignore[reportIncompatibleMethodOverride]
-        rectangles = solver.GetBarDataAsList()
+        rectangles = solver.GetRectangleDataAsList()
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
         self._drawRectanglesPNG(draw,solver, height)
@@ -182,7 +182,7 @@ class BarChartPictureDrawer(PictureDrawer):
 
 class HistorgramPictureDrawer(BarChartPictureDrawer):
     def _drawRectanglesPNG(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
-        rectangles = solver.GetBarDataAsList()
+        rectangles : list[ValueBucket] = solver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
         for rec in rectangles:
             x1 = rec.leftBottom.X
             y1 = height - rec.leftBottom.Y
@@ -191,8 +191,8 @@ class HistorgramPictureDrawer(BarChartPictureDrawer):
             y2 = height - rec.rightTop.Y
             draw.rectangle((x1,y2,x2,y1), fill=rec.color, outline="black")
             font = ImageFont.load_default()
-            textLeft = rec.leftBottom.secondaryName
-            textRight = rec.rightTop.secondaryName
+            textLeft = str(rec.interval[0])
+            textRight = str(rec.interval[1])
 
             # get text size
             bboxLeft = font.getbbox(textLeft)

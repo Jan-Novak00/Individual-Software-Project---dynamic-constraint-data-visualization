@@ -6,7 +6,7 @@ from kiwiplots.solvers import *
 from kiwiplots.solvers import ChartSolver
 from .plotmetadata import *
 from .plotmath import ceilToNearestTen, divideInterval
-from kiwiplots.chartelements import ValuePoint2D
+from kiwiplots.chartelements import ValuePoint2D, ValueBucket
 
 class CanvasDrawer(ABC):
     """
@@ -166,20 +166,21 @@ class BarChartCanvasDrawer(CanvasDrawer):
         self.drawBare(plotMetadata,solver, clear=False, outlineOnly=outlineOnly, specialHighlight=specialHighlight)
 
 class HistogramCanvasDrawer(BarChartCanvasDrawer):
-    def _drawRectangles(self, solver: BarChartSolver, outlineOnly : bool = False): 
+    def _drawRectangles(self, solver: HistogramSolver, outlineOnly : bool = False): 
         """
         Draws rectangles on the plot and writes their names under them.
         """
-        rectangles = solver.GetRectangleDataAsList()
+        rectangles : list[ValueBucket] = solver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
         for rec in rectangles: 
+            interval = rec.interval
             x1 = rec.leftBottom.X
             y1 = self.canvasHeight - rec.leftBottom.Y
             
             x2 = rec.rightTop.X
             y2 = self.canvasHeight - rec.rightTop.Y
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color if not outlineOnly else "", outline="black" if not outlineOnly else "red", width= 1 if not outlineOnly else 3) # pyright: ignore[reportArgumentType]
-            self.canvas.create_text(x1,y1 + 10, text=rec.leftBottom.secondaryName)
-            self.canvas.create_text(x2,y1 + 10, text=rec.rightTop.secondaryName)
+            self.canvas.create_text(x1,y1 + 10, text=interval[0])
+            self.canvas.create_text(x2,y1 + 10, text=interval[1])
 
 class LineChartCanvasDrawer(CanvasDrawer):
     def _drawLines(self, plotMetadata: LineChartMetadata, solver: LineChartSolver):

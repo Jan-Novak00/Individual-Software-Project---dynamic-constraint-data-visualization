@@ -4,7 +4,7 @@ from .barchartsolver import BarChartSolver
 from kiwisolver import Solver, Constraint
 from kiwiplots.variablechart import VariableRectangleGroupChart, VariableHistogram
 from .rectanglesolver import RectangleSolver
-from kiwiplots.chartelements import ValueRectangle
+from kiwiplots.chartelements import ValueRectangle, ValueBucket
 
 class HistogramSolver(RectangleSolver):
 
@@ -40,7 +40,7 @@ class HistogramSolver(RectangleSolver):
     def Feed(self, otherSolver: "HistogramSolver"):
         ChartSolver.Feed(self,otherSolver)
 
-    def GetBucketData(self):
+    def GetBucketData(self)->list[ValueBucket]:
         return self.variableChart.Value()
     
   
