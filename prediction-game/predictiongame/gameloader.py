@@ -741,23 +741,24 @@ class HistogramGameLoader(GameLoader):
         print("intervals",intervalTuples)
         #input()
 
+        solutionChart = VariableHistogram(intervals=intervalTuples,
+                                          widthScales=metadata.widthScaleFactor[0])
+        userChart = VariableHistogram(intervals=intervalTuples,
+                                          widthScales=metadata.widthScaleFactor[0])
         
-        
-        self.solutionSolver = HistogramSolver.new(width=INITIAL_WIDTH,
-                                                  initialHeights=rescaledSolutionValues,
-                                                  intervals=intervalTuples,
-                                                  paddingLeft=INITIAL_PADDING,
-                                                  widthScalesForGroups=metadata.widthScaleFactor,
-                                                  xCoordinate=self.originX,
-                                                  yCoordinate=self.originY)
-        
-        self.userSolver = HistogramSolver.new(width=INITIAL_WIDTH,
-                                                  initialHeights=rescaledUserValues,
-                                                  intervals=intervalTuples,
-                                                  paddingLeft=INITIAL_PADDING,
-                                                  widthScalesForGroups=metadata.widthScaleFactor,
-                                                  xCoordinate=self.originX,
-                                                  yCoordinate=self.originY)
+        self.solutionSolver = HistogramSolver(variableChart=solutionChart,
+                                              width=INITIAL_WIDTH,
+                                              initialHeights=rescaledSolutionValues[0],
+                                              padding=INITIAL_PADDING,
+                                              xCoordinate=self.originX,
+                                              yCoordinate=self.originY)
+
+        self.userSolver     = HistogramSolver(variableChart=userChart,
+                                              width=INITIAL_WIDTH,
+                                              initialHeights=rescaledUserValues[0],
+                                              padding=INITIAL_PADDING,
+                                              xCoordinate=self.originX,
+                                              yCoordinate=self.originY)
         self.plotMetadata = metadata
         self._lock(isGuess)
 
