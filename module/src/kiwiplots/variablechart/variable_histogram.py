@@ -9,6 +9,8 @@ class VariableHistogram(VariableRectangleGroupChart):
     def __init__(self, intervals : list[tuple[float,float]], widthScales: list[float]):
         
         super().__init__()
+
+        self.shortestInterval : tuple[float,float] = min(intervals, key= lambda i: abs(i[1]-i[0]))
         
         self.groups : list[VariableBucketGroup] = [VariableBucketGroup(bucketWidth=self.width,
                                                                innerSpacing=self.innerSpacing,
@@ -57,6 +59,7 @@ class VariableHistogram(VariableRectangleGroupChart):
     def AddBucket(self,widthScale: float, intervalStart: float, intervalEnd: float):
         constraintsToRemove = [] 
         constraintsToAdd = []
+        self.shortestInterval = self.shortestInterval if abs(intervalEnd - intervalStart) >= abs(self.shortestInterval[1]-self.shortestInterval[0]) else (intervalStart,intervalEnd)
         newBucket = self.groups[0].AddBucket((intervalStart,intervalEnd),widthScale)
         constraintsToAdd.extend(newBucket.GetAllConstraints())
         constraintsToAdd.append((self.groups[0].rectangles[0].leftBottom.Y == newBucket.leftBottom.Y)|"required")
@@ -70,3 +73,7 @@ class VariableHistogram(VariableRectangleGroupChart):
     def ChangeName(self, groupIndex: int, rectangleIndex: int, name: str):
         warnings.warn(f"Method {type(VariableHistogram).__name__}.CahngeName has no effect by design.",category=MethodWithoutEffectWarning,stacklevel=2)
         return
+    
+    def GetShortestInterval(self)->tuple[float,float]:
+        return self.shortestInterval
+    

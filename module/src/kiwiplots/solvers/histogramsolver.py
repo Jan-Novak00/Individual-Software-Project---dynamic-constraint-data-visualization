@@ -41,22 +41,22 @@ class HistogramSolver(RectangleSolver):
         ChartSolver.Feed(self,otherSolver)
 
     def GetBucketData(self)->list[ValueBucket]:
-        return self.variableChart.Value()
+        return self.variableChart.Value() # pyright: ignore[reportReturnType]
     
   
     def GetGroupData(self)->list[list[ValueRectangle]]:
-        return [self.GetBucketData()]
+        return [self.GetBucketData()] # pyright: ignore[reportReturnType]
     
 
     def GetRectangleDataAsList(self)->list[ValueRectangle]:
-        return self.GetBucketData()
+        return self.GetBucketData() # pyright: ignore[reportReturnType]
     
     def AddBucket(self,start: float, end: float, recHeight: float):
-        return
         print("--- solver.AddRectangle start ---")
-        shoretestLength = self._getShortestIntervalLength()
+        shortestInterval = self.variableChart.GetShortestInterval()
+        shoretestLength = shortestInterval[1] - shortestInterval[0]
         widthScale = (end-start)/shoretestLength
-        height, constraintsToAdd, constraintsToRemove = self.innerSolver.variableChart.AddRectangleAsInterval(0,widthScale,start,end)
+        height, constraintsToAdd, constraintsToRemove = self.variableChart.AddBucket(widthScale,start,end)
         for constr in constraintsToRemove:
             if self.solver.hasConstraint(constr): # pyright: ignore[reportArgumentType]
                 self.solver.removeConstraint(constr) # pyright: ignore[reportArgumentType]

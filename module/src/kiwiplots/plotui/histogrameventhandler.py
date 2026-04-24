@@ -37,7 +37,7 @@ class HistogramEventHandler(BarChartEventHandler):
 
     def _addRectangle(self):
         #TODO only one interval
-        endOfLastInterval = float(self.plotSolver.GetRectangleDataAsList()[-1].rightTop.secondaryName)
+        endOfLastInterval = float(self.plotSolver.GetBucketData()[-1].interval[1])
         def createPopUp():
             popup = tk.Toplevel()
             popup.resizable(True, False)
@@ -84,7 +84,7 @@ class HistogramEventHandler(BarChartEventHandler):
             return
         self.plotSolver.AddBucket(endOfLastInterval,newEnd,newValue*self.plotMetadata.heightScaleFactor)
         self.UpdateUI()
-        self._createTranslationTable(self.plotSolver.GetRectangleData()) # pyright: ignore[reportArgumentType]
+        self._createTranslationTable(self.plotSolver.GetGroupData()) # pyright: ignore[reportArgumentType]
 
 
     #   nemazat!
