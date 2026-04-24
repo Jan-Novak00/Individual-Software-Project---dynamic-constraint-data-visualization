@@ -22,6 +22,7 @@ def StartGame():
             messagebox.showerror("Error: not TOML",str(e),parent=root)
         except Exception as e:
             messagebox.showerror("Error: unknown error",f"Unknown error has occured while loading the configuration file.\nError message:\n{str(e)}",parent=root)
+            raise e
         else:
             assert gameUI is not None
             root.destroy()

@@ -372,8 +372,8 @@ class BarChartGameLoader(GameLoader):
         rescaledUserData = RescaleListOfLists(userData,metadata.heightScaleFactor)
         rescaledSolutionData = RescaleListOfLists(solutionData,metadata.heightScaleFactor)
 
-        solutionChart : VariableBarChart = VariableBarChart(names,None)
-        userChart : VariableBarChart = VariableBarChart(names,None)
+        solutionChart : VariableBarChart = VariableBarChart(names)
+        userChart : VariableBarChart = VariableBarChart(names)
 
 
         self.solutionSolver = BarChartSolver(variableChart=solutionChart,
