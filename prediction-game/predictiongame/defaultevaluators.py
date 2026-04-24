@@ -1,5 +1,5 @@
 from .gameevaluator import GameEvaluator
-from kiwiplots import ChartSolver, BarChartSolver, PlotMetadata, BarChartMetadata, LineChartSolver, CandlestickChartSolver
+from kiwiplots import ChartSolver, BarChartSolver, PlotMetadata, BarChartMetadata, LineChartSolver, CandlestickChartSolver, HistogramSolver
 
 class DefaultBarChartEvaluator(GameEvaluator):
     @staticmethod
@@ -38,7 +38,7 @@ class DefaultCandlestickChartEvaluator(GameEvaluator):
 
 class DefaultHistogramEvaluator(GameEvaluator):
     @staticmethod
-    def Eval(userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata: PlotMetadata) -> int:
+    def Eval(userSolver: HistogramSolver, solutionSolver: HistogramSolver, plotMetadata: PlotMetadata) -> int:
         return 0
 
 class DefaultLineChartEvaluator(GameEvaluator):

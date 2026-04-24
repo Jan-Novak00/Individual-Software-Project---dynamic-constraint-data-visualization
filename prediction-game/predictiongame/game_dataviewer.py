@@ -213,6 +213,53 @@ class GameCandlestickChartDataViewer(GameDataViewer):
 
 class GameHistogramDataViewer(GameDataViewer):
     def Write(self, plotMetadata: HistogramMetadata, solver: HistogramSolver, changedIndex: int, changedStatus: str) -> None:
-        self.dataWindow.insert("1.0","TODO")
-    def WriteSolution(self, userSolver: HistogramMetadata, solutionSolver: HistogramMetadata, plotMetadata: HistogramMetadata):
-        self.dataWindow.insert("1.0","TODO")
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        valueEdited = changedStatus == "top"
+        rectangles : list[ValueBucket] = solver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
+
+        for i in range(len(rectangles)-1, -1, -1):
+            rec = rectangles[i]
+            trueValue = rec.GetHeight()/plotMetadata.heightScaleFactor
+            valueString = ""
+            if ((trueValue >= 1e+06) or (trueValue <= 1e-04)):
+                valueString = f"{trueValue:.4g}"
+            else:
+                valueString = str(trueValue)
+
+
+            if valueEdited and i == changedIndex:
+                self.dataWindow.insert("1.0",f"({rec.interval[0]}, {rec.interval[1]}) = {valueString}\n", "changing_Value")
+            else:
+                self.dataWindow.insert("1.0",f"({rec.interval[0]}, {rec.interval[1]}) = {valueString}\n")
+        self.dataWindow.insert("1.0","(interval start, interval end) = value\n","header")
+        self.dataWindow.config(state="disabled")
+    
+    def WriteSolution(self, userSolver: HistogramSolver, solutionSolver: HistogramSolver, plotMetadata: HistogramMetadata):
+        self.dataWindow.config(state="normal")
+        self.dataWindow.delete("1.0", "end")
+
+        self.dataWindow.tag_configure("changing_Value", foreground="red")
+        userRectangles : list[ValueBucket] = userSolver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
+        solutionRectangles : list[ValueBucket] = solutionSolver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
+
+        assert len(userRectangles) == len(solutionRectangles)
+
+        for i in range(len(solutionRectangles)-1, -1, -1):
+            Urec = userRectangles[i]
+            Srec = solutionRectangles[i]
+            trueUValue = Urec.GetHeight()/plotMetadata.heightScaleFactor
+            trueSValue = Srec.GetHeight()/plotMetadata.heightScaleFactor
+            
+            UvalueString = FormatFloat(trueUValue)
+            SvalueString = FormatFloat(trueSValue)
+
+            self.dataWindow.insert("1.0",")\n")
+            self.dataWindow.insert("1.0", SvalueString, "green_highlight")
+            self.dataWindow.insert("1.0",f"({Urec.interval[0]}, {Urec.interval[1]}) = {UvalueString} (")
+        self.dataWindow.insert("1.0",")\n","header")
+        self.dataWindow.insert("1.0","solution","green_highlight")
+        self.dataWindow.insert("1.0","(interval start, interval end) = value (","header")
+        self.dataWindow.config(state="disabled")
