@@ -56,17 +56,26 @@ class LineChartEventHandler(EventHandler):
     
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         super().initializeDefaultRightClickMenu(menu)
-        self.defaultMenu.add_command(label="Change mode", command=self._changeMode)
+        self.valueModeLabel = "Switch to value modification mode"
+        self.horizontalModeLabel = "Switch to horizontal layout modification mode"
+
+        self.defaultMenu.add_command(command=self._changeMode)
+        self.changeModeIndex = self.defaultMenu.index("end")
+        assert self.changeModeIndex
+        self.defaultMenu.entryconfig(self.changeModeIndex,label=self.horizontalModeLabel)
         self.defaultMenu.add_command(label="Add point test", command=self._addPointTEST)
         self.defaultMenu.add_command(label="Add point", command=self._addPoint)
 
 
     def _changeMode(self):
         print("CLICK")
+        assert self.changeModeIndex
         if self.mode == "value":
             self.mode = "width"
+            self.defaultMenu.entryconfig(self.changeModeIndex,label=self.valueModeLabel)
         else:
             self.mode = "value"
+            self.defaultMenu.entryconfig(self.changeModeIndex,label=self.horizontalModeLabel)
     
     def _changeColor(self):
         color = colorchooser.askcolor(title="Choose different color")
