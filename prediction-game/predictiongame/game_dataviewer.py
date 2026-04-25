@@ -22,18 +22,18 @@ class GameBarChartDataViewer(GameDataViewer):
     def __init__(self, textWindow: Text):
         super().__init__(textWindow)
     
-    def Write(self, plotMetadata: PlotMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None:
+    def Write(self, plotMetadata: PlotMetadata, solver: BarChartSolver, changedIndex: int, valueChanged : bool) -> None:
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
-        valueEdited = changedStatus == BarChartEventHandler.RectangleEventRegistersLeftButton.RectangleLeftEvents.height
+        
         rectangles = solver.GetBarDataAsList()
         for i in range(len(rectangles)-1, -1, -1):
             rec = rectangles[i]
             trueValue = rec.GetHeight()/plotMetadata.heightScaleFactor
             valueString = FormatFloat(trueValue)
 
-            if valueEdited and i == changedIndex:
+            if valueChanged and i == changedIndex:
                 self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n", "changing_Value")
             else:
                 self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n")
@@ -88,11 +88,11 @@ class GameLineChartDataViewer(GameDataViewer):
         return result
 
     
-    def Write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, changedStatus: str) -> None:
+    def Write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, valueChanged : bool) -> None:
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
-        valueEdited = changedStatus == BarChartEventHandler.RectangleEventRegistersLeftButton.RectangleLeftEvents.height
+        
         lines = solver.GetLineData()
         points = GameLineChartDataViewer._getPoints(lines)
         names = GameLineChartDataViewer._getPointNames(lines)
@@ -102,7 +102,7 @@ class GameLineChartDataViewer(GameDataViewer):
             trueValue = value/plotMetadata.heightScaleFactor
             valueString = FormatFloat(trueValue)
 
-            if valueEdited and i == changedIndex:
+            if valueChanged and i == changedIndex:
                 self.dataWindow.insert("1.0",f"{names[i]} = {valueString}\n", "changing_Value")
             else:
                 self.dataWindow.insert("1.0",f"{names[i]} = {valueString}\n")
@@ -142,7 +142,7 @@ class GameCandlestickChartDataViewer(GameDataViewer):
     def __init__(self, textWindow: Text):
         super().__init__(textWindow)
     
-    def Write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str) -> None:
+    def Write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, valueChanged : bool) -> None:
         """
         Displays all data for the user and highlights which data is being edited
         """
@@ -153,7 +153,7 @@ class GameCandlestickChartDataViewer(GameDataViewer):
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
         eventType = CandlesticEventHandler.CandleEventRegistersLeftButton.CandleLeftEvents
-        valueEdited = changedStatus in [eventType.closing,eventType.opening,eventType.maximum,eventType.minimum]
+        
         candles = solver.GetCandleData()
 
         for i in range(len(candles)-1, -1, -1):
@@ -164,7 +164,7 @@ class GameCandlestickChartDataViewer(GameDataViewer):
             minimumValue = FormatFloat(candle.wickBottom.Y/scaleFactor + xAxisValue/scaleFactor)
             
             string = f"{candle.name}:\t{openingValue}, {closingValue}, {minimumValue}, {maximumValue}\n"
-            if valueEdited and i == changedIndex:
+            if valueChanged and i == changedIndex:
                 self.dataWindow.insert("1.0",f"{string}", "changing_Value")
             else:
                 self.dataWindow.insert("1.0",f"{string}")
@@ -212,12 +212,12 @@ class GameCandlestickChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="disabled")
 
 class GameHistogramDataViewer(GameDataViewer):
-    def Write(self, plotMetadata: HistogramMetadata, solver: HistogramSolver, changedIndex: int, changedStatus: str) -> None:
+    def Write(self, plotMetadata: HistogramMetadata, solver: HistogramSolver, changedIndex: int, valueChanged : bool) -> None:
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
-        valueEdited = changedStatus == "top"
+        
         rectangles : list[ValueBucket] = solver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
 
         for i in range(len(rectangles)-1, -1, -1):
@@ -230,7 +230,7 @@ class GameHistogramDataViewer(GameDataViewer):
                 valueString = str(trueValue)
 
 
-            if valueEdited and i == changedIndex:
+            if valueChanged and i == changedIndex:
                 self.dataWindow.insert("1.0",f"({rec.interval[0]}, {rec.interval[1]}) = {valueString}\n", "changing_Value")
             else:
                 self.dataWindow.insert("1.0",f"({rec.interval[0]}, {rec.interval[1]}) = {valueString}\n")

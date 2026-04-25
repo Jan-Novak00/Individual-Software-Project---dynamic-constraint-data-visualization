@@ -52,6 +52,9 @@ class CandlesticEventHandler(EventHandler):
         self.eventRegistersLeft : CandlesticEventHandler.CandleEventRegistersLeftButton = CandlesticEventHandler.CandleEventRegistersLeftButton()
         self.eventRegistersRight : CandlesticEventHandler.CandleEventRegistersRightButton = CandlesticEventHandler.CandleEventRegistersRightButton()
     
+    def _isEventTypeValueChange(self) -> bool:
+        return self.eventRegistersLeft.eventType in [self.LeftEvents.maximum, self.LeftEvents.minimum, self.LeftEvents.opening, self.LeftEvents.closing]
+
     def initializeDataView(self, textWindow: tk.Text):
         self.dataViewer = CandlesticDataViewer(textWindow)
     

@@ -44,7 +44,7 @@ class RectangleEventHandler(EventHandler,ABC):
         """
         super().__init__(plotMetadata)
         self.plotSolver : RectangleSolver = solver 
-        self.canvasHeight : int  = None
+        self.canvasHeight : int  = 0
         self._createTranslationTable(solver.GetGroupData()) 
         self.eventRegistersLeft : RectangleEventHandler.RectangleEventRegistersLeftButton = RectangleEventHandler.RectangleEventRegistersLeftButton()
         self.eventRegistersRight : RectangleEventHandler.RectangleEventRegistersRightButton = RectangleEventHandler.RectangleEventRegistersRightButton()
@@ -55,6 +55,9 @@ class RectangleEventHandler(EventHandler,ABC):
             for itemIndex in range(len(group)): # pyright: ignore[reportArgumentType]
                 self.translationTable.append((groupIndex,itemIndex))
     
+    def _isEventTypeValueChange(self) -> bool:
+        return self.eventRegistersLeft.eventType == RectangleEventHandler.RectangleEventRegistersLeftButton.RectangleLeftEvents.height
+
     @abstractmethod
     def initializeDataView(self, textWindow: Text) -> None:
         return

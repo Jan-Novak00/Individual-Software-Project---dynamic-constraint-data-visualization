@@ -1,5 +1,5 @@
 import tkinter as tk
-from typing import Union
+from typing import Union, TypeAlias
 from .canvasdrawers import LineChartCanvasDrawer
 from .eventhandlers import EventHandler
 from kiwiplots.solvers import LineChartSolver
@@ -9,6 +9,7 @@ from .dataviewers import *
 from kiwiplots.chartelements import ValueLine, ValuePoint2D
 from tkinter import messagebox
 from tkinter import colorchooser
+from enum import Enum
 
 def LineIndexToPointIndex(lineIndex: int, isLeft: bool):
         if isLeft:
@@ -16,17 +17,40 @@ def LineIndexToPointIndex(lineIndex: int, isLeft: bool):
         else:
             return lineIndex+1
 
-
-
 class LineChartEventHandler(EventHandler):
 
     class LineChartEventRegisterLeftButton(EventHandler.EventRegistersLeftButton):
+        class LineLeftEvents(Enum):
+            nothing = 0
+            height  = 1,
+            origin  = 2,
+            horizontal = 3,
+            axisTop = 5
+        
+        class LineEndParity(Enum):
+            left = 0,
+            right = 1
+
+        def __init__(self):
+            super().__init__()
+            self.eventType : LineChartEventHandler.LineChartEventRegisterLeftButton.LineLeftEvents = LineChartEventHandler.LineChartEventRegisterLeftButton.LineLeftEvents.nothing
+            self.lineEndParity : LineChartEventHandler.LineChartEventRegisterLeftButton.LineEndParity|None = None
+        
         def reset(self):
             super().reset()
-            self.lineEndParity : str = None # pyright: ignore[reportAttributeAccessIssue] # left or right
+            self.eventType = LineChartEventHandler.LineChartEventRegisterLeftButton.LineLeftEvents.nothing
+            self.lineEndParity = None 
     
     class LineChartEventRegistersRightButton(EventHandler.EventRegistersRightButton):
         pass
+
+    class EditMode(Enum):
+        VALUE = 0,
+        HORIZONTAL = 1
+    
+    LeftEvents : TypeAlias = LineChartEventRegisterLeftButton.LineLeftEvents
+    LineEndParity : TypeAlias = LineChartEventRegisterLeftButton.LineEndParity
+    
 
     ###################
     # Initialization #
@@ -36,10 +60,13 @@ class LineChartEventHandler(EventHandler):
         super().__init__(plotMetadata)
         self.plotSolver: LineChartSolver = solver
         self.canvasHeight : int = None # pyright: ignore[reportAttributeAccessIssue]
-        self.mode = "value"
+        self.mode : LineChartEventHandler.EditMode = LineChartEventHandler.EditMode.VALUE
         self.plotMetadata : LineChartMetadata = self.plotMetadata
         self.eventRegistersLeft : LineChartEventHandler.LineChartEventRegisterLeftButton =  LineChartEventHandler.LineChartEventRegisterLeftButton()
         self.eventRegistersRight : LineChartEventHandler.LineChartEventRegistersRightButton = LineChartEventHandler.LineChartEventRegistersRightButton()
+
+    def _isEventTypeValueChange(self) -> bool:
+        return self.eventRegistersLeft.eventType == self.LeftEvents.height
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
         self.dataViewer = LineChartDataViewer(textWindow)
@@ -70,18 +97,18 @@ class LineChartEventHandler(EventHandler):
     def _changeMode(self):
         print("CLICK")
         assert self.changeModeIndex
-        if self.mode == "value":
-            self.mode = "width"
+        if self.mode == LineChartEventHandler.EditMode.VALUE:
+            self.mode = LineChartEventHandler.EditMode.HORIZONTAL
             self.defaultMenu.entryconfig(self.changeModeIndex,label=self.valueModeLabel)
         else:
-            self.mode = "value"
+            self.mode = LineChartEventHandler.EditMode.VALUE
             self.defaultMenu.entryconfig(self.changeModeIndex,label=self.horizontalModeLabel)
     
     def _changeColor(self):
         color = colorchooser.askcolor(title="Choose different color")
         if color[1] == None:
             return
-        self.plotMetadata.color = color[1] # pyright: ignore[reportAttributeAccessIssue]
+        self.plotMetadata.color = color[1]
         self._updateCanvas()
     
     def _addPointTEST(self):                                                               #addition TEST
@@ -162,50 +189,49 @@ class LineChartEventHandler(EventHandler):
         self.eventRegistersLeft.reset()
     
     def _clickedOnLineEnd(self, event: tk.Event, index: int, leftEdge: bool):
-        self.eventRegistersLeft.eventType = "value" if self.mode == "value" else "width"
-        self.eventRegistersLeft.lineEndParity = "left" if leftEdge else "right"
+        self.eventRegistersLeft.eventType = self.LeftEvents.height if self.mode == LineChartEventHandler.EditMode.VALUE else self.LeftEvents.horizontal
+        self.eventRegistersLeft.lineEndParity = self.LineEndParity.left if leftEdge else self.LineEndParity.right
         self.eventRegistersLeft.dragIndex = index
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x,event.y)
     
     def _clickedOnOrigin(self, event: tk.Event):
-        self.eventRegistersLeft.eventType = "origin"
+        self.eventRegistersLeft.eventType = self.LeftEvents.origin
     
     def _clickedOnTopOfAxis(self, event: tk.Event):
-        self.eventRegistersLeft.eventType = "axisTop"
+        self.eventRegistersLeft.eventType = self.LeftEvents.axisTop
 
     #######################
     # Mouse move handling #
     #######################
 
     def on_mouse_move(self, event: tk.Event) -> None:
-        if self.eventRegistersLeft.eventType is None:
+        if self.eventRegistersLeft.eventType == self.LeftEvents.nothing:
             return
         
         origin = self.plotSolver.GetOrigin()
         points = self.plotSolver.GetPoints()
 
-        if self.eventRegistersLeft.eventType == "value":
+        if self.eventRegistersLeft.eventType == self.LeftEvents.height:
             pointIndex = self.eventRegistersLeft.dragIndex
             self.plotSolver.ChangeHeight(pointIndex,self.canvasHeight - event.y - origin.Y)
 
         
-        elif self.eventRegistersLeft.eventType == "width" and self.eventRegistersLeft.dragIndex != 0:
-            #newWidth = (event.x - origin.X - self.plotSolver.GetPadding())/(self.eventRegistersLeft.dragIndex)
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.horizontal and self.eventRegistersLeft.dragIndex != 0:
             newX = event.x #- self.plotSolver.GetPadding()
             if newX >= 5:
                 #self.plotSolver.ChangeWidth(newWidth)
                 self.plotSolver.ChangeX(self.eventRegistersLeft.dragIndex, newX)
         
-        elif self.eventRegistersLeft.eventType == "width" and self.eventRegistersLeft.dragIndex == 0:
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.horizontal and self.eventRegistersLeft.dragIndex == 0:
             newPadding = event.x - origin.X
             if newPadding >= 0:
                 self.plotSolver.ChangePadding(newPadding)
 
-        elif self.eventRegistersLeft.eventType == "origin":
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.origin:
             self.plotSolver.ChangeOrigin(event.x, self.canvasHeight - event.y)
             print("Origin: ", origin)
         
-        elif self.eventRegistersLeft.eventType == "axisTop":  
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.axisTop:  
             newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 10:
                 self.plotSolver.ChangeAxisHeight(int(newHeight))
@@ -226,7 +252,7 @@ class LineChartEventHandler(EventHandler):
         points = self.plotSolver.GetPoints()
         for index, point in enumerate(points):
             if self._isNearLineEnd(event,point):
-                if self.mode == "value":
+                if self.mode == LineChartEventHandler.EditMode.VALUE:
                     self.canvas.config(cursor="cross")
                 else:
                     if index == 0:

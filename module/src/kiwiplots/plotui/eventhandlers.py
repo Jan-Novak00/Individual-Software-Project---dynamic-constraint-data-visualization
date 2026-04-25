@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from .plotmetadata import PlotMetadata
 import tkinter as tk
 from kiwiplots.chartelements import ValuePoint2D
@@ -11,6 +11,7 @@ from kiwiplots.solvers import ChartSolver
 class EventRegisters(ABC):
     def reset(self)->None:
         raise NotImplementedError("Method EventRegisters.reset must be declared in subclass")
+
 
 class EventHandler(ABC):
     """
@@ -54,8 +55,8 @@ class EventHandler(ABC):
         self.dataViewer : DataViewer = None                                                                             # type: ignore
         self.plotSolver : ChartSolver = None                                                                            # type: ignore
         self.plotMetadata = plotMetadata                           #ToDo  typing
-        #self.eventRegistersLeft : EventHandler.EventRegistersLeftButton = EventHandler.EventRegistersLeftButton()
-        #self.eventRegistersRight : EventHandler.EventRegistersRightButton = EventHandler.EventRegistersRightButton()
+        self.eventRegistersLeft : EventHandler.EventRegistersLeftButton = None # pyright: ignore[reportAttributeAccessIssue]
+        self.eventRegistersRight : EventHandler.EventRegistersRightButton = None  # pyright: ignore[reportAttributeAccessIssue]
     
     def UpdateUI(self):
         """
@@ -66,6 +67,10 @@ class EventHandler(ABC):
         self._updateCanvas()
         self._updateDataView()
     
+    @abstractmethod
+    def _isEventTypeValueChange(self)->bool:
+        return False
+    
     
     def _updateCanvas(self):
         """
@@ -73,13 +78,14 @@ class EventHandler(ABC):
         """
         self.drawer.draw(self.plotMetadata,self.plotSolver) 
     
+
     def _updateDataView(self):
         """
         Updates the data viewer to display current plot values.
         
         Highlights the data element currently being edited if any.
         """
-        self.dataViewer.Write(self.plotMetadata, self.plotSolver, self.eventRegistersLeft.dragIndex, self.eventRegistersLeft.eventType) # type: ignore
+        self.dataViewer.Write(self.plotMetadata, self.plotSolver, self.eventRegistersLeft.dragIndex, self._isEventTypeValueChange())
     
     def _changeTitle(self):
         """

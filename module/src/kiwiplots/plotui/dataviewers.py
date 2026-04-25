@@ -21,7 +21,7 @@ class DataViewer(ABC):
         """
         self.dataWindow : tk.Text = textWindow
 
-    def Write(self, plotMetadata: PlotMetadata, solver: ChartSolver, changedIndex: int, changedStatus: str)->None: # type: ignore
+    def Write(self, plotMetadata: PlotMetadata, solver: ChartSolver, changedIndex: int, valueChanged: bool)->None: # type: ignore
         """
         Displays plot data in the text window.
         
@@ -41,7 +41,7 @@ class CandlesticDataViewer(DataViewer):
     def __init__(self, textWindow: tk.Text):
         super().__init__(textWindow)
 
-    def Write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, changedStatus: str): # pyright: ignore[reportIncompatibleMethodOverride]
+    def Write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, valueChanged: bool): # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Displays all data for the user and highlights which data is being edited
         """
@@ -51,7 +51,6 @@ class CandlesticDataViewer(DataViewer):
         self.dataWindow.delete("1.0", "end")
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
-        valueEdited = changedStatus in ["opening", "closing", "maximum", "minimum"]
         candles = solver.GetCandleData()
 
         for i in range(len(candles)-1, -1, -1):
@@ -62,14 +61,14 @@ class CandlesticDataViewer(DataViewer):
             minimumValue = candle.wickBottom.Y/scaleFactor + xAxisValue/scaleFactor
             
             string = f"{candle.name}:\n\topening = {openingValue:.4f},\n\tclosing = {closingValue:.4f},\n\tmin = {minimumValue:.4f},\n\tmax = {maximumValue:.4f}\n\n"
-            if valueEdited and i == changedIndex:
+            if valueChanged and i == changedIndex:
                 self.dataWindow.insert("1.0",f"{string}\n", "changing_Value")
             else:
                 self.dataWindow.insert("1.0",f"{string}\n")
         self.dataWindow.config(state="disabled")
 
 class BarChartDataViewer(DataViewer):
-    def Write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+    def Write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, changedIndex: int, valueChanged: bool) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Displays all data for the user and highlights which data is being edited
         """
@@ -77,7 +76,6 @@ class BarChartDataViewer(DataViewer):
         self.dataWindow.delete("1.0", "end")
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
-        valueEdited = changedStatus == "top"
         rectangles = solver.GetBarDataAsList()
 
         for i in range(len(rectangles)-1, -1, -1):
@@ -89,19 +87,18 @@ class BarChartDataViewer(DataViewer):
             else:
                 valueString = str(trueValue)
 
-            if valueEdited and i == changedIndex:
+            if valueChanged and i == changedIndex:
                 self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n", "changing_Value")
             else:
                 self.dataWindow.insert("1.0",f"{rec.name} = {valueString}\n")
         self.dataWindow.config(state="disabled")
 
 class HistogramDataViewer(DataViewer):
-    def Write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, changedIndex: int, changedStatus: str) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+    def Write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, changedIndex: int, valueChanged: bool) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
         self.dataWindow.tag_configure("changing_Value", foreground="red")
-        valueEdited = changedStatus == "top"
         rectangles : list[ValueBucket] = solver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
 
         for i in range(len(rectangles)-1, -1, -1):
@@ -113,19 +110,17 @@ class HistogramDataViewer(DataViewer):
             else:
                 valueString = str(trueValue)
 
-
-            if valueEdited and i == changedIndex:
+            if valueChanged and i == changedIndex:
                 self.dataWindow.insert("1.0",f"({rec.interval[0]}, {rec.interval[1]}) = {valueString}\n", "changing_Value")
             else:
                 self.dataWindow.insert("1.0",f"({rec.interval[0]}, {rec.interval[1]}) = {valueString}\n")
         self.dataWindow.config(state="disabled")
 
 class LineChartDataViewer(DataViewer):
-    def Write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, changedStatus: str)->None:
+    def Write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, valueChanged: bool)->None:
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
         self.dataWindow.tag_configure("changing_Value", foreground="red")
-        valueEdited = False #
         lines = solver.GetLineData()
         origin = solver.GetOrigin()
         points = [line.leftEnd for line in lines] + [lines[-1].rightEnd]
@@ -140,7 +135,7 @@ class LineChartDataViewer(DataViewer):
                 valueString = f"{trueValue:.4g}"
             else:
                 valueString = str(trueValue)
-            if valueEdited and i == changedIndex:
+            if valueChanged and i == len(points)-1 - changedIndex:
                 self.dataWindow.insert("1.0",f"{label} = {valueString}\n", "changing_Value")
             else:
                 self.dataWindow.insert("1.0",f"{label} = {valueString}\n")
