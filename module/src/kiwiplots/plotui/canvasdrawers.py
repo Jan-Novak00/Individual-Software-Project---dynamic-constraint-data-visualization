@@ -223,7 +223,7 @@ class LineChartCanvasDrawer(CanvasDrawer):
         origin = solver.GetOrigin()
         y = solver.GetAxisHeight()
 
-        minimum: float = 0
+        minimum: float = min([line.leftHeight for line in lines] + [line.rightHeight for line in lines])
 
-        self._drawAxes(solver.GetAxisHeight(),int(lines[-1].rightEnd.X),origin,plotMetadata.heightScaleFactor,int(minimum),plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
+        self._drawAxes(solver.GetAxisHeight(),int(lines[-1].rightEnd.X),origin,plotMetadata.heightScaleFactor,int(min([minimum,0])),plotMetadata.xAxisLabel,plotMetadata.yAxisLabel,plotMetadata.xAxisValue)
         self.drawBare(plotMetadata,solver,clear=False,outlineOnly=outlineOnly,specialHighlight=specialHighlight)

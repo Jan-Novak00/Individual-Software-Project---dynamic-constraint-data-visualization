@@ -6,7 +6,7 @@ class ValueLine:
         self.leftEnd : ValuePoint2D = leftEnd
         self.rightEnd : ValuePoint2D = rightEnd
         self.leftHeight : float = leftHeight
-        self.righHeight : float = rightHeight
+        self.rightHeight : float = rightHeight
     def __str__(self):
         return f"<{self.leftEnd.name}>-<{self.rightEnd.name}>: ({self.leftEnd.X}, {self.leftEnd.Y})-({self.rightEnd.X}, {self.rightEnd.Y})"
 

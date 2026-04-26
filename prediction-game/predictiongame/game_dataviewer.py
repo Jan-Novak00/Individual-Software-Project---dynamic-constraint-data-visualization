@@ -75,7 +75,7 @@ class GameLineChartDataViewer(GameDataViewer):
         for line in lines:
             result.append(line.leftHeight)
         if len(lines) != 0:
-            result.append(lines[-1].righHeight)
+            result.append(lines[-1].rightHeight)
         return result
     
     @staticmethod
