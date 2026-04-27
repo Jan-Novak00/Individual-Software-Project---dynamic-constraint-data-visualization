@@ -77,10 +77,10 @@ class VariableBarGroup(VariableRectangleGroup):
         widthScales = [1. for name in names]
         super().__init__(rectangleWidth, innerSpacing, names, widthScales, color)
 
-    def AddBar(self, name: str, widthScale: float = 1):
+    def AddBar(self, name: str):
         print("--- rectangleGroup.AddRectangle start ---")
         #TODO this method can only be called on a group with at least one rectangle
-        newRectangle = VariableRectangle(width=self.width,name=name,widthScale=widthScale)
+        newRectangle = VariableRectangle(width=self.width,name=name,widthScale=1)
         lastRectangle = self.rectangles[-1]
         self.rectangles.append(newRectangle)
         newRectangle.SetSpacingConstraint((lastRectangle.rightTop.X + self.innerSpacing == newRectangle.leftBottom.X) | "required")

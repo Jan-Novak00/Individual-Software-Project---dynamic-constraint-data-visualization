@@ -71,7 +71,14 @@ class VariableCandle(VariableRectangle):
         """
         Return ValueCandle instances for each rectangle in the group as a list
         """
-        return ValueCandle(self.openingCorner.Value(), self.closingCorner.Value(), self.wickBottom.Value(), self.wickTop.Value(), self.positiveColor if self.height.value() >= 0 else self.negativeColor, self.name, self.nameVisible)
+        return ValueCandle(openingCorner=self.openingCorner.Value(), 
+                           closingCorner=self.closingCorner.Value(), 
+                           wickBottom=self.wickBottom.Value(), 
+                           wickTop=self.wickTop.Value(), 
+                           color=self.positiveColor if self.height.value() >= 0 
+                                                    else self.negativeColor, 
+                           name = self.name, 
+                           nameVisible = self.nameVisible)
         
     def ChangePositiveColor(self, color: Union[str,int]):
         self.positiveColor = color

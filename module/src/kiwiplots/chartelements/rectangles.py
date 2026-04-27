@@ -40,8 +40,8 @@ class VariableRectangle(VariableElement):
         self.horizontalPositionConstraint : Constraint = ((self.leftBottom.X + self.width * self.widthScale == self.rightTop.X) | "required")
         self.verticalPositionConstraint : Constraint = ((self.leftBottom.Y + self.height == self.rightTop.Y) | "required")
 
-        self.bottomLeftXPositionConstraint : Constraint | None = None
-        self.bottomLeftYPositionConstraint : Constraint | None = None
+        #self.bottomLeftXPositionConstraint : Constraint | None = None
+        #self.bottomLeftYPositionConstraint : Constraint | None = None
 
         self.spacingConstraint : Constraint | None = None 
 
@@ -59,10 +59,10 @@ class VariableRectangle(VariableElement):
         constraints = []
         if self.spacingConstraint is not None:
             constraints.append(self.spacingConstraint)
-        if self.bottomLeftXPositionConstraint is not None:
-            constraints.append(self.bottomLeftXPositionConstraint)
-        if self.bottomLeftYPositionConstraint is not None:
-            constraints.append(self.bottomLeftYPositionConstraint)
+        #if self.bottomLeftXPositionConstraint is not None:
+        #    constraints.append(self.bottomLeftXPositionConstraint)
+        #if self.bottomLeftYPositionConstraint is not None:
+        #    constraints.append(self.bottomLeftYPositionConstraint)
         constraints.append(self.horizontalPositionConstraint)
         constraints.append(self.verticalPositionConstraint)
         return constraints
@@ -85,7 +85,7 @@ class VariableRectangle(VariableElement):
         """
         Returns ValueRectangle representation of the instance.
         """
-        return ValueRectangle(self.leftBottom.Value(), self.rightTop.Value(), self.color, self.name)
+        return ValueRectangle(leftBottomCorner =  self.leftBottom.Value(), rightTopCorner= self.rightTop.Value(), color= self.color,  name = self.name)
     
     def GetName(self)->str:
         return self.name
