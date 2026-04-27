@@ -1,12 +1,12 @@
 from kiwiplots import *
 import tkinter as tk
 from .gameevaluator import GameEvaluator
-from .gameeventhandler import GameEventHandler
+from .gameeventhandler import EventHandlerProtocol
 from .game_dataviewer import GameDataViewer
 
 
 class GameUI:
-    def __init__(self, gameEventHandler, instructionString: str, evaluator: GameEvaluator, userSolver : ChartSolver, solutionSolver : ChartSolver, plotMetadata : PlotMetadata, plotWidth: int, plotHeight: int):
+    def __init__(self, gameEventHandler : EventHandlerProtocol, instructionString: str, evaluator: GameEvaluator, userSolver : ChartSolver, solutionSolver : ChartSolver, plotMetadata : PlotMetadata, plotWidth: int, plotHeight: int):
         self.eventHandler = gameEventHandler
         self.plotWidth = plotWidth
         self.plotHeight = plotHeight
