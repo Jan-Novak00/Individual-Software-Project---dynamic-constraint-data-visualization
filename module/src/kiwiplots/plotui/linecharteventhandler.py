@@ -220,12 +220,14 @@ class LineChartEventHandler(EventHandler):
             newX = event.x #- self.plotSolver.GetPadding()
             if newX >= 5:
                 #self.plotSolver.ChangeWidth(newWidth)
-                self.plotSolver.ChangeX(self.eventRegistersLeft.dragIndex, newX)
+                self.plotSolver.ChangeWidthX(self.eventRegistersLeft.dragIndex, newX)
         
         elif self.eventRegistersLeft.eventType == self.LeftEvents.horizontal and self.eventRegistersLeft.dragIndex == 0:
-            newPadding = event.x - origin.X
-            if newPadding >= 0:
-                self.plotSolver.ChangePadding(newPadding)
+            #newPadding = event.x - origin.X TOTO NEPOUZIVAT
+            #if newPadding >= 0:
+                #self.plotSolver.ChangePadding(newPadding)
+            newX = event.x
+            self.plotSolver.ChangePaddingX(newX)
 
         elif self.eventRegistersLeft.eventType == self.LeftEvents.origin:
             self.plotSolver.ChangeOrigin(event.x, self.canvasHeight - event.y)

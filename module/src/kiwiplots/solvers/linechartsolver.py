@@ -88,7 +88,9 @@ class LineChartSolver(ChartSolver):
     def GetPadding(self):
         return self.variableChart.padding.value()
 
-    def ChangeX(self, pointIndex: int, newX: float):
+    def ChangeWidthX(self, pointIndex: int, newX: float):
+        if pointIndex == 0:
+            return
         lineIndex = pointIndex if pointIndex == 0 else pointIndex - 1
         var = self.variableChart.lines[lineIndex].leftEnd.X if pointIndex == 0 else self.variableChart.lines[lineIndex].rightEnd.X
         strength = "strong" if pointIndex == 0 else 1e+8 # magic number = stronger than strong
@@ -103,6 +105,22 @@ class LineChartSolver(ChartSolver):
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
         self.switchConstraintLock(self.variableChart.padding,paddingLock)
         self.switchConstraintLock(self.variableChart.origin.X,originLock)
+    
+    def ChangePaddingX(self, newX: float):
+        firstLine = self.variableChart.lines[0]
+        var = firstLine.leftEnd.X
+        strength = 1e+8
+        if (not self.solver.hasEditVariable(var)):
+                self.solver.addEditVariable(var,strength)
+        self.solver.suggestValue(var, newX)
+        originLock = self.switchConstraintLock(self.variableChart.origin.X)
+        #widthLock = self.switchConstraintLock(self.variableChart.width)
+        self.Solve()
+        self.solver.removeEditVariable(var)
+        self.solver.suggestValue(self.variableChart.padding,self.variableChart.padding.value())
+        #self.switchConstraintLock(self.variableChart.width,widthLock)
+        self.switchConstraintLock(self.variableChart.origin.X,originLock)
+
     
     def AddPoint(self, value: float, name: str): #NEW FUNCTION
         print("--- solver.AddPoint method start ---")
