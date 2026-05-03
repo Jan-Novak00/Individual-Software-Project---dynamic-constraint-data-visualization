@@ -14,3 +14,4 @@ y = 30
 names = [["a","b","c","d"],["z"]]
 groups = [[1,2,3,4],[1]]
 is_guess = [[false,false,true,true],[true]]
+colors = [["#F5AD27","#F5AD27","#F5AD27","#00AD27"],["#F5ADF7"]]

@@ -15,3 +15,4 @@ y = 30
 interval_boundries = [1,2,4,5]
 values = [5,6,3]
 is_guess = [false,false,true]
+colors = ["#F527C8","#3ff527","#96ade0"]

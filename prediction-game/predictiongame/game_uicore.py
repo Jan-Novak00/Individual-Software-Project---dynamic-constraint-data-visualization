@@ -51,7 +51,7 @@ class GameUI:
         rightFrame.pack(side="left", padx=10)
 
         tk.Label(leftFrame, text="Instructions:", font=("Arial", 13, "bold")).pack()
-        self.instructionWindow = tk.Text(leftFrame, wrap="none", font=("Arial",12), width=40, height=10)
+        self.instructionWindow = tk.Text(leftFrame, wrap="word", font=("Arial",12), width=40, height=10)
         self.instructionWindow.pack(padx=20, pady=20, side="left")
         self.instructionWindow.insert("1.0",self.instructionsForPlayer)
         self.instructionWindow.config(state="disabled")

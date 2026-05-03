@@ -85,7 +85,7 @@ class VariableRectangle(VariableElement):
         """
         Returns ValueRectangle representation of the instance.
         """
-        return ValueRectangle(leftBottomCorner =  self.leftBottom.Value(), rightTopCorner= self.rightTop.Value(), color= self.color,  name = self.name)
+        return ValueRectangle(leftBottomCorner =  self.leftBottom.Value(), rightTopCorner = self.rightTop.Value(), color = self.color,  name = self.name)
     
     def GetName(self)->str:
         return self.name

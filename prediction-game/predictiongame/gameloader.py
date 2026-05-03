@@ -18,7 +18,6 @@ INITIAL_INNER_SPACING = 10
 INITIAL_ORIGIN_X : int = 50
 INITIAL_ORIGIN_Y : int = 30
 INITIAL_PADDING : int = 10
-DEFAULT_COLOR : Union[str,int] = "blue"
 INITIAL_PADDING : int = 10
 
 GENERAL_CONFIG_SECTION_HEADER           = "game_config"
@@ -286,9 +285,24 @@ def ValidateListUnderKeyword(keyword : str, listToValidate : list, itemType : ty
         if not isinstance(item,itemType):
             raise InvalidDataFormatException(f"List under \"{keyword}\" key must be a list of {typeName}.",keyword)
 
+def ValidateTKColor(color: str):
+    if not isinstance(color,str):
+        raise LoadFailedException(f"Color {color} must be a string.")
+    if not color.startswith("#"):
+        raise LoadFailedException(f"String {color} is not a valid color.")
+    hexpart = color[1:]
+    if len(hexpart) != 3 and len(hexpart) != 6:
+         raise LoadFailedException(f"String {color} is not a valid color.")
+    try:
+        result = int(hexpart, 16)
+        if result < 0:
+            raise LoadFailedException(f"String {color} is not a valid color.")
+        return
+    except ValueError:
+        return LoadFailedException(f"String {color} is not a valid color.")
 
 GROUPS_KEY = "groups"
-
+BAR_COLORS_KEY = "colors"
 class BarChartGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
         super().__init__(data)
@@ -339,11 +353,28 @@ class BarChartGameLoader(GameLoader):
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
         return DefaultBarChartEvaluator
     
+    @staticmethod
+    def _validateColors(colors: list[list[str]], groups: list[list[float]]):
+        if not isinstance(colors, list):
+            raise InvalidDataFormatException(f"Data under {BAR_COLORS_KEY} are not valid.",BAR_COLORS_KEY)
+        if len(colors) != len(groups):
+            raise InvalidDataFormatException(f"Data under {BAR_COLORS_KEY} are not valid.",BAR_COLORS_KEY)
+        for i in range(len(colors)):
+            if not isinstance(colors[i],list):
+                raise InvalidDataFormatException(f"Data under {BAR_COLORS_KEY} are not valid.",BAR_COLORS_KEY)
+            if len(colors[i]) != len(groups[i]):
+                raise InvalidDataFormatException(f"Data under {BAR_COLORS_KEY} are not valid.",BAR_COLORS_KEY)
+            for color in colors[i]:
+                if not isinstance(color,str):
+                    raise InvalidDataFormatException(f"Data under {BAR_COLORS_KEY} are not valid.",BAR_COLORS_KEY)
+                ValidateTKColor(color)
+    
     def _loadData(self, data: dict[str, Any]):
         gameData = data[BARCHART_DATA_CONFIG_SECTION_HEADER]
         groups  : Optional[list[list[float]]] = None 
         isGuess : Optional[list[list[bool ]]] = None 
         names   : Optional[list[list[str  ]]] = None
+        colors  : Optional[list[list[str  ]]] = None
 
         if GROUPS_KEY in gameData:
             groups = gameData[GROUPS_KEY]
@@ -360,11 +391,25 @@ class BarChartGameLoader(GameLoader):
         else:
             raise InvalidDataConfigSectionException(NAMES_KEY,BARCHART_DATA_CONFIG_SECTION_HEADER)
         
+        if BAR_COLORS_KEY in gameData:
+            colors = gameData[BAR_COLORS_KEY]
+
+        
         assert groups  is not None
         assert isGuess is not None
         assert names   is not None
         
         BarChartGameLoader._validateData(groups,isGuess, names)
+
+        if colors is None:
+            colors = []
+            for group in groups:
+                colors.append([])
+                for _ in group:
+                    colors[-1].append(DEFAULT_COLOR) # pyright: ignore[reportArgumentType]
+        else:
+            BarChartGameLoader._validateColors(colors,groups)
+        assert colors is not None
         userData = BarChartGameLoader._createUserData(groups,isGuess)
         solutionData = groups
         metadata : BarChartMetadata = CreateBarChartMetadata(self.title, self.xAxisLabel, self.yAxisLabel, solutionData, self.plotHeight)
@@ -394,6 +439,7 @@ class BarChartGameLoader(GameLoader):
 
         self.plotMetadata = metadata
         self._lock(isGuess)
+        self._color(colors=colors)
     
     @staticmethod
     def GetGameMode() -> GameModes:
@@ -404,9 +450,17 @@ class BarChartGameLoader(GameLoader):
             for j in range(len(isGuess[i])):
                 if not isGuess[i][j]:
                     self.userSolver.SwitchRectangleLock(i,j)
+    
+    def _color(self, colors: list[list[str]]):
+        for groupIndex in range(len(colors)):
+            for recIndex in range(len(colors[groupIndex])):
+                self.userSolver.ChangeColor(groupIndex,recIndex,colors[groupIndex][recIndex])
+                self.solutionSolver.ChangeColor(groupIndex,recIndex,colors[groupIndex][recIndex])
 
 
 POINTS_KEY = "points"
+GUESS_COLOR = "guess_color"
+SOLUTION_COLOR = "solution_color"
 
 class LineChartGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
@@ -433,6 +487,7 @@ class LineChartGameLoader(GameLoader):
         isGuess : Optional[list[bool ]] = None
         names   : Optional[list[str  ]] = None
         xAxisValue : float = 0
+        guessColor : str = DEFAULT_COLOR # pyright: ignore[reportAssignmentType]
 
         if POINTS_KEY in gameData:
             points = gameData[POINTS_KEY]
@@ -454,6 +509,10 @@ class LineChartGameLoader(GameLoader):
             if not isinstance(xAxisValue,float) and not isinstance(xAxisValue, int):
                 raise InvalidDataFormatException(f"Value under \"{X_AXIS_VALUE_KEY}\" must be float.",X_AXIS_VALUE_KEY)
         
+        if GUESS_COLOR in gameData:
+            guessColor = gameData[GUESS_COLOR]
+            ValidateTKColor(guessColor)
+        
         assert points  is not None
         assert isGuess is not None
         assert names   is not None
@@ -461,7 +520,7 @@ class LineChartGameLoader(GameLoader):
         LineChartGameLoader._validateData(points, isGuess, names)
         solutionData = points
 
-        metadata: LineChartMetadata = CreateLineChartMetadata(self.title, xAxisValue, solutionData, self.xAxisLabel, self.yAxisLabel, self.plotHeight)
+        metadata: LineChartMetadata = CreateLineChartMetadata(self.title, xAxisValue, solutionData, self.xAxisLabel, self.yAxisLabel, self.plotHeight, guessColor)
 
         rescaledXAxisValue = xAxisValue*metadata.heightScaleFactor
         userData = LineChartGameLoader._createUserData(points,isGuess, xAxisValue)
@@ -506,6 +565,8 @@ OPENINGS_KEY = "openings"
 CLOSINGS_KEY = "closings"
 MAXIMUMS_KEY = "maximums"
 MINIMUMS_KEY = "minimums"
+NEGATIVE_COLOR_KEY = "negative_color"
+POSITIVE_COLOR_KEY = "positive_color"
 
 class CandlestickChartGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
@@ -529,6 +590,8 @@ class CandlestickChartGameLoader(GameLoader):
         isGuess  : Optional[list[bool ]] = None
         names    : Optional[list[str  ]] = None
         xAxisValue : float   = 0
+        positiveColor : str = "green"
+        negativeColor : str = "red"
 
         if X_AXIS_VALUE_KEY in gameData:
             xAxisValue = gameData[X_AXIS_VALUE_KEY]
@@ -565,6 +628,14 @@ class CandlestickChartGameLoader(GameLoader):
         else:
             raise InvalidDataConfigSectionException(NAMES_KEY,CANDLESTICK_DATA_CONFIG_SECTION_HEADER)
         
+        if NEGATIVE_COLOR_KEY in gameData:
+            negativeColor = gameData[NEGATIVE_COLOR_KEY]
+            ValidateTKColor(negativeColor)
+        
+        if POSITIVE_COLOR_KEY in gameData:
+            positiveColor = gameData[POSITIVE_COLOR_KEY]
+            ValidateTKColor(positiveColor)
+
         assert openings is not None
         assert closings is not None
         assert minimums is not None
@@ -612,6 +683,13 @@ class CandlestickChartGameLoader(GameLoader):
                                                  yCoordinate=self.originY)
         self.plotMetadata = metadata
         self._lock(isGuess)
+        self._color(positiveColor,negativeColor)
+    
+    def _color(self, positiveColor: str, negativeColor: str):
+        self.userSolver.ChangeNegativeColor(negativeColor)
+        self.userSolver.ChangePositiveColor(positiveColor)
+        self.solutionSolver.ChangeNegativeColor(negativeColor)
+        self.solutionSolver.ChangePositiveColor(positiveColor)
 
     @staticmethod
     def _validateData(openings : list[float], closings : list[float], minimums : list[float], maximums : list[float], names : list[str], isGuess : list[bool]):
@@ -656,7 +734,7 @@ class CandlestickChartGameLoader(GameLoader):
 
 INTERVALS_KEY = "interval_boundries"
 BUCKET_VALUE_KEY = "values"
-
+BUCKET_COLORS_KEY = "colors"
 class HistogramGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
         super().__init__(data)
@@ -696,12 +774,21 @@ class HistogramGameLoader(GameLoader):
         assert len(boundries) > 1
         return list(pairwise(boundries))
 
+    @staticmethod
+    def _validateColors(colors: list[str], count: int):
+        if not isinstance(colors,list):
+            raise InvalidDataFormatException(f"Data under {BUCKET_COLORS_KEY} are not valid.",BUCKET_COLORS_KEY)
+        if not len(colors) == count:
+            raise InvalidDataFormatException(f"Data under {BUCKET_COLORS_KEY} are not valid.",BUCKET_COLORS_KEY)
+        for color in colors:
+            ValidateTKColor(color)
 
     def _loadData(self, data: dict[str, Any]):
         gameData = data[HISTOGRAM_DATA_CONFIG_SECTION_HEADER]
         intervals : Optional[list[float]] = None
         values    : Optional[list[float]] = None
         isGuess   : Optional[list[bool ]] = None
+        colors    : Optional[list[str  ]] = None
 
         if INTERVALS_KEY in gameData:
             intervals = gameData[INTERVALS_KEY]
@@ -717,12 +804,23 @@ class HistogramGameLoader(GameLoader):
             isGuess = gameData[IS_GUESS_KEY]
         else:
             raise InvalidDataConfigSectionException(IS_GUESS_KEY,HISTOGRAM_DATA_CONFIG_SECTION_HEADER)
+        
+        if BUCKET_COLORS_KEY in gameData:
+            colors = gameData[BUCKET_COLORS_KEY]
 
         assert intervals is not None
         assert values    is not None
         assert isGuess   is not None
 
         HistogramGameLoader._validateData(intervals,values,isGuess)
+
+        if colors is None:
+            colors = []
+            for _ in values:
+                colors.append(DEFAULT_COLOR) # pyright: ignore[reportArgumentType]
+        else:
+            HistogramGameLoader._validateColors(colors,len(values))
+
         userValues = HistogramGameLoader._getUserData(values,isGuess)
         intervalTuples = HistogramGameLoader._getIntervals(intervals)
 
@@ -761,6 +859,12 @@ class HistogramGameLoader(GameLoader):
                                               yCoordinate=self.originY)
         self.plotMetadata = metadata
         self._lock(isGuess)
+        self._color(colors)
+
+    def _color(self, colors: list[str]):
+        for i in range(len(colors)):
+            self.userSolver.ChangeColor(0,i,colors[i])
+            self.solutionSolver.ChangeColor(0,i,colors[i])
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
         return DefaultHistogramEvaluator

@@ -1,0 +1,18 @@
+[game_config]
+title = "Czech military spending"
+x_axis_label = "years"
+y_axis_label = "US $"
+instructions = "The line chart depicts how the military spending of the Czech republic evolved over time between the years 2005 and 2025. Fill in the missing values. Source: https://ourworldindata.org/grapher/military-spending-sipri?tab=line&country=~CZE&mapSelect=~CZE"
+plot_width = 2000
+plot_height = 500
+
+[game_config.origin]
+x = 50
+y = 30
+
+[line_chart]
+names = ["2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023","2024","2025"]
+points = [4.71e+9,4.35e+9,4.2e+9,3.58e+9,3.69e+9,3.35e+9,3.01e+9,2.9e+9,2.76e+9,2.75e+9,2.86e+9,3.1e+9,3.09e+9,3.70e+9,4.11e+9,4.34e+9,4.77e+9,4.43e+9,4.44e+9,6.51e+9,6.49e+9]
+is_guess = [false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true]
+x_axis_value = 0
+guess_color = "#F54927"
