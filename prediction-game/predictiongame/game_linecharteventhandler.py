@@ -15,8 +15,14 @@ class GameLineChartEventHandler(LineChartEventHandler, GameEventHandler):
         self.dataViewer = self.dataViewerType(textWindow)
     
     def initializeDefaultRightClickMenu(self, menu: Menu) -> None:
+        self.valueModeLabel = "Switch to value modification mode"
+        self.horizontalModeLabel = "Switch to horizontal layout modification mode"
+        
         self.defaultMenu = menu
-        self.defaultMenu.add_command(label="Change mode", command=self._changeMode)
+        self.defaultMenu.add_command(command=self._changeMode)
+        self.changeModeIndex = self.defaultMenu.index("end")
+        assert self.changeModeIndex is not None
+        self.defaultMenu.entryconfig(self.changeModeIndex,label=self.horizontalModeLabel)
     
     def on_left_down(self, event: Event):
         if self.paused:
@@ -31,6 +37,7 @@ class GameLineChartEventHandler(LineChartEventHandler, GameEventHandler):
     def on_right_down(self, event: Event):
         if self.paused:
             return
+        assert self.defaultMenu
         self.defaultMenu.post(event.x_root,event.y_root)
     
     def on_left_up(self, event):
@@ -49,6 +56,7 @@ class GameLineChartEventHandler(LineChartEventHandler, GameEventHandler):
         super().check_cursor(event)
     
     def DisplayOther(self, otherSolver: LineChartSolver):
+        assert self.drawer
         self.plotSolver.Feed(otherSolver)
         self.drawer.drawBare(self.plotMetadata, otherSolver,clear=True,specialHighlight=True,outlineOnly=False)
         self.drawer.draw(self.plotMetadata,self.plotSolver,outlineOnly=True, clear=False)

@@ -93,14 +93,15 @@ class LineChartEventHandler(EventHandler):
         assert self.defaultMenu is not None
         self.defaultMenu.add_command(command=self._changeMode)
         self.changeModeIndex = self.defaultMenu.index("end")
-        assert self.changeModeIndex
+        assert self.changeModeIndex is not None
         self.defaultMenu.entryconfig(self.changeModeIndex,label=self.horizontalModeLabel)
         self.defaultMenu.add_command(label="Add point", command=self._addPoint)
 
 
     def _changeMode(self):
         assert self.defaultMenu is not None
-        assert self.changeModeIndex
+        assert self.changeModeIndex is not None
+        print ("change mode index: ",self.changeModeIndex)
         if self.mode == LineChartEventHandler.EditMode.VALUE:
             self.mode = LineChartEventHandler.EditMode.HORIZONTAL
             self.defaultMenu.entryconfig(self.changeModeIndex,label=self.valueModeLabel)
