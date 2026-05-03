@@ -1,0 +1,18 @@
+[game_config]
+title = "Budget for individual ministries for 2026"
+x_axis_label = ""
+y_axis_label = "billions of KČ"
+instructions = "Fill in the bar chart of budget for Czech ministries. Hint: the ministries are sorted by their budget from the lowest budget. Hint 2: the sum is 1856.549 billons CZK.\nMeaning of abbreviations:\n\nMŽP = Ministry of the Environment\nMMR = Ministry of Regional Development\nMZV = Ministry of Foreign Affairs\nMZd = Ministry of Health\nMK = Ministry of Culture\nMF = Ministry of Finance\nMZe = Ministry of Agriculture\nMSp = Ministry of Justice\nMPO = Ministry of Industry and Trade\nMV = Ministry of the Interior\nMD = Ministry of Transport\nMO = Ministry of Defence\nMŠMT = Ministry of Education, Youth and Sports\nMPSV = Ministry of Labour and Social Affairs\n\nSource: https://mf.gov.cz/cs/ministerstvo/media/tiskove-zpravy/2026/snemovna-schvalila-zakon-o-statnim-rozpoctu-2026-63269"
+plot_width = 1500
+plot_height = 500
+
+
+[game_config.origin]
+x = 50
+y = 30
+
+[bar_chart]
+groups = [[4.927, 8.164, 9.826, 10.781, 17.228, 28.129, 32.660, 40.407, 42.236, 114.908, 129.432, 154.790, 268.659, 994.402]]
+names  = [["MŽP", "MMR", "MZV", "MZd", "MK", "MF", "MZe", "MSp", "MPO", "MV", "MD", "MO", "MŠMT", "MPSV"]]
+is_guess = [[false,false,true,true,true,true,true,true,true,true,true,true,true,true]]
+colors = [["#8d0808","#e0b130","#bef527","#47f031","#27f5b0","#27c5f5","#275ef5","#6f27f5","#cc27f5","#f52798","#f52727","#c5c5c5","#000000","#555555"]]
