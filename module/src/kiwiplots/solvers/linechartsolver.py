@@ -87,6 +87,9 @@ class LineChartSolver(ChartSolver):
     
     def GetPadding(self):
         return self.variableChart.padding.value()
+    
+    def ChangeName(self, pointIndex : int, name : str):
+        self.variableChart.ChangeName(pointIndex, name)
 
     def ChangeWidthX(self, pointIndex: int, newX: float):
         if pointIndex == 0:

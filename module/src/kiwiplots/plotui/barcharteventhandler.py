@@ -97,7 +97,7 @@ class BarChartEventHandler(RectangleEventHandler):
         self._createTranslationTable(self.plotSolver.GetBarData()) # pyright: ignore[reportArgumentType]
     
     def _addRectangle(self):
-        groupIndex, _ = self._indexToGroupIndex(self.eventRegistersRight.rectangleIndexToChange)
+        groupIndex, _ = self._indexToGroupIndex(self.eventRegistersRight.indexToChange)
         def createPopUp():
             assert self.canvas
             popup = tk.Toplevel()
@@ -143,23 +143,6 @@ class BarChartEventHandler(RectangleEventHandler):
         self.UpdateUI()
         self._createTranslationTable(self.plotSolver.GetBarData()) # pyright: ignore[reportArgumentType]
     
-
-    def _addGroupTEST(self):
-        print("adding group!")
-        self.plotSolver.AddGroup("newBar",5*self.plotMetadata.heightScaleFactor)
-        print("updating UI")
-        self.UpdateUI()
-        print("group added")
-        print("reseting translation table")
-        self._createTranslationTable(self.plotSolver.GetBarData()) # pyright: ignore[reportArgumentType]
-    
-    def _addRectangleTEST1(self):
-        print("adding ractangle to the first group")
-        self.plotSolver.AddBar("new rec",1,5*self.plotMetadata.heightScaleFactor)
-        print("updating UI")
-        self.UpdateUI()
-        print("reseting translation table")
-        self._createTranslationTable(self.plotSolver.GetBarData()) # pyright: ignore[reportArgumentType]
 
     #######################
     # Mouse move handling #

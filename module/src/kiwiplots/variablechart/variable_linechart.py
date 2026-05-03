@@ -53,5 +53,13 @@ class VariableLineChart(VariableChart):
     def Value(self):
         return [line.Value() for line in self.lines]
     
-    def GetHeightList(self): # better less coupled implementation required TODO
+    def GetHeightList(self):
         return [line.leftHeight for line in self.lines] + [self.lines[-1].rightHeight]
+
+    def ChangeName(self, pointIndex: int, name: str):
+        if pointIndex == len(self.lines):
+            self.lines[-1].ChangeName(name,"right")
+            return
+        self.lines[pointIndex].ChangeName(name,"left")
+        if pointIndex != 0:
+            self.lines[pointIndex-1].ChangeName(name,"right")

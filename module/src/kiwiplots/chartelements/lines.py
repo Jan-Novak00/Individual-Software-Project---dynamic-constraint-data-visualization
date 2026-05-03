@@ -1,5 +1,6 @@
 from kiwisolver import Constraint, Variable
 from .basicelements import *
+from typing import Literal
 
 class ValueLine:
     def __init__(self, leftEnd : ValuePoint2D, rightEnd : ValuePoint2D, leftHeight : float, rightHeight : float):
@@ -30,3 +31,7 @@ class VariableLine(VariableElement):
     
     def Value(self):
         return ValueLine(self.leftEnd.Value(), self.rightEnd.Value(), self.leftHeight.value(), self.rightHeight.value())
+
+    def ChangeName(self, name: str, whichPoint: Literal["left","right"]):
+        point = self.leftEnd if whichPoint == "left" else self.rightEnd
+        point.name = name

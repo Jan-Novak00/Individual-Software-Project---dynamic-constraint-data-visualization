@@ -324,7 +324,7 @@ class CandlesticEventHandler(EventHandler):
         assert self.elementMenu
         for index, candle in enumerate(self.plotSolver.GetCandleData()):
             if self._isInsideOfCandle(event, candle):
-                self.eventRegistersRight.rectangleIndexToChange = index
+                self.eventRegistersRight.indexToChange = index
                 self.elementMenu.post(event.x_root, event.y_root) 
                 return
         super().on_right_down(event)
@@ -344,17 +344,17 @@ class CandlesticEventHandler(EventHandler):
         self._updateCanvas()
 
     def _changeName(self):
-        currentName = self.plotSolver.GetName(self.eventRegistersRight.rectangleIndexToChange)
+        currentName = self.plotSolver.GetName(self.eventRegistersRight.indexToChange)
         newName = simpledialog.askstring("Change name", "New name:", initialvalue=currentName)
         if newName == None:
             return
-        self.plotSolver.ChangeName(self.eventRegistersRight.rectangleIndexToChange, newName)
+        self.plotSolver.ChangeName(self.eventRegistersRight.indexToChange, newName)
         self._updateCanvas()
         self._updateDataView()
         pass
 
     def _switchNameVisibility(self):
-        self.plotSolver.SwitchNameVisibility(self.eventRegistersRight.rectangleIndexToChange)
+        self.plotSolver.SwitchNameVisibility(self.eventRegistersRight.indexToChange)
         self._updateCanvas()
     
     ##################################

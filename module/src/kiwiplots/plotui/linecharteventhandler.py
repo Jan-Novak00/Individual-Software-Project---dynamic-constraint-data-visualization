@@ -8,7 +8,7 @@ from .plotmath import isNear
 from .dataviewers import *
 from kiwiplots.chartelements import ValueLine, ValuePoint2D
 from tkinter import messagebox
-from tkinter import colorchooser
+from tkinter import colorchooser, simpledialog
 from enum import Enum
 
 def LineIndexToPointIndex(lineIndex: int, isLeft: bool):
@@ -19,6 +19,10 @@ def LineIndexToPointIndex(lineIndex: int, isLeft: bool):
 
 class LineChartEventHandler(EventHandler):
 
+    class LineEndParity(Enum):
+        left = 0,
+        right = 1
+
     class LineChartEventRegisterLeftButton(EventHandler.EventRegistersLeftButton):
         class LineLeftEvents(Enum):
             nothing = 0
@@ -26,15 +30,11 @@ class LineChartEventHandler(EventHandler):
             origin  = 2,
             horizontal = 3,
             axisTop = 5
-        
-        class LineEndParity(Enum):
-            left = 0,
-            right = 1
 
         def __init__(self):
             super().__init__()
             self.eventType : LineChartEventHandler.LineChartEventRegisterLeftButton.LineLeftEvents = LineChartEventHandler.LineChartEventRegisterLeftButton.LineLeftEvents.nothing
-            self.lineEndParity : LineChartEventHandler.LineChartEventRegisterLeftButton.LineEndParity|None = None
+            self.lineEndParity : LineChartEventHandler.LineEndParity|None = None
         
         def reset(self):
             super().reset()
@@ -42,14 +42,17 @@ class LineChartEventHandler(EventHandler):
             self.lineEndParity = None 
     
     class LineChartEventRegistersRightButton(EventHandler.EventRegistersRightButton):
-        pass
+        def __init__(self):
+            super().__init__()
+        def reset(self):
+            self.pointIndex : int|None = None
 
     class EditMode(Enum):
         VALUE = 0,
         HORIZONTAL = 1
     
     LeftEvents : TypeAlias = LineChartEventRegisterLeftButton.LineLeftEvents
-    LineEndParity : TypeAlias = LineChartEventRegisterLeftButton.LineEndParity
+
     
 
     ###################
@@ -79,6 +82,7 @@ class LineChartEventHandler(EventHandler):
     def initializeRightClickMenu(self, menu: tk.Menu) -> None:
         self.elementMenu = menu
         self.elementMenu.add_command(label="Change color", command=self._changeColor)
+        self.elementMenu.add_command(label="Change name", command=self._changeName)
         return
     
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
@@ -91,7 +95,6 @@ class LineChartEventHandler(EventHandler):
         self.changeModeIndex = self.defaultMenu.index("end")
         assert self.changeModeIndex
         self.defaultMenu.entryconfig(self.changeModeIndex,label=self.horizontalModeLabel)
-        self.defaultMenu.add_command(label="Add point test", command=self._addPointTEST)
         self.defaultMenu.add_command(label="Add point", command=self._addPoint)
 
 
@@ -112,14 +115,14 @@ class LineChartEventHandler(EventHandler):
         self.plotMetadata.color = color[1]
         self._updateCanvas()
     
-    def _addPointTEST(self):                                                               #addition TEST
-        print("adding point to the graph")
-        newValue = 10
-        self.plotSolver.AddPoint(value = newValue * self.plotMetadata.heightScaleFactor, name = "new")
-        print("solver.AddPoint called and returned")
-        print("updating UI")
-        self.UpdateUI()
-        pass
+    def _changeName(self):
+        assert self.eventRegistersRight.pointIndex is not None
+        name = simpledialog.askstring(title="Change name", prompt="New name:")
+        if name == None:
+            return
+        self.plotSolver.ChangeName(self.eventRegistersRight.pointIndex, name)
+        self._updateCanvas()
+        self._updateDataView()
 
     def _addPoint(self):
         def createPopUp():
@@ -279,17 +282,20 @@ class LineChartEventHandler(EventHandler):
     def on_right_down(self, event: tk.Event) -> None:
         assert self.elementMenu
         assert self.defaultMenu
+        print("on_right_down triggered")
         lines = self.plotSolver.GetLineData()
         for index, line in enumerate(lines):
             point : ValuePoint2D = line.leftEnd
             if self._isNearLineEnd(event,point):
-                self.eventRegistersRight.rectangleIndexToChange = index
+                self.eventRegistersRight.pointIndex = index
+                print("self.eventRegistersRight.pointIndex = ", "index ",index)
                 self.elementMenu.post(event.x_root, event.y_root)
                 return
             if (index == len(lines)-1):
                 point : ValuePoint2D = line.rightEnd
                 if self._isNearLineEnd(event,point):
-                    self.eventRegistersRight.rectangleIndexToChange = index
+                    self.eventRegistersRight.pointIndex = index + 1
+                    print("self.eventRegistersRight.pointIndex = ", "index ",index+1)
                     self.elementMenu.post(event.x_root, event.y_root)
                     return
         self.defaultMenu.post(event.x_root,event.y_root)
@@ -299,7 +305,6 @@ class LineChartEventHandler(EventHandler):
     ##################################
 
     def _isNearLineEnd(self,event: tk.Event, point: ValuePoint2D)->bool:
-        origin = self.plotSolver.GetOrigin()
         xLeft, yLeft = point.X, self.canvasHeight - (point.Y)
         return isNear(xLeft,event.x) and isNear(yLeft,event.y)
     

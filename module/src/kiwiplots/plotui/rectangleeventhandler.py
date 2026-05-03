@@ -150,13 +150,13 @@ class RectangleEventHandler(EventHandler,ABC):
         assert self.elementMenu
         for index, rec in enumerate(self.plotSolver.GetRectangleDataAsList()):
             if self._isInsideOfRectangle(event, rec):
-                self.eventRegistersRight.rectangleIndexToChange = index
+                self.eventRegistersRight.indexToChange = index
                 self.elementMenu.post(event.x_root, event.y_root)
                 return
         super().on_right_down(event) 
 
     def _changeColor(self):
-        groupIndex = self._indexToGroupIndex(self.eventRegistersRight.rectangleIndexToChange)
+        groupIndex = self._indexToGroupIndex(self.eventRegistersRight.indexToChange)
         color = colorchooser.askcolor(title="Choose different color")
         if color[1] == None:
             return
@@ -164,7 +164,7 @@ class RectangleEventHandler(EventHandler,ABC):
         self._updateCanvas()
 
     def _changeName(self):
-        groupIndex = self._indexToGroupIndex(self.eventRegistersRight.rectangleIndexToChange)
+        groupIndex = self._indexToGroupIndex(self.eventRegistersRight.indexToChange)
         currentName = self.plotSolver.GetName(groupIndex[0],groupIndex[1])
         newName = simpledialog.askstring("Change name", "New name:", initialvalue=currentName)
         if newName == None:

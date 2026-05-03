@@ -37,7 +37,7 @@ class EventHandler(ABC):
             self.reset()
         
         def reset(self)->None:
-            self.rectangleIndexToChange : int = None #type: ignore
+            self.indexToChange : int = None #type: ignore
 
     def __init__(self, plotMetadata: PlotMetadata) -> None:
         """
