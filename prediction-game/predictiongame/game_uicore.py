@@ -3,7 +3,7 @@ import tkinter as tk
 from .gameevaluator import GameEvaluator
 from .gameeventhandler import EventHandlerProtocol
 from .game_dataviewer import GameDataViewer
-
+from .utils import GetCannonicalData
 
 class GameUI:
     def __init__(self, gameEventHandler : EventHandlerProtocol, instructionString: str, evaluator: GameEvaluator, userSolver : ChartSolver, solutionSolver : ChartSolver, plotMetadata : PlotMetadata, plotWidth: int, plotHeight: int):
@@ -107,8 +107,11 @@ class GameUI:
     def _evaluatePrediction_ButtonPressed(self):
         self.eventHandler.Pause()
         self.eventHandler.DisplayOther(self.solutionSolver)
-        score = self.evaluator.Eval(self.userSolver, self.solutionSolver, self.plotMetadata)
+        score = self._calculateScore()
         self.scoreCounter.set(f"{score}/10000")
         self.eventHandler.WriteSolution(self.userSolver, self.solutionSolver, self.plotMetadata)
         self.evalButton.config(state="disabled")
-        
+    
+    def _calculateScore(self)->int:
+        score = self.evaluator.Eval(GetCannonicalData(self.userSolver,self.plotMetadata),GetCannonicalData(self.solutionSolver,self.plotMetadata))
+        return score

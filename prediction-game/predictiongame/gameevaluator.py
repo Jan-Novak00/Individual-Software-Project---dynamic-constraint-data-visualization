@@ -6,8 +6,10 @@ class GameEvaluator(ABC):
     """
     Evaluates user input.
     """
-    @staticmethod
+    def __init__(self, isGuess):
+        self.isGuess = isGuess
+
     @abstractmethod
-    def Eval(userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata : PlotMetadata) -> int:
+    def Eval(self,userData, solutionData) -> int:
         raise NotImplementedError("Metod GameEvaluator.Eval must be declared in a subclass.")
     
