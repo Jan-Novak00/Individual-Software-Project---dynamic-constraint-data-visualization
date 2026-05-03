@@ -24,7 +24,8 @@ class GameFactory(UIFactory):
         if (loader.GetGameMode() == GameModes.BarChart):
             eventHandler = GameBarChartEventHandler(metadata,userSolver,GameBarChartDataViewer) # pyright: ignore[reportArgumentType]
         elif (loader.GetGameMode() == GameModes.LineChart):
-            eventHandler = GameLineChartEventHandler(metadata,userSolver,GameLineChartDataViewer) # pyright: ignore[reportArgumentType]
+            assert isinstance(loader,LineChartGameLoader)
+            eventHandler = GameLineChartEventHandler(metadata,userSolver,GameLineChartDataViewer, loader.GetSolutionColor()) # pyright: ignore[reportArgumentType]
         elif (loader.GetGameMode() == GameModes.CandlestickChart):
             eventHandler = GameCandlestickChartEventHandler(metadata,userSolver,GameCandlestickChartDataViewer) # pyright: ignore[reportArgumentType]
         elif (loader.GetGameMode() == GameModes.Histogram):
@@ -37,7 +38,7 @@ class GameFactory(UIFactory):
         width = loader.GetWidth()
         height = loader.GetHeight()
 
-        return GameUI(gameEventHandler=eventHandler,
+        return GameUI(gameEventHandler=eventHandler, # pyright: ignore[reportArgumentType]
                       instructionString=instructions,
                       userSolver=userSolver,
                       solutionSolver=solutionSolver,

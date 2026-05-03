@@ -459,8 +459,8 @@ class BarChartGameLoader(GameLoader):
 
 
 POINTS_KEY = "points"
-GUESS_COLOR = "guess_color"
-SOLUTION_COLOR = "solution_color"
+GUESS_COLOR_KEY = "guess_color"
+SOLUTION_COLOR_KEY = "solution_color"
 
 class LineChartGameLoader(GameLoader):
     def __init__(self, data: dict[str, Any]):
@@ -488,6 +488,7 @@ class LineChartGameLoader(GameLoader):
         names   : Optional[list[str  ]] = None
         xAxisValue : float = 0
         guessColor : str = DEFAULT_COLOR # pyright: ignore[reportAssignmentType]
+        solutionColor : str = DEFAULT_COLOR # pyright: ignore[reportAssignmentType]
 
         if POINTS_KEY in gameData:
             points = gameData[POINTS_KEY]
@@ -509,9 +510,13 @@ class LineChartGameLoader(GameLoader):
             if not isinstance(xAxisValue,float) and not isinstance(xAxisValue, int):
                 raise InvalidDataFormatException(f"Value under \"{X_AXIS_VALUE_KEY}\" must be float.",X_AXIS_VALUE_KEY)
         
-        if GUESS_COLOR in gameData:
-            guessColor = gameData[GUESS_COLOR]
+        if GUESS_COLOR_KEY in gameData:
+            guessColor = gameData[GUESS_COLOR_KEY]
             ValidateTKColor(guessColor)
+        
+        if SOLUTION_COLOR_KEY in gameData:
+            solutionColor = gameData[SOLUTION_COLOR_KEY]
+            ValidateTKColor(solutionColor)
         
         assert points  is not None
         assert isGuess is not None
@@ -545,7 +550,7 @@ class LineChartGameLoader(GameLoader):
                                           yCoordinate=self.originY,
                                           padding=INITIAL_PADDING)
         self.plotMetadata = metadata
-
+        self.solutionColor = solutionColor
         self._lock(isGuess)
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
@@ -555,6 +560,9 @@ class LineChartGameLoader(GameLoader):
         for i in range(len(isGuess)):
             if not isGuess[i]:
                 self.userSolver.SwitchPointLock(i)
+    
+    def GetSolutionColor(self)->str:
+        return self.solutionColor
 
 
     @staticmethod

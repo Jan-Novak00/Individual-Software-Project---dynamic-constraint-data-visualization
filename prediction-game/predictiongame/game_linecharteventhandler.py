@@ -5,11 +5,12 @@ from .gameeventhandler import GameEventHandler
 from .game_dataviewer import GameDataViewer, GameLineChartDataViewer
 
 class GameLineChartEventHandler(LineChartEventHandler, GameEventHandler):
-    def __init__(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, dataViewerClass: Type[GameDataViewer]):
+    def __init__(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, dataViewerClass: Type[GameDataViewer], solutionColor : str):
         LineChartEventHandler.__init__(self,plotMetadata, solver)
         GameEventHandler.__init__(self)
         self.dataViewer : GameDataViewer = self.dataViewer
         self.dataViewerType : Type[GameDataViewer] = dataViewerClass
+        self.solutionColor : str | int = solutionColor
     
     def initializeDataView(self, textWindow: Text) -> None:
         self.dataViewer = self.dataViewerType(textWindow)
@@ -58,7 +59,10 @@ class GameLineChartEventHandler(LineChartEventHandler, GameEventHandler):
     def DisplayOther(self, otherSolver: LineChartSolver):
         assert self.drawer
         self.plotSolver.Feed(otherSolver)
+        currentColor = self.plotMetadata.color
+        self.plotMetadata.color = self.solutionColor
         self.drawer.drawBare(self.plotMetadata, otherSolver,clear=True,specialHighlight=True,outlineOnly=False)
+        self.plotMetadata.color = currentColor
         self.drawer.draw(self.plotMetadata,self.plotSolver,outlineOnly=True, clear=False)
     
     def WriteSolution(self, userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata: PlotMetadata):
