@@ -72,6 +72,7 @@ class CandlesticEventHandler(EventHandler):
     
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         super().initializeDefaultRightClickMenu(menu)
+        assert self.defaultMenu
         self.defaultMenu.add_command(label="Add candle TEST", command=self._addCandleTEST)
         self.defaultMenu.add_command(label="Add candle", command=self._addCandle)
     
@@ -84,6 +85,7 @@ class CandlesticEventHandler(EventHandler):
     
     def _addCandle(self):
         def createPopUp():
+            assert self.canvas
             popup = tk.Toplevel()
             popup.resizable(True, False)
             popup.title("Add new candle")
@@ -280,6 +282,7 @@ class CandlesticEventHandler(EventHandler):
         """
         Changes cursor according to its position.
         """
+        assert self.canvas
         if self._isNearOrigin(event):
             self.canvas.config(cursor="fleur")
             return
@@ -318,12 +321,13 @@ class CandlesticEventHandler(EventHandler):
         return
     
     def on_right_down(self, event: tk.Event):
-            for index, candle in enumerate(self.plotSolver.GetCandleData()):
-                if self._isInsideOfCandle(event, candle):
-                    self.eventRegistersRight.rectangleIndexToChange = index
-                    self.elementMenu.post(event.x_root, event.y_root) 
-                    return
-            super().on_right_down(event)
+        assert self.elementMenu
+        for index, candle in enumerate(self.plotSolver.GetCandleData()):
+            if self._isInsideOfCandle(event, candle):
+                self.eventRegistersRight.rectangleIndexToChange = index
+                self.elementMenu.post(event.x_root, event.y_root) 
+                return
+        super().on_right_down(event)
     
     def _changePositiveColor(self):
         color = colorchooser.askcolor(title="Choose different color")

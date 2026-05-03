@@ -25,7 +25,7 @@ class PictureDrawer(ABC):
         """
         raise NotImplementedError("Method PictureDrawer.draw must ASVbe declared in subclass")
     
-    def _drawAxesPNG(self, scaleFactor: float, height: int, xAxisValue: float, draw: ImageDraw.ImageDraw, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0, xAxisLabel:str = "", yAxisLabel: str = ""):  
+    def _drawAxes(self, scaleFactor: float, height: int, xAxisValue: float, draw: ImageDraw.ImageDraw, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0, xAxisLabel:str = "", yAxisLabel: str = ""):  
         """
         Draws axes on the PNG output
         """
@@ -68,7 +68,7 @@ class PictureDrawer(ABC):
             (origin.X - textW/2, height - origin.Y - topNumber - textH - 5), 
             text=yAxisLabel, fill=(0,0,0), font=font
         )
-    def _writePlotTitlePNG(self, draw: ImageDraw.ImageDraw, solver: ChartSolver, width: int, title: str):
+    def _writePlotTitle(self, draw: ImageDraw.ImageDraw, solver: ChartSolver, width: int, title: str):
         font = ImageFont.truetype("arialbd.ttf", 16)
         text = title
         bbox = font.getbbox(text)
@@ -76,7 +76,7 @@ class PictureDrawer(ABC):
         draw.text((width / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
 
 class CandlesticPictureDrawer(PictureDrawer):
-    def _drawCandlesPNG(self, solver: CandlestickChartSolver, draw : ImageDraw.ImageDraw, height: int):
+    def _drawCandles(self, solver: CandlestickChartSolver, draw : ImageDraw.ImageDraw, height: int):
         candles = solver.GetCandleData()
         origin = solver.GetOrigin()
         for candle in candles:
@@ -127,13 +127,13 @@ class CandlesticPictureDrawer(PictureDrawer):
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
-        self._drawCandlesPNG(solver, draw, height)
-        self._drawAxesPNG(plotMetadata.heightScaleFactor,height, plotMetadata.xAxisValue,draw, solver.GetAxisHeight(), candles[-1].rightTop.X, solver.GetOrigin(), min(0, lowestWickHeight))
-        self._writePlotTitlePNG(draw,solver,width,plotMetadata.title)
+        self._drawCandles(solver, draw, height)
+        self._drawAxes(plotMetadata.heightScaleFactor,height, plotMetadata.xAxisValue,draw, solver.GetAxisHeight(), candles[-1].rightTop.X, solver.GetOrigin(), min(0, lowestWickHeight)) # pyright: ignore[reportArgumentType]
+        self._writePlotTitle(draw,solver,width,plotMetadata.title)
         img.save(file)
 
 class BarChartPictureDrawer(PictureDrawer):
-    def _drawRectanglesPNG(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
+    def _drawRectangles(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
         rectangles = solver.GetBarDataAsList()
         origin = solver.GetOrigin()
         for rec in rectangles:
@@ -166,22 +166,22 @@ class BarChartPictureDrawer(PictureDrawer):
         rectangles = solver.GetRectangleDataAsList()
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
-        self._drawRectanglesPNG(draw,solver, height)
-        self._drawAxesPNG(plotMetadata.heightScaleFactor, 
+        self._drawRectangles(draw,solver, height)
+        self._drawAxes(plotMetadata.heightScaleFactor, 
                           height, 
                           plotMetadata.xAxisValue, 
                           draw, 
                           solver.GetAxisHeight(), 
-                          rectangles[-1].rightTop.X, 
+                          rectangles[-1].rightTop.X,  # pyright: ignore[reportArgumentType]
                           solver.GetOrigin(), 
                           0, 
                           plotMetadata.xAxisLabel, 
                           plotMetadata.yAxisLabel)
-        self._writePlotTitlePNG(draw, solver,width,plotMetadata.title)
+        self._writePlotTitle(draw, solver,width,plotMetadata.title)
         img.save(file)
 
 class HistorgramPictureDrawer(BarChartPictureDrawer):
-    def _drawRectanglesPNG(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
+    def _drawRectangles(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
         rectangles : list[ValueBucket] = solver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
         for rec in rectangles:
             x1 = rec.leftBottom.X
@@ -215,3 +215,76 @@ class HistorgramPictureDrawer(BarChartPictureDrawer):
                 textRight,
                 fill="black",
                 font=font)
+            
+class LineChartPictureDrawer(PictureDrawer):
+    def _drawLines(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, draw: ImageDraw.ImageDraw, height: int):
+        RADIUS: int = 4
+        lines = solver.GetLineData()
+        origin = solver.GetOrigin()
+
+        color = plotMetadata.color if isinstance(plotMetadata.color, str) else f"#{plotMetadata.color:06x}"
+
+        for index, line in enumerate(lines):
+            x1, y1 = line.leftEnd.X, height - line.leftEnd.Y
+            x2, y2 = line.rightEnd.X, height - line.rightEnd.Y
+
+            draw.line((x1, y1, x2, y2), fill=(0, 0, 0), width=1)
+
+            draw.ellipse(
+                (x1 - RADIUS, y1 - RADIUS, x1 + RADIUS, y1 + RADIUS),
+                fill=color,
+                outline=(0, 0, 0),
+                width=1
+            )
+            draw.ellipse(
+                (x2 - RADIUS, y2 - RADIUS, x2 + RADIUS, y2 + RADIUS),
+                fill=color,
+                outline=(0, 0, 0),
+                width=1
+            )
+
+            font = ImageFont.load_default()
+
+            leftBbox = font.getbbox(line.leftEnd.name)
+            leftTextWidth = leftBbox[2] - leftBbox[0]
+            draw.text(
+                (x1 - leftTextWidth / 2, height - origin.Y + 10),
+                text=line.leftEnd.name,
+                fill=(0, 0, 0),
+                font=font
+            )
+
+            if index == len(lines) - 1:
+                rightBbox = font.getbbox(line.rightEnd.name)
+                rightTextWidth = rightBbox[2] - rightBbox[0]
+                draw.text(
+                    (x2 - rightTextWidth / 2, height - origin.Y + 10),
+                    text=line.rightEnd.name,
+                    fill=(0, 0, 0),
+                    font=font
+                )
+
+    def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, width: int, height: int, file: str):  # pyright: ignore[reportIncompatibleMethodOverride]
+        lines = solver.GetLineData()
+        origin = solver.GetOrigin()
+
+        minimum: float = min([line.leftHeight for line in lines] + [line.rightHeight for line in lines])
+
+        img = Image.new("RGB", (width, height), color="white")
+        draw = ImageDraw.Draw(img)
+
+        self._drawLines(plotMetadata, solver, draw, height)
+        self._drawAxes(
+            plotMetadata.heightScaleFactor,
+            height,
+            plotMetadata.xAxisValue,
+            draw,
+            solver.GetAxisHeight(),
+            int(lines[-1].rightEnd.X),
+            origin,
+            int(min(minimum, 0)),
+            plotMetadata.xAxisLabel,
+            plotMetadata.yAxisLabel
+        )
+        self._writePlotTitle(draw, solver, width, plotMetadata.title)
+        img.save(file)

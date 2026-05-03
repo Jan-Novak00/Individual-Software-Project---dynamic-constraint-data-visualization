@@ -47,10 +47,12 @@ class BarChartEventHandler(RectangleEventHandler):
     
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         EventHandler.initializeDefaultRightClickMenu(self,menu)
+        assert self.defaultMenu
         self.defaultMenu.add_command(label="Add rectangle group", command=self._addGroup)
     
     def _addGroup(self):
         def createPopUp():
+            assert self.canvas
             popup = tk.Toplevel()
             popup.resizable(True, False)
             popup.title("Add new rectangle group")
@@ -97,6 +99,7 @@ class BarChartEventHandler(RectangleEventHandler):
     def _addRectangle(self):
         groupIndex, _ = self._indexToGroupIndex(self.eventRegistersRight.rectangleIndexToChange)
         def createPopUp():
+            assert self.canvas
             popup = tk.Toplevel()
             popup.resizable(True, False)
             popup.title(f"Add new rectangle to group {groupIndex}")
@@ -167,6 +170,7 @@ class BarChartEventHandler(RectangleEventHandler):
         """
         Changes cursor according to its position.
         """
+        assert self.canvas
         for idx, rec in enumerate(self.plotSolver.GetBarDataAsList()):
             if self._isNearLeftEdge(event, rec):
                 self.canvas.config(cursor="hand2")

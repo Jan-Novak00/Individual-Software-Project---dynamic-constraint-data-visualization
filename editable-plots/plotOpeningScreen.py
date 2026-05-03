@@ -459,6 +459,10 @@ class MenuScreen:
             messagebox.showerror("Warning","Input text is not in correct format.")
             return
         names, values = data[0], data[1]
+        if names is None or len(names) == 0 or any([names[i] == [] or names[i] == None for i in range(len(names))]):
+            messagebox.showerror("Empty data","Data must be be nonempty")
+            return
+        print("HELP")
         self.root.destroy()
         UIFactory.CreateBarChart(title,xLabel,yLabel,values,names,width,height).View()
     
@@ -477,8 +481,8 @@ class MenuScreen:
             yLabel (str): The label for the Y axis.
         """
         data = self._prepareInput_Histogram(input)
-        if data is None:
-            messagebox.showerror("Warning","Input text is not in correct format.")
+        if data is None or len(data) == 0:
+            messagebox.showerror("Empty data","Data must be be nonempty")
             return
         
         self.root.destroy()
@@ -505,6 +509,10 @@ class MenuScreen:
             messagebox.showerror("Warning","Input text is not in correct format.")
             return
         names, openings, closings, minima, maxima = data[0], data[1], data[2], data[3], data[4]
+        if names is None or len(names) == 0:
+            messagebox.showerror("Empty data","Data must be be nonempty")
+            return
+
         xAxisValue = float(self.xAxisValueEntry.get()) # pyright: ignore[reportOptionalMemberAccess]
         self.root.destroy()
         UIFactory.CreateCandlesticChart(title,xLabel,yLabel,xAxisValue,openings,closings,minima,maxima,names,width,height).View()
@@ -516,6 +524,10 @@ class MenuScreen:
             messagebox.showerror("Warning","Input text is not in correct format.")
             return
         names, values = data[0], data[1]
+        if names is None or len(names) == 0:
+            messagebox.showerror("Empty data","Data must be be nonempty")
+            return
+
         xAxisValue = float(self.xAxisValueEntry.get()) # pyright: ignore[reportOptionalMemberAccess]
         self.root.destroy()
         UIFactory.CreateLineChart(title, xLabel,yLabel,xAxisValue,values,names,width,height).View()

@@ -32,13 +32,14 @@ class HistogramEventHandler(BarChartEventHandler):
     
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
         EventHandler.initializeDefaultRightClickMenu(self,menu)
+        assert self.defaultMenu is not None
         self.defaultMenu.add_command(label="Append new interval", command=self._addRectangle)
     
 
     def _addRectangle(self):
-        #TODO only one interval
         endOfLastInterval = float(self.plotSolver.GetBucketData()[-1].interval[1])
         def createPopUp():
+            assert self.canvas is not None
             popup = tk.Toplevel()
             popup.resizable(True, False)
             popup.title(f"Add new value for interval")
@@ -84,10 +85,10 @@ class HistogramEventHandler(BarChartEventHandler):
             return
         self.plotSolver.AddBucket(endOfLastInterval,newEnd,newValue*self.plotMetadata.heightScaleFactor)
         self.UpdateUI()
-        self._createTranslationTable(self.plotSolver.GetGroupData()) # pyright: ignore[reportArgumentType]
+        self._createTranslationTable(self.plotSolver.GetGroupData())
 
 
-    #   nemazat!
+
     def _clickedOnLeftEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle): 
         """
         Registers that the user clicked on a left edge of some rectangle
@@ -110,6 +111,7 @@ class HistogramEventHandler(BarChartEventHandler):
         """
         Changes cursor according to its position.
         """
+        assert self.canvas
         for index, rec in enumerate(self.plotSolver.GetRectangleDataAsList()):
             groupIndex = self._indexToGroupIndex(index)
             if self._isNearLeftEdge(event, rec) and groupIndex[1] == 0:

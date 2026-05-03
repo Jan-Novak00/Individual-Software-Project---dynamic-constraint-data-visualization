@@ -26,11 +26,10 @@ class EventHandler(ABC):
 
         def reset(self)-> None:
             self.eventType = None                # which edge is being dragged                 
-            self.dragStart = ValuePoint2D(0,0)  # where draging started
-            self.dragIndex : int = None               # index of plot element which is being dragged #type: ignore
-            self.originalLeftX : float = None           #                 #ToDo redundant?         #type: ignore
+            self.dragStart = ValuePoint2D(0,0)   # where draging started
+            self.dragIndex : int = None          # index of plot element which is being dragged #type: ignore
+            self.originalLeftX : float = None           #                        #type: ignore
             self.originalSpacing : float = None         #                           #type: ignore
-            #self.rightEdgeCursorOffset : float = None   #                    #ToDo redundant?               #type: ignore
             self.originalHeight : float = None          #               #type: ignore
     
     class EventRegistersRightButton(EventRegisters):
@@ -48,13 +47,13 @@ class EventHandler(ABC):
         Args:
             plotMetadata: Metadata about the plot including scale factor and axis values.
         """
-        self.canvas : tk.Canvas = None                                                                                  # type: ignore
-        self.defaultMenu : tk.Menu = None                                                                               # type: ignore
-        self.elementMenu : tk.Menu = None                                                                               # type: ignore
-        self.drawer : CanvasDrawer = None                                                                               # type: ignore
-        self.dataViewer : DataViewer = None                                                                             # type: ignore
-        self.plotSolver : ChartSolver = None                                                                            # type: ignore
-        self.plotMetadata = plotMetadata                           #ToDo  typing
+        self.canvas : tk.Canvas | None = None    
+        self.defaultMenu : tk.Menu | None = None       
+        self.elementMenu : tk.Menu | None = None         
+        self.drawer : CanvasDrawer | None = None   
+        self.dataViewer : DataViewer | None= None     
+        self.plotSolver : ChartSolver | None= None 
+        self.plotMetadata = plotMetadata                        
         self.eventRegistersLeft : EventHandler.EventRegistersLeftButton = None # pyright: ignore[reportAttributeAccessIssue]
         self.eventRegistersRight : EventHandler.EventRegistersRightButton = None  # pyright: ignore[reportAttributeAccessIssue]
     
@@ -76,6 +75,8 @@ class EventHandler(ABC):
         """
         Redraws the plot on the canvas using the current solver state.
         """
+        assert self.plotSolver is not None
+        assert self.drawer is not None
         self.drawer.draw(self.plotMetadata,self.plotSolver) 
     
 
@@ -85,6 +86,8 @@ class EventHandler(ABC):
         
         Highlights the data element currently being edited if any.
         """
+        assert self.plotSolver is not None
+        assert self.dataViewer is not None
         self.dataViewer.Write(self.plotMetadata, self.plotSolver, self.eventRegistersLeft.dragIndex, self._isEventTypeValueChange())
     
     def _changeTitle(self):
@@ -119,6 +122,7 @@ class EventHandler(ABC):
         Args:
             event: The tkinter Event object containing mouse coordinates.
         """
+        assert self.defaultMenu is not None
         self.defaultMenu.post(event.x_root,event.y_root)
 
     def on_mouse_move(self,event: tk.Event)->None:

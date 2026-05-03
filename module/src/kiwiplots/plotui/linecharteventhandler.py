@@ -85,7 +85,8 @@ class LineChartEventHandler(EventHandler):
         super().initializeDefaultRightClickMenu(menu)
         self.valueModeLabel = "Switch to value modification mode"
         self.horizontalModeLabel = "Switch to horizontal layout modification mode"
-
+        
+        assert self.defaultMenu is not None
         self.defaultMenu.add_command(command=self._changeMode)
         self.changeModeIndex = self.defaultMenu.index("end")
         assert self.changeModeIndex
@@ -95,7 +96,7 @@ class LineChartEventHandler(EventHandler):
 
 
     def _changeMode(self):
-        print("CLICK")
+        assert self.defaultMenu is not None
         assert self.changeModeIndex
         if self.mode == LineChartEventHandler.EditMode.VALUE:
             self.mode = LineChartEventHandler.EditMode.HORIZONTAL
@@ -122,6 +123,7 @@ class LineChartEventHandler(EventHandler):
 
     def _addPoint(self):
         def createPopUp():
+            assert self.canvas is not None
             popup = tk.Toplevel()
             popup.resizable(True, False)
             popup.title("Add new point")
@@ -161,7 +163,7 @@ class LineChartEventHandler(EventHandler):
         newName, newValue = createPopUp()
         if newName == None or newValue == None:
             return
-        self.plotSolver.AddPoint(value = newValue * self.plotMetadata.heightScaleFactor, name = newName) # pyright: ignore[reportArgumentType, reportOperatorIssue]
+        self.plotSolver.AddPoint(value = newValue * self.plotMetadata.heightScaleFactor, name = newName)
         self.UpdateUI()
 
     ########################
@@ -244,6 +246,7 @@ class LineChartEventHandler(EventHandler):
 
     
     def check_cursor(self, event: tk.Event) -> None:
+        assert self.canvas
         if self._isNearOrigin(event):
             self.canvas.config(cursor="fleur")
             return
@@ -274,6 +277,8 @@ class LineChartEventHandler(EventHandler):
         return
     
     def on_right_down(self, event: tk.Event) -> None:
+        assert self.elementMenu
+        assert self.defaultMenu
         lines = self.plotSolver.GetLineData()
         for index, line in enumerate(lines):
             point : ValuePoint2D = line.leftEnd

@@ -6,7 +6,7 @@ from typing import TypeAlias
 from .plotmetadata import PlotMetadata
 from kiwiplots.solvers import RectangleSolver
 import tkinter as tk
-from kiwiplots.chartelements import ValuePoint2D, VariablePoint2D, ValueRectangle
+from kiwiplots.chartelements import ValuePoint2D, ValueRectangle
 from .plotmath import isNear
 from tkinter import simpledialog
 from tkinter import colorchooser
@@ -49,10 +49,10 @@ class RectangleEventHandler(EventHandler,ABC):
         self.eventRegistersLeft : RectangleEventHandler.RectangleEventRegistersLeftButton = RectangleEventHandler.RectangleEventRegistersLeftButton()
         self.eventRegistersRight : RectangleEventHandler.RectangleEventRegistersRightButton = RectangleEventHandler.RectangleEventRegistersRightButton()
 
-    def _createTranslationTable(self, groups : list[list]): # ToDo better system required - will stop working once ability to change number of rectangles is added
+    def _createTranslationTable(self, groups : list[list]):
         self.translationTable = []
         for groupIndex, group in enumerate(groups):
-            for itemIndex in range(len(group)): # pyright: ignore[reportArgumentType]
+            for itemIndex in range(len(group)):
                 self.translationTable.append((groupIndex,itemIndex))
     
     def _isEventTypeValueChange(self) -> bool:
@@ -147,6 +147,7 @@ class RectangleEventHandler(EventHandler,ABC):
         return
     
     def on_right_down(self, event: tk.Event) -> None:
+        assert self.elementMenu
         for index, rec in enumerate(self.plotSolver.GetRectangleDataAsList()):
             if self._isInsideOfRectangle(event, rec):
                 self.eventRegistersRight.rectangleIndexToChange = index
@@ -203,13 +204,13 @@ class RectangleEventHandler(EventHandler,ABC):
   
             newHeight = self.canvasHeight - event.y - origin.Y
             if newHeight > 0:
-                self.plotSolver.ChangeHeight(groupIndex, rectangleInGroupIndex, int(newHeight)) # pyright: ignore[reportPossiblyUnboundVariable]
+                self.plotSolver.ChangeHeight(groupIndex, rectangleInGroupIndex, int(newHeight))
             self._updateDataView()
 
         elif self.eventRegistersLeft.eventType == self.LeftEvents.spacing:
             self.plotSolver.ChangeSpacingX(groupIndex,rectangleInGroupIndex, event.x)
         
-        elif self.eventRegistersLeft.eventType == self.LeftEvents.innerSpacing and rectangleInGroupIndex > 0: # pyright: ignore[reportPossiblyUnboundVariable]
+        elif self.eventRegistersLeft.eventType == self.LeftEvents.innerSpacing and rectangleInGroupIndex > 0:
             self.plotSolver.ChangeInnerSpacingX(groupIndex,rectangleInGroupIndex, event.x)
 
         elif self.eventRegistersLeft.eventType == self.LeftEvents.origin: #done
@@ -269,9 +270,6 @@ class RectangleEventHandler(EventHandler,ABC):
     ##################
     # Logic wrappers #
     ##################
-    def _getNewWidth(self,event,groupIndex: int, rectangleInGroupIndex: int, groups: list[list[ValueRectangle]], origin: ValuePoint2D): #THIS IS THE PROBLEMATIC FUNCTION
-        return (event.x - self.plotSolver.GetSpacing()*(groupIndex+1) - rectangleInGroupIndex*self.plotSolver.GetInnerSpacing() - sum([self.plotSolver.GetInnerSpacing()*(len(groups[i])-1) for i in range(0,groupIndex)]) - origin.X)//(self.eventRegistersLeft.dragIndex+1)
-    
     def _indexToGroupIndex(self, index: int):
         if index >= len(self.translationTable):
             raise Exception(f"Index {index} is too large to translate into group coordinates. There are only {len(self.translationTable)} rectangles.")

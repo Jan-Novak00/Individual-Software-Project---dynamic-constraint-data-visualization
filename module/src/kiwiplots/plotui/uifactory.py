@@ -241,8 +241,8 @@ class UIFactory:
                         )->UICore:
         metadata : LineChartMetadata = CreateLineChartMetadata(title,xAxisValue,initialValues,xAxisLabel,yAxisLabel, plotHeight)
         solver : LineChartSolver = UIFactory._createLineChartSolver(metadata, initialValues, names)
-        pictureDrawer : PictureDrawer = None # pyright: ignore[reportAssignmentType] #TODO
-        dataWriter : DataWriter = None # pyright: ignore[reportAssignmentType] #TODO
+        pictureDrawer : PictureDrawer = LineChartPictureDrawer()
+        dataWriter : DataWriter = LineChartDataWriter()
         eventHandler : EventHandler = LineChartEventHandler(metadata, solver)
         return UICore(metadata,solver,eventHandler,pictureDrawer,dataWriter,plotWidth,plotHeight)
     
@@ -250,7 +250,7 @@ class UIFactory:
     def _createLineChartSolver(metadata : LineChartMetadata, 
                                initialValues : list[float], 
                                names : list[str]):
-        rescaledValues : list[float] = RescaleList(initialValues,metadata.heightScaleFactor,metadata.xAxisValue)
+        rescaledValues : list[float] = RescaleList(initialValues,metadata.heightScaleFactor,metadata.xAxisValue*metadata.heightScaleFactor)
         chart : VariableLineChart = VariableLineChart(names)
         return LineChartSolver(chart,INITIAL_WIDTH,rescaledValues,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y,INITIAL_PADDING)
         
