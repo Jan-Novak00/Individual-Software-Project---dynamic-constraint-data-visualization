@@ -13,12 +13,12 @@ class VariableCandlesticChart(VariableChart):
 
         self.candles = [VariableCandle(self.width, positivity[i], names[i]) for i in range(len(names))]
         
-        self.leftMostCandleConstriant : Constraint = (self.candles[0].openingCorner.X >= self.origin.X) | "required"
+        #self.leftMostCandleConstriant : Constraint = (self.candles[0].openingCorner.X >= self.origin.X) | "required" #redundant
 
         self._createCandleSpacingConstraints()
 
     def _createCandleSpacingConstraints(self):
-        self.candles[0].SetSpacingConstraint((self.candles[0].openingCorner.X - self.spacing == self.origin.X) | "required") #TODO move spacing constraints out
+        self.candles[0].SetSpacingConstraint((self.candles[0].openingCorner.X - self.spacing == self.origin.X) | "required")
         for index in range(1, len(self.candles)):
             self.candles[index].SetSpacingConstraint((self.candles[index-1].closingCorner.X + self.spacing == self.candles[index].openingCorner.X) | "required")
     
@@ -32,7 +32,7 @@ class VariableCandlesticChart(VariableChart):
         return result
     
     def _getPositionConstraints(self)-> list[Constraint]:
-        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required",self.leftMostCandleConstriant]
+        return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required"]#,self.leftMostCandleConstriant]
 
     def _getGlobalShapeConstraints(self)-> list[Constraint]:
         return []
