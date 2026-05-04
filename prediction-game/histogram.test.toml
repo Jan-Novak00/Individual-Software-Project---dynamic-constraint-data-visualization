@@ -5,7 +5,7 @@ y_axis_label = "y axis"
 instructions = "Instructions for the user here."
 plot_width = 1000
 plot_height = 500
-
+evaluator = "D:\\bakalarka\\repo\\prediction-game\\customeval.test.py:MyEvaluator1"
 [game_config.origin]
 x = 50
 y = 30

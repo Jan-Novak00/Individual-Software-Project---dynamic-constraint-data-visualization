@@ -441,7 +441,7 @@ class BarChartGameLoader(GameLoader):
         self.plotMetadata = metadata
         self._lock(isGuess)
         self._color(colors=colors)
-        self.evaluator = self._getDefaultEvaluatorType()(isGuess)
+        self.evaluator = self.evaluatorType(isGuess)
     
     @staticmethod
     def GetGameMode() -> GameModes:
@@ -554,7 +554,7 @@ class LineChartGameLoader(GameLoader):
         self.plotMetadata = metadata
         self.solutionColor = solutionColor
         self._lock(isGuess)
-        self.evaluator = self._getDefaultEvaluatorType()(isGuess)
+        self.evaluator = self.evaluatorType(isGuess)
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
         return DefaultLineChartEvaluator
@@ -697,7 +697,7 @@ class CandlestickChartGameLoader(GameLoader):
         self.plotMetadata = metadata
         self._lock(isGuess)
         self._color(positiveColor,negativeColor)
-        self.evaluator = self._getDefaultEvaluatorType()(isGuess)
+        self.evaluator = self.evaluatorType(isGuess)
     
     def _color(self, positiveColor: str, negativeColor: str):
         self.userSolver.ChangeNegativeColor(negativeColor)
@@ -874,7 +874,7 @@ class HistogramGameLoader(GameLoader):
         self.plotMetadata = metadata
         self._lock(isGuess)
         self._color(colors)
-        self.evaluator = self._getDefaultEvaluatorType()(isGuess)
+        self.evaluator = self.evaluatorType(isGuess)
 
     def _color(self, colors: list[str]):
         for i in range(len(colors)):
