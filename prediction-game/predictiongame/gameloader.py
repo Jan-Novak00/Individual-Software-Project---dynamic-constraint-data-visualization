@@ -92,6 +92,7 @@ class GameLoader(ABC):
         self.originY    : int = None # pyright: ignore[reportAttributeAccessIssue]
         self.plotWidth  : int = None # pyright: ignore[reportAttributeAccessIssue]
         self.plotHeight : int = None # pyright: ignore[reportAttributeAccessIssue]
+        self.evaluator : GameEvaluator = None  # pyright: ignore[reportAttributeAccessIssue]
 
         self._loadGeneralConfig(data)
         self._loadData(data)
@@ -260,7 +261,7 @@ class GameLoader(ABC):
         return self.plotMetadata
 
     def GetEvaluator(self)->GameEvaluator:
-        return self.evaluatorType()
+        return self.evaluator
     
     def GetInstructions(self):
         return self.instructions
@@ -440,6 +441,7 @@ class BarChartGameLoader(GameLoader):
         self.plotMetadata = metadata
         self._lock(isGuess)
         self._color(colors=colors)
+        self.evaluator = self._getDefaultEvaluatorType()(isGuess)
     
     @staticmethod
     def GetGameMode() -> GameModes:
@@ -552,6 +554,7 @@ class LineChartGameLoader(GameLoader):
         self.plotMetadata = metadata
         self.solutionColor = solutionColor
         self._lock(isGuess)
+        self.evaluator = self._getDefaultEvaluatorType()(isGuess)
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
         return DefaultLineChartEvaluator
@@ -665,8 +668,10 @@ class CandlestickChartGameLoader(GameLoader):
                                                closings=RescaleList(closings,metadata.heightScaleFactor,rescaledXAxisValue), # pyright: ignore[reportArgumentType]
                                                minimums=RescaleList(minimums,metadata.heightScaleFactor,rescaledXAxisValue), # pyright: ignore[reportArgumentType]
                                                maximums=RescaleList(maximums,metadata.heightScaleFactor,rescaledXAxisValue)) # pyright: ignore[reportArgumentType]
-        
-        isPositive = [openings[i] - closings[i] >= 0 for i in range(len(openings))]
+        print("openings",openings)
+        print("closings",closings)
+        isPositive = [closings[i] - openings[i] >= 0 for i in range(len(openings))]
+        print(isPositive)
         solutionChart : VariableCandlesticChart = VariableCandlesticChart(isPositive,names)
         userChart : VariableCandlesticChart = VariableCandlesticChart(isPositive,names)
 
@@ -692,6 +697,7 @@ class CandlestickChartGameLoader(GameLoader):
         self.plotMetadata = metadata
         self._lock(isGuess)
         self._color(positiveColor,negativeColor)
+        self.evaluator = self._getDefaultEvaluatorType()(isGuess)
     
     def _color(self, positiveColor: str, negativeColor: str):
         self.userSolver.ChangeNegativeColor(negativeColor)
@@ -868,6 +874,7 @@ class HistogramGameLoader(GameLoader):
         self.plotMetadata = metadata
         self._lock(isGuess)
         self._color(colors)
+        self.evaluator = self._getDefaultEvaluatorType()(isGuess)
 
     def _color(self, colors: list[str]):
         for i in range(len(colors)):

@@ -3,7 +3,7 @@ title = "Czech military spending"
 x_axis_label = "years"
 y_axis_label = "US $"
 instructions = "The line chart depicts how the military spending of the Czech republic evolved over time between the years 2005 and 2025. Fill in the missing values. Source: https://ourworldindata.org/grapher/military-spending-sipri?tab=line&country=~CZE&mapSelect=~CZE"
-plot_width = 2000
+plot_width = 1500
 plot_height = 500
 
 [game_config.origin]

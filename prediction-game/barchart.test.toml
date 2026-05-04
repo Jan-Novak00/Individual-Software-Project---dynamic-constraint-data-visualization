@@ -2,7 +2,7 @@
 title = "Bar chart title"
 x_axis_label = "x axis"
 y_axis_label = "y axis"
-instructions = "Instructions for the user here."
+instructions = "Fill in the 1,2,3,4,1 sequence."
 plot_width = 1000
 plot_height = 500
 
@@ -14,4 +14,4 @@ y = 30
 names = [["a","b","c","d"],["z"]]
 groups = [[1,2,3,4],[1]]
 is_guess = [[false,false,true,true],[true]]
-colors = [["#F5AD27","#F5AD27","#F5AD27","#00AD27"],["#F5ADF7"]]
+ccolors = [["#F5AD27","#F5AD27","#F5AD27","#00AD27"],["#F5ADF7"]]

@@ -11,12 +11,12 @@ x = 50
 y = 30
 
 [candlestick_chart]
-openings = [2,3,4]
-closings = [4,5,6]
-minimums = [1,2,3]
-maximums = [5,6,7]
-names    = ["a","b","c"]
-is_guess = [false,false,true]
+openings = [2,3,6,6,2]
+closings = [4,5,4,2,5]
+minimums = [1,2,3,-1,0]
+maximums = [5,6,7,9,8]
+names    = ["mon","tue","wed","thu","fri"]
+is_guess = [false,false,false,true,true]
 x_axis_value = 2
-positive_color = "#2773F5"
-negative_color = "#e63176"
+positive_colorr = "#2773F5"
+negative_colorr = "#e63176"
