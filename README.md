@@ -16,4 +16,4 @@ pip install kiwisolver
 ```
 
 ## Prediction game examples
-Prediction game examples can be found in directory [game examples]("./game examples/").
+Prediction game examples can be found in directory [game examples](./game examples/).
