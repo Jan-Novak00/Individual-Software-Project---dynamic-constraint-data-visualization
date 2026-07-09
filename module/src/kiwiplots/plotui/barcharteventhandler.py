@@ -13,44 +13,79 @@ from enum import Enum
 from typing import TypeAlias
 from tkinter import messagebox
 from .rectangleeventhandler import RectangleEventHandler
+from kiwiplots.utils import inheritdocstring
 
 class BarChartEventHandler(RectangleEventHandler):
+    """Event handler for bar chart user interactions.
+    
+    Manages mouse events and context menus for bar chart manipulation including adding/removing
+    bars and groups, changing properties, and interactive resizing of rectangles.
+    
+    Attributes:
+        plotSolver (BarChartSolver): The solver containing bar chart data.
+        plotMetadata (BarChartMetadata): Metadata about the bar chart including scale factors.
+    """
     
     ###################
     # Inicialization #
     ###################
 
     def __init__(self, plotMetadata: BarChartMetadata, solver: BarChartSolver) -> None:
-        """_summary_
+        """Initializes the BarChartEventHandler with plot metadata and solver.
 
         Args:
-            plotMetadata (BarChartMetadata): _description_
-            solver (BarChartSolver): _description_
+            plotMetadata (BarChartMetadata): Metadata about the bar chart including scale factor and axis values.
+            solver (BarChartSolver): Solver containing bar chart data.
         """
         super().__init__(plotMetadata, solver)
         self.plotSolver : BarChartSolver = solver
         self.plotMetadata : BarChartMetadata = plotMetadata
 
+    @inheritdocstring(RectangleEventHandler.initializeDataView)
     def initializeDataView(self, textWindow: tk.Text) -> None:
+        """Initializes the data viewer for bar chart display.
+        
+        Creates a BarChartDataViewer to display bar values in the text window.
+        """
         self.dataViewer = BarChartDataViewer(textWindow)
     
+    @inheritdocstring(RectangleEventHandler.initializeCanvas)
     def initializeCanvas(self, canvas: tk.Canvas, width: int, height: int) -> None:
+        """Initializes the canvas drawer for bar chart visualization.
+        
+        Creates a BarChartCanvasDrawer for rendering bars on the canvas.
+        """
         self.canvas = canvas
         self.canvasHeight = height
         self.drawer = BarChartCanvasDrawer(canvas,width,height)
     
+    @inheritdocstring(RectangleEventHandler.initializeRightClickMenu)
     def initializeRightClickMenu(self, menu: tk.Menu) -> None:
+        """Initializes the right-click context menu for bar operations.
+        
+        Adds commands to change color, change name, and add rectangles to selected bars.
+        """
         self.elementMenu = menu
         self.elementMenu.add_command(label="Change color", command=self._changeColor)
         self.elementMenu.add_command(label="Change name", command=self._changeName)
         self.elementMenu.add_command(label="Add rectangle to group", command=self._addRectangle)
     
+    @inheritdocstring(RectangleEventHandler.initializeDefaultRightClickMenu)
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
+        """Initializes the default right-click context menu for empty canvas area.
+        
+        Adds commands to add new bar groups to the chart.
+        """
         EventHandler.initializeDefaultRightClickMenu(self,menu)
         assert self.defaultMenu
         self.defaultMenu.add_command(label="Add rectangle group", command=self._addGroup)
     
     def _addGroup(self):
+        """Prompts user to add a new rectangle group to the bar chart.
+        
+        Opens a dialog for entering the group's first rectangle name and initial value.
+        Updates the chart visualization and translation table after adding the group.
+        """
         def createPopUp():
             assert self.canvas
             popup = tk.Toplevel()
@@ -97,6 +132,11 @@ class BarChartEventHandler(RectangleEventHandler):
         self._createTranslationTable(self.plotSolver.GetBarData()) # pyright: ignore[reportArgumentType]
     
     def _addRectangle(self):
+        """Prompts user to add a new rectangle to the selected bar group.
+        
+        Opens a dialog for entering the rectangle's name and value.
+        Updates the chart visualization and translation table after adding the rectangle.
+        """
         groupIndex, _ = self._indexToGroupIndex(self.eventRegistersRight.indexToChange)
         def createPopUp():
             assert self.canvas
@@ -149,9 +189,16 @@ class BarChartEventHandler(RectangleEventHandler):
     #######################
 
     
-    def check_cursor(self,event):
-        """
-        Changes cursor according to its position.
+    @inheritdocstring(RectangleEventHandler.check_cursor)
+    def check_cursor(self, event):
+        """Updates cursor appearance based on mouse position over bar chart elements.
+        
+        Changes the cursor to indicate what action is possible at the current location:
+        - hand2: Near a left edge (spacing adjustment)
+        - sb_h_double_arrow: Near a right edge (width adjustment)
+        - sb_v_double_arrow: Near a top edge (height adjustment) or Y-axis top
+        - fleur: Near the chart origin (pan operation)
+        - arrow: Default cursor for empty areas
         """
         assert self.canvas
         for idx, rec in enumerate(self.plotSolver.GetBarDataAsList()):

@@ -2,9 +2,14 @@ from .chartsolver import ChartSolver
 from kiwiplots.variablechart import VariableRectangleGroupChart
 from abc import ABC, abstractmethod
 from kiwiplots.chartelements import ValueRectangle
+from kiwiplots.utils import inheritdocstring
+
+
+STRONGER_THAN_STRONG : float = 1e+08
 
 class RectangleSolver(ChartSolver,ABC):
     """
+    Abstract class.
     ChartSolver version for bar chart and histogram.
     """
     def __init__(self, variableChart : VariableRectangleGroupChart, width: int, spacing: int, innerSpacing: int, xCoordinate: int = 0, yCoordinate: int = 0):
@@ -20,11 +25,13 @@ class RectangleSolver(ChartSolver,ABC):
 
         self.lockedRectangles: set[tuple[int,int]] = set()
 
+    @inheritdocstring(ChartSolver._setConstraints)
     def _setConstraints(self):
         barChartConstraints = set(self.variableChart.GetAllConstraints())
         for constraint in barChartConstraints:
             self.solver.addConstraint(constraint)
     
+    @inheritdocstring(ChartSolver._addEditVariables)
     def _addEditVariables(self):
         self.solver.addEditVariable(self.variableChart.width, "strong")
         self.solver.addEditVariable(self.variableChart.spacing, "strong")
@@ -39,6 +46,7 @@ class RectangleSolver(ChartSolver,ABC):
         self.solver.addEditVariable(self.variableChart.origin.Y, "strong")
         self.solver.addEditVariable(self.variableChart.yAxisHeight, "strong")
     
+    @inheritdocstring(ChartSolver._initialSuggest)
     def _initialSuggest(self):
         assert self.variableChart.groups is not None
         self.solver.suggestValue(self.variableChart.origin.X, self.initialxCoordinate)
@@ -52,19 +60,34 @@ class RectangleSolver(ChartSolver,ABC):
     
     @abstractmethod
     def _suggestHeights(self):
-        return
+        """Method for initial suggesting of rectangle heights.
+        """
+        raise NotImplementedError("Method must be declared in a subclass")
     
+
     @abstractmethod
     def _suggestYAxisHeight(self):
-        return
+        """Method for initial suggest of Y axis height.
+        """
+        raise NotImplementedError("Method must be declared in a subclass")
     
     def _refreshSuggestions(self):
+        return
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
         self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
         self.solver.suggestValue(self.variableChart.innerSpacing, self.variableChart.innerSpacing.value())
         self.solver.suggestValue(self.variableChart.origin.X, self.variableChart.origin.X.value())
     
     def SwitchRectangleLock(self, groupIndex: int, recIndex: int) -> bool:
+        """Locks or unlocks rectangle of a given index form being edited.
+
+        Args:
+            groupIndex (int): index of the group
+            recIndex (int): index of the rectangle within the group
+
+        Returns:
+            bool: True if the method call has locked the rectangle, False if the method call has unlocked the rectangle.
+        """
         if (groupIndex,recIndex) in self.lockedRectangles:
             self.lockedRectangles.remove((groupIndex,recIndex))
             return False
@@ -72,20 +95,40 @@ class RectangleSolver(ChartSolver,ABC):
             self.lockedRectangles.add((groupIndex,recIndex))
             return True
         
-    
+    @inheritdocstring(ChartSolver.Feed)
     def Feed(self, otherSolver: "RectangleSolver"):
-        print("feeding...")
         otherSolver.ChangeInnerSpacing(self.GetInnerSpacing())
         super().Feed(otherSolver)
 
 
-    def GetInnerSpacing(self):
+    def GetInnerSpacing(self)->float:
+        """Inner spacing value getter
+
+        Returns:
+            float: inner spacing value
+        """
         return self.variableChart.innerSpacing.value()
     
     def GetName(self, groupIndex: int, rectangleIndex: int):
+        """Rectangle name setter
+
+        Args:
+            groupIndex (int): index of the group
+            rectangleIndex (int): index of the rectangle within the group
+
+        Returns:
+            str: name of the rectangle
+        """
         return self.variableChart.GetName(groupIndex, rectangleIndex)
     
     def ChangeHeight(self, groupIndex: int, rectangleIndex: int, newHeight: int):
+        """Changes height of the rectangle to a given value, if the rectangle is not locked.
+
+        Args:
+            groupIndex (int): group index
+            rectangleIndex (int): index of the rectangle within the group
+            newHeight (int): new height
+        """
         if (groupIndex, rectangleIndex) in self.lockedRectangles:
             return
         self.solver.suggestValue(self.variableChart.GetHeightVariable(groupIndex, rectangleIndex), newHeight)
@@ -103,23 +146,49 @@ class RectangleSolver(ChartSolver,ABC):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) 
     
     def ChangeInnerSpacing(self, newInnerSpacing: float):
+        """Sets inner spacing to a given value.
+
+        Args:
+            newInnerSpacing (float): new inner spacing value
+        """
         self.solver.suggestValue(self.variableChart.innerSpacing, newInnerSpacing)
         self.Solve()
 
     def ChangeColor(self, groupIndex: int, rectangleIndex: int, newColor: str):
+        """Rectangle color setter
+
+        Args:
+            groupIndex (int): group index
+            rectangleIndex (int): index of the rectangle within the group
+            newColor (str): new color
+        """
         self.variableChart.ChangeColor(groupIndex,rectangleIndex, newColor)
         self.Update()
     
     def ChangeName(self,groupIndex: int, rectangleIndex: int, newName: str):
+        """Rectangle name setter
+
+        Args:
+            groupIndex (int): group index
+            rectangleIndex (int): index of the rectangle within the group
+            newName (str): new name
+        """
         self.variableChart.ChangeName(groupIndex,rectangleIndex, newName)
         self.Update()
     
     def ChangeWidthX(self,groupIndex: int, rectangleIndex : int, newX : float):
+        """Change global width of rectangles by streatching right side of a given rectangle (in other words: set width of rectangles from cursor position).
+
+        Args:
+            groupIndex (int): group index
+            rectangleIndex (int): index of the rectangle within the group
+            newX (float): cursor X position.
+        """
         assert self.variableChart.groups is not None
         var = self.variableChart.groups[groupIndex].rectangles[rectangleIndex].rightTop.X
         if self.solver.hasEditVariable(var):
             self.solver.removeEditVariable(var)
-        self.solver.addEditVariable(var, 1e+8)
+        self.solver.addEditVariable(var, STRONGER_THAN_STRONG)
         self.solver.suggestValue(var,newX)
 
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
@@ -136,11 +205,18 @@ class RectangleSolver(ChartSolver,ABC):
 
     
     def ChangeSpacingX(self,groupIndex: int, rectangleIndex : int, newX : float):
+        """Change spacing of rectangle groups by displacing left side of a given rectangle (in other words: set spacing of rectangle groups from cursor position).
+
+        Args:
+            groupIndex (int): group index
+            rectangleIndex (int): index of the rectangle within the group
+            newX (float): cursor X position.
+        """
         assert self.variableChart.groups is not None
         var = self.variableChart.groups[groupIndex].rectangles[rectangleIndex].leftBottom.X
         if self.solver.hasEditVariable(var):
             self.solver.removeEditVariable(var)
-        self.solver.addEditVariable(var, 1e+8)
+        self.solver.addEditVariable(var, STRONGER_THAN_STRONG)
         self.solver.suggestValue(var,newX)
 
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
@@ -156,11 +232,18 @@ class RectangleSolver(ChartSolver,ABC):
         self._refreshSuggestions()
     
     def ChangeInnerSpacingX(self,groupIndex: int, rectangleIndex : int, newX : float):
+        """Change inner spacing of rectangle groups by displacing left side of a given rectangle (in other words: set inner spacing of rectangle groups from cursor position).
+
+        Args:
+            groupIndex (int): group index
+            rectangleIndex (int): index of the rectangle within the group
+            newX (float): cursor X position.
+        """
         assert self.variableChart.groups is not None
         var = self.variableChart.groups[groupIndex].rectangles[rectangleIndex].leftBottom.X
         if self.solver.hasEditVariable(var):
             self.solver.removeEditVariable(var)
-        self.solver.addEditVariable(var, 1e+8)
+        self.solver.addEditVariable(var, STRONGER_THAN_STRONG)
         self.solver.suggestValue(var,newX)
 
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
@@ -175,6 +258,7 @@ class RectangleSolver(ChartSolver,ABC):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock)
         self._refreshSuggestions()
     
+    @inheritdocstring(ChartSolver.ChangeOrigin)
     def ChangeOrigin(self, newX: int, newY: int):
         innerSpacingConstrLock = self.switchConstraintLock(self.variableChart.innerSpacing)
         spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
@@ -185,6 +269,7 @@ class RectangleSolver(ChartSolver,ABC):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock)
         self._refreshSuggestions()
     
+    @inheritdocstring(ChartSolver.ChangeAxisHeight)
     def ChangeAxisHeight(self, newHeight: int):
         innerSpacingConstrLock = self.switchConstraintLock(self.variableChart.innerSpacing)
         spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
@@ -199,9 +284,17 @@ class RectangleSolver(ChartSolver,ABC):
     
     @abstractmethod
     def GetGroupData(self)->list[list[ValueRectangle]]:
-        raise NotImplementedError()
+        """Get data rectangles (ValueRectangle instances) of the chart structured by groups.
+        Returns:
+            list[list[ValueRectangle]]: list of rectangle groups. Each group is represented by a list of ValueRectangle instances.
+        """
+        raise NotImplementedError("Method must be declared in a subclass")
     
     @abstractmethod
     def GetRectangleDataAsList(self)->list[ValueRectangle]:
-        raise NotImplementedError()
+        """Get data rectangles (ValueRectangle instances) in a list
+        Returns:
+            list[ValueRectangle]: List of all rectangle data values.
+        """
+        raise NotImplementedError("Method must be declared in a subclass")
     

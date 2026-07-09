@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import font 
-from abc import ABC
+from abc import ABC, abstractmethod
 from kiwiplots.plotui.plotmetadata import PlotMetadata
 from kiwiplots.solvers import *
 from kiwiplots.solvers import ChartSolver
@@ -26,9 +26,20 @@ class CanvasDrawer(ABC):
         self.canvasWidth : int = canvasWidth
         self.canvasHeight = canvasHeight
     
+    @abstractmethod
     def drawBare(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
-        raise NotImplementedError("Method CanvasDrawer.drawBare must be declared in subclass")
+        """Renders plot data elements without axes or title.
+
+        Args:
+            plotMetadata (PlotMetadata): Metadata about the plot.
+            solver (ChartSolver): Solver containing plot data.
+            clear (bool, optional): Whether to clear canvas before drawing. Defaults to True.
+            outlineOnly (bool, optional): Whether to draw outlines only. Defaults to False.
+            specialHighlight (bool, optional): Whether to apply special highlighting. Defaults to False.
+        """
+        raise NotImplementedError("Method CanvasDrawer.drawBare must be declared a in subclass")
     
+    @abstractmethod
     def draw(self, plotMetadata: PlotMetadata, solver : ChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False)->None:
         """
         Renders the plot data and axes on the canvas.
@@ -71,7 +82,19 @@ class CanvasDrawer(ABC):
         self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - 10, text=yAxisLabel, anchor="s",font=boldFont)
 
 class CandlesticCanvasDrawer(CanvasDrawer):
-    def _drawCandles(self, solver: CandlestickChartSolver, outlineOnly: bool = False, specialHighlight : bool = False): 
+    """
+    Canvas drawer for candlestick charts.
+    
+    Renders candlesticks with wicks, bodies, and optional names on a tkinter canvas.
+    """
+    def _drawCandles(self, solver: CandlestickChartSolver, outlineOnly: bool = False, specialHighlight : bool = False):
+        """Draws candlesticks with wicks and names on the canvas.
+
+        Args:
+            solver (CandlestickChartSolver): Solver containing candle data.
+            outlineOnly (bool, optional): Whether to draw outlines only. Defaults to False.
+            specialHighlight (bool, optional): Whether to highlight wick extremes. Defaults to False.
+        """ 
         
         origin = solver.GetOrigin()
         candles = solver.GetCandleData()
@@ -108,13 +131,28 @@ class CandlesticCanvasDrawer(CanvasDrawer):
                 self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + 10, text=candle.name)
     
     def drawBare(self, plotMetadata: PlotMetadata, solver: CandlestickChartSolver, clear: bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
+        """Renders candlesticks without axes or title.
+
+        Args:
+            plotMetadata (PlotMetadata): Metadata about the plot.
+            solver (CandlestickChartSolver): Solver containing candle data.
+            clear (bool, optional): Whether to clear canvas before drawing. Defaults to True.
+            outlineOnly (bool, optional): Whether to draw outlines only. Defaults to False.
+            specialHighlight (bool, optional): Whether to highlight wick extremes. Defaults to False.
+        """
         if clear:
             self.canvas.delete("all")
         self._drawCandles(solver, outlineOnly, specialHighlight)
 
     def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False)->None: # type: ignore #ToDo typing of plot metadata
-        """
-        Draws candles and axes on the plot
+        """Renders candlesticks, axes, and title on the canvas.
+
+        Args:
+            plotMetadata (CandlesticPlotMetadata): Metadata about the plot.
+            solver (CandlestickChartSolver): Solver containing candle data.
+            clear (bool, optional): Whether to clear canvas before drawing. Defaults to True.
+            outlineOnly (bool, optional): Whether to draw outlines only. Defaults to False.
+            specialHighlight (bool, optional): Whether to highlight wick extremes. Defaults to False.
         """
         if clear:
             self.canvas.delete("all")
@@ -128,9 +166,17 @@ class CandlesticCanvasDrawer(CanvasDrawer):
         self.drawBare(plotMetadata, solver, clear=False, outlineOnly=outlineOnly, specialHighlight=specialHighlight)
 
 class BarChartCanvasDrawer(CanvasDrawer):
-    def _drawRectangles(self, solver: BarChartSolver, outlineOnly : bool = False): 
-        """
-        Draws rectangles on the plot and writes their names under them.
+    """
+    Canvas drawer for bar charts.
+    
+    Renders grouped bar rectangles with names on a tkinter canvas.
+    """
+    def _drawRectangles(self, solver: BarChartSolver, outlineOnly : bool = False):
+        """Draws rectangles (bars) with names on the canvas.
+
+        Args:
+            solver (BarChartSolver): Solver containing rectangle data.
+            outlineOnly (bool, optional): Whether to draw outlines only. Defaults to False.
         """
         rectangles = solver.GetBarDataAsList()
         for rec in rectangles: 
@@ -143,14 +189,29 @@ class BarChartCanvasDrawer(CanvasDrawer):
             self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
 
     def drawBare(self, plotMetadata: PlotMetadata, solver : BarChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
+        """Renders bars without axes or title.
+
+        Args:
+            plotMetadata (PlotMetadata): Metadata about the plot.
+            solver (BarChartSolver): Solver containing rectangle data.
+            clear (bool, optional): Whether to clear canvas before drawing. Defaults to True.
+            outlineOnly (bool, optional): Whether to draw outlines only. Defaults to False.
+            specialHighlight (bool, optional): Unused for bar charts. Defaults to False.
+        """
         if clear:
             self.canvas.delete("all")
         print("drawing bare")
         self._drawRectangles(solver, outlineOnly)
 
     def draw(self, plotMetadata: BarChartMetadata, solver : BarChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
-        """
-        Draws rectangles and axes on the plot
+        """Renders bars, axes, and title on the canvas.
+
+        Args:
+            plotMetadata (BarChartMetadata): Metadata about the plot.
+            solver (BarChartSolver): Solver containing rectangle data.
+            clear (bool, optional): Whether to clear canvas before drawing. Defaults to True.
+            outlineOnly (bool, optional): Whether to draw outlines only. Defaults to False.
+            specialHighlight (bool, optional): Unused for bar charts. Defaults to False.
         """
         if clear:
             self.canvas.delete("all")
@@ -166,9 +227,17 @@ class BarChartCanvasDrawer(CanvasDrawer):
         self.drawBare(plotMetadata,solver, clear=False, outlineOnly=outlineOnly, specialHighlight=specialHighlight)
 
 class HistogramCanvasDrawer(BarChartCanvasDrawer):
-    def _drawRectangles(self, solver: HistogramSolver, outlineOnly : bool = False): 
-        """
-        Draws rectangles on the plot and writes their names under them.
+    """
+    Canvas drawer for histograms.
+    
+    Extends BarChartCanvasDrawer to render histogram buckets with interval labels.
+    """
+    def _drawRectangles(self, solver: HistogramSolver, outlineOnly : bool = False):
+        """Draws histogram buckets with interval labels on the canvas.
+
+        Args:
+            solver (HistogramSolver): Solver containing bucket data.
+            outlineOnly (bool, optional): Whether to draw outlines only. Defaults to False.
         """
         rectangles : list[ValueBucket] = solver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
         for rec in rectangles: 
@@ -183,7 +252,18 @@ class HistogramCanvasDrawer(BarChartCanvasDrawer):
             self.canvas.create_text(x2,y1 + 10, text=interval[1])
 
 class LineChartCanvasDrawer(CanvasDrawer):
+    """
+    Canvas drawer for line charts.
+    
+    Renders connected line segments with colored data points and point names on a tkinter canvas.
+    """
     def _drawLines(self, plotMetadata: LineChartMetadata, solver: LineChartSolver):
+        """Draws line segments with data points and point names on the canvas.
+
+        Args:
+            plotMetadata (LineChartMetadata): Metadata containing line color.
+            solver (LineChartSolver): Solver containing line data.
+        """
         RADIUS : int = 4
         lines = solver.GetLineData()
         origin = solver.GetOrigin()
@@ -209,12 +289,29 @@ class LineChartCanvasDrawer(CanvasDrawer):
             #text ToDo
 
     def drawBare(self, plotMetadata: LineChartMetadata, solver : LineChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
+        """Renders lines without axes or title.
+
+        Args:
+            plotMetadata (LineChartMetadata): Metadata about the plot.
+            solver (LineChartSolver): Solver containing line data.
+            clear (bool, optional): Whether to clear canvas before drawing. Defaults to True.
+            outlineOnly (bool, optional): Unused for line charts. Defaults to False.
+            specialHighlight (bool, optional): Unused for line charts. Defaults to False.
+        """
         if clear:
             self.canvas.delete("all")
         self._drawLines(plotMetadata,solver)
 
     def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False)->None:
-        
+        """Renders lines, axes, and title on the canvas.
+
+        Args:
+            plotMetadata (LineChartMetadata): Metadata about the plot.
+            solver (LineChartSolver): Solver containing line data.
+            clear (bool, optional): Whether to clear canvas before drawing. Defaults to True.
+            outlineOnly (bool, optional): Unused for line charts. Defaults to False.
+            specialHighlight (bool, optional): Unused for line charts. Defaults to False.
+        """
         if clear:
             self.canvas.delete("all")
         self._writePlotTitle(plotMetadata.title)

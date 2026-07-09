@@ -38,12 +38,22 @@ class DataViewer(ABC):
 
 
 class CandlesticDataViewer(DataViewer):
+    """
+    Data viewer for candlestick charts.
+    
+    Displays candlestick data (opening, closing, minimum, maximum) in a text window.
+    """
     def __init__(self, textWindow: tk.Text):
         super().__init__(textWindow)
 
     def Write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, valueChanged: bool): # pyright: ignore[reportIncompatibleMethodOverride]
-        """
-        Displays all data for the user and highlights which data is being edited
+        """Displays candlestick data with highlighting for edited values.
+
+        Args:
+            plotMetadata (CandlesticPlotMetadata): Metadata containing scale factor and axis values.
+            solver (CandlestickChartSolver): Solver containing candle data.
+            changedIndex (int): Index of the candle being modified.
+            valueChanged (bool): Whether a value is currently being changed.
         """
         xAxisValue = plotMetadata.xAxisValue
         scaleFactor = plotMetadata.heightScaleFactor
@@ -68,9 +78,19 @@ class CandlesticDataViewer(DataViewer):
         self.dataWindow.config(state="disabled")
 
 class BarChartDataViewer(DataViewer):
+    """
+    Data viewer for bar charts.
+    
+    Displays bar values in a text window.
+    """
     def Write(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, changedIndex: int, valueChanged: bool) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
-        """
-        Displays all data for the user and highlights which data is being edited
+        """Displays bar data with highlighting for edited values.
+
+        Args:
+            plotMetadata (BarChartMetadata): Metadata containing scale factor and axis values.
+            solver (BarChartSolver): Solver containing rectangle data.
+            changedIndex (int): Index of the bar being modified.
+            valueChanged (bool): Whether a value is currently being changed.
         """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
@@ -94,7 +114,20 @@ class BarChartDataViewer(DataViewer):
         self.dataWindow.config(state="disabled")
 
 class HistogramDataViewer(DataViewer):
+    """
+    Data viewer for histograms.
+    
+    Displays histogram bucket intervals and values in a text window.
+    """
     def Write(self, plotMetadata: HistogramMetadata, solver: BarChartSolver, changedIndex: int, valueChanged: bool) -> None: # pyright: ignore[reportIncompatibleMethodOverride]
+        """Displays histogram bucket data with highlighting for edited values.
+
+        Args:
+            plotMetadata (HistogramMetadata): Metadata containing scale factor and axis values.
+            solver (BarChartSolver): Solver containing bucket data.
+            changedIndex (int): Index of the bucket being modified.
+            valueChanged (bool): Whether a value is currently being changed.
+        """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
@@ -117,7 +150,20 @@ class HistogramDataViewer(DataViewer):
         self.dataWindow.config(state="disabled")
 
 class LineChartDataViewer(DataViewer):
+    """
+    Data viewer for line charts.
+    
+    Displays line chart data point values in a text window.
+    """
     def Write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, valueChanged: bool)->None:
+        """Displays line chart data with highlighting for edited values.
+
+        Args:
+            plotMetadata (LineChartMetadata): Metadata containing scale factor and axis values.
+            solver (LineChartSolver): Solver containing line data.
+            changedIndex (int): Index of the point being modified.
+            valueChanged (bool): Whether a value is currently being changed.
+        """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
         self.dataWindow.tag_configure("changing_Value", foreground="red")

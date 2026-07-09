@@ -59,12 +59,30 @@ def CreateScalesForIntervalGroup(intervals : list[tuple[float,float]])->list[flo
     return scales
 
 def CreateIntervalScales(intervals : list[tuple[float,float]])->list[float]:
+    """Create scale for intervals
+
+    Args:
+        intervals (list[tuple[float,float]]): intervals
+
+    Returns:
+        list[float]: Scale for each interval at corresponding index
+    """
     intervalLengths : list[float] = [interval[1]-interval[0] for interval in intervals]
     minimum = min([length for length in intervalLengths if length > 0], default=1)
     scales : list[float] = [length/minimum for length in intervalLengths]
     return scales
 
 def RescaleListOfLists(input: list[list[float]], scaleFactor: float, scaledXAxisValue: float = 0):
+    """RescaleList version for nested lists
+
+    Args:
+        input (list[list[float]]): input nested lsit
+        scaleFactor (float): scale factor
+        scaledXAxisValue (float, optional): Scaled value of the x axis. Defaults to 0.
+
+    Returns:
+        list[list[float]]: scaled nested list
+    """
     result = []
     for sublist in input:
         result.append(RescaleList(sublist,scaleFactor,scaledXAxisValue))

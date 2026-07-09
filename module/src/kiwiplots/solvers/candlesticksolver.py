@@ -2,10 +2,12 @@ from .chartsolver import ChartSolver
 from kiwiplots.variablechart import VariableCandlesticChart, VariableChart
 from typing import Union
 from kiwiplots.chartelements import ValueCandle, VariableCandle
+from kiwiplots.utils import inheritdocstring
 
 class CandlestickChartSolver(ChartSolver):
     """
     ChartSolver version for candlestick chart.
+    Manages constraint solving for candlestick charts.
     """
     def __init__(self, variableChart : VariableCandlesticChart, width : int, initialOpening : list[float], initialClosing : list[float], initialMinimum : list[float], initialMaximum : list[float], spacing : int, xCoordinate : int = 0, yCoordinate : int = 0):
         self.initialWidth = width
@@ -22,6 +24,7 @@ class CandlestickChartSolver(ChartSolver):
         self.variableChart : VariableCandlesticChart = self.variableChart
         self.lockedCandles : set[int] = set()
 
+    @inheritdocstring(ChartSolver._addEditVariables)
     def _addEditVariables(self):
         self.solver.addEditVariable(self.variableChart.width, "strong")
         self.solver.addEditVariable(self.variableChart.spacing, "strong")
@@ -34,6 +37,7 @@ class CandlestickChartSolver(ChartSolver):
             self.solver.addEditVariable(candle.wickTop.Y, "strong")
             self.solver.addEditVariable(candle.openingCorner.Y, "strong")
 
+    @inheritdocstring(ChartSolver._initialSuggest)
     def _initialSuggest(self):
         self.solver.suggestValue(self.variableChart.yAxisHeight, max(self.initialMaximum))
         self.solver.suggestValue(self.variableChart.origin.X, self.initialxCoordinate)
@@ -46,11 +50,16 @@ class CandlestickChartSolver(ChartSolver):
             self.solver.suggestValue(candle.openingCorner.Y, self.initialOpening[index])
             self.solver.suggestValue(candle.height, self.initialClosing[index]-self.initialOpening[index])
 
-    #def _initializeVariableChart(self) -> VariableChart:
-    #    return VariableCandlesticChart([self.initialOpening[i] - self.initialClosing[i] >= 0 for i in range(len(self.initialOpening))], self.initialNames)
 
-    
     def SwitchCandleLock(self, index: int)->bool:
+        """Locks or unlocks a candle from being edited.
+
+        Args:
+            index (int): Index of the candle
+
+        Returns:
+            bool: True if the method call has locked the candle, False if unlocked.
+        """
         if index in self.lockedCandles:
             self.lockedCandles.remove(index)
             return False
@@ -59,6 +68,12 @@ class CandlestickChartSolver(ChartSolver):
             return True
     
     def ChangeHeight(self, candleIndex : int, height : int):
+        """Changes the height (closing price) of a candle.
+
+        Args:
+            candleIndex (int): Index of the candle to modify
+            height (int): New height value for the candle
+        """
         if candleIndex in self.lockedCandles:
             return
         self.solver.suggestValue(self.variableChart.GetHeightVariable(candleIndex), height)
@@ -72,6 +87,12 @@ class CandlestickChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)  
         self.switchConstraintLock(self.variableChart.width, widthConstrLock)
     def ChangeMaximum(self, candleIndex : int, yValue : int):
+        """Changes the maximum price (wick top) of a candle.
+
+        Args:
+            candleIndex (int): Index of the candle to modify
+            yValue (int): New maximum price value
+        """
         if candleIndex in self.lockedCandles:
             return
         topOfCandle = max(self.variableChart.GetOpeningCorner(candleIndex).Y.value(), self.variableChart.GetClosingCorner(candleIndex).Y.value())
@@ -87,6 +108,12 @@ class CandlestickChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock)
 
     def ChangeMinimum(self, candleIndex : int, yValue : int):
+        """Changes the minimum price (wick bottom) of a candle.
+
+        Args:
+            candleIndex (int): Index of the candle to modify
+            yValue (int): New minimum price value
+        """
         if candleIndex in self.lockedCandles:
             return
         self.solver.suggestValue(self.variableChart.GetWickBottom(candleIndex).Y, yValue)
@@ -101,6 +128,12 @@ class CandlestickChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock)
 
     def ChangeOpening(self, candleIndex: int, yValue : int):
+        """Changes the opening price of a candle.
+
+        Args:
+            candleIndex (int): Index of the candle to modify
+            yValue (int): New opening price value
+        """
         if candleIndex in self.lockedCandles:
             return
         self.solver.suggestValue(self.variableChart.GetOpeningCorner(candleIndex).Y, yValue)
@@ -115,25 +148,59 @@ class CandlestickChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
     
     def SwitchNameVisibility(self, index : int):
+        """Toggles the visibility of a candle's name.
+
+        Args:
+            index (int): Index of the candle
+        """
         self.variableChart.SwitchNameVisibility(index)
         self.Update()
 
     def ChangePositiveColor(self, color : Union[str, int]):
+        """Changes the color for candles with positive values (closing > opening).
+
+        Args:
+            color (Union[str, int]): New color value
+        """
         self.variableChart.ChangePositiveColor(color)
         self.Update()
 
     def ChangeNegativeColor(self, color : Union[str, int]):
+        """Changes the color for candles with negative values (closing < opening).
+
+        Args:
+            color (Union[str, int]): New color value
+        """
         self.variableChart.ChangeNegativeColor(color)
         self.Update()
     
     def ChangeName(self, candleIndex : int, name : str):
+        """Cangle name setter.
+
+        Args:
+            candleIndex (int): Index of the candle to rename
+            name (str): New name for the candle
+        """
         self.variableChart.ChangeName(candleIndex, name)
         self.Update()
 
     def GetCandleData(self)->list[ValueCandle]:
+        """Gets the candle data for the chart.
+
+        Returns:
+            list[ValueCandle]: List of all candles with current values.
+        """
         return self.data # type: ignore
     
     def GetName(self, candleIndex : int):
+        """Gets the name of a candle.
+
+        Args:
+            candleIndex (int): Index of the candle
+
+        Returns:
+            str: Name of the candle.
+        """
         return self.variableChart.GetName(candleIndex)
     
     def _refreshSuggestions(self):
@@ -143,6 +210,12 @@ class CandlestickChartSolver(ChartSolver):
         
     
     def ChangeWidthX(self, candleIndex : int, newX : float)->None:
+        """Change global width of candles by streatching right side of a given candle (in other words: set width of candles from cursor position).
+
+        Args:
+            candleIndex (int): Index of the candle
+            newX (float): Cursor X position.
+        """
         var = self.variableChart.candles[candleIndex].rightTop.X
         if self.solver.hasEditVariable(var):
             self.solver.removeEditVariable(var)
@@ -160,6 +233,12 @@ class CandlestickChartSolver(ChartSolver):
         self._refreshSuggestions()
     
     def ChangeSpacingX(self,candleIndex: int, newX : float):
+        """Change spacing of candles by displacing left side of a given candle (in other words: set spacing of candles from cursor position).
+
+        Args:
+            candleIndex (int): Index of the candle
+            newX (float): Cursor X position.
+        """
         var = self.variableChart.candles[candleIndex].leftBottom.X
         if self.solver.hasEditVariable(var):
             self.solver.removeEditVariable(var)
@@ -177,6 +256,12 @@ class CandlestickChartSolver(ChartSolver):
         self._refreshSuggestions()
     
     def ChangeOrigin(self, newX: int, newY: int):
+        """Changes the position of the origin.
+
+        Args:
+            newX (int): New X coordinate
+            newY (int): New Y coordinate
+        """
         spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
         widthConstrLock = self.switchConstraintLock(self.variableChart.width)
         super().ChangeOrigin(newX, newY)
@@ -185,6 +270,11 @@ class CandlestickChartSolver(ChartSolver):
         self._refreshSuggestions()
     
     def ChangeAxisHeight(self, newHeight: int):
+        """Changes height of the Y axis.
+
+        Args:
+            newHeight (int): New axis height value
+        """
         spacingConstrLock = self.switchConstraintLock(self.variableChart.spacing)
         widthConstrLock = self.switchConstraintLock(self.variableChart.width)
         originConstrLock = self.switchConstraintLock(self.variableChart.origin.X)
@@ -195,6 +285,15 @@ class CandlestickChartSolver(ChartSolver):
         self._refreshSuggestions()
     
     def AddCandle(self, name: str, opening: float, closing: float, minimum: float, maximum: float):
+        """Appends a new candle to the chart.
+
+        Args:
+            name (str): Name of the new candle
+            opening (float): Opening price of the candle
+            closing (float): Closing price of the candle
+            minimum (float): Minimum price for the candle's wick
+            maximum (float): Maximum price for the candle's wick
+        """
         spacingLock = self.switchConstraintLock(self.variableChart.spacing)
         widthLock = self.switchConstraintLock(self.variableChart.width)
 

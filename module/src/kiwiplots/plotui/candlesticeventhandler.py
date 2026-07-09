@@ -8,12 +8,22 @@ from .dataviewers import CandlesticDataViewer
 from kiwiplots.chartelements import ValueCandle, ValuePoint2D
 from tkinter import simpledialog
 from tkinter import colorchooser
+from kiwiplots.utils import inheritdocstring
 from enum import Enum
 from typing import TypeAlias
 from tkinter import messagebox
 
 
 class CandlesticEventHandler(EventHandler):
+    """Event handler for candlestick chart user interactions.
+    
+    Manages mouse events for modifying candle properties (open, close, min, max values)
+    and context menus for changing colors and names.
+    
+    Attributes:
+        plotSolver (CandlestickChartSolver): The solver containing candlestick data.
+        canvasHeight (int): Height of the canvas in pixels.
+    """
     ###################
     # Initialization #
     ###################
@@ -46,6 +56,12 @@ class CandlesticEventHandler(EventHandler):
     LeftEvents: TypeAlias = CandleEventRegistersLeftButton.CandleLeftEvents
 
     def __init__(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver) -> None:
+        """Initializes the CandlesticEventHandler with plot metadata and solver.
+
+        Args:
+            plotMetadata (CandlesticPlotMetadata): Metadata about the candlestick chart including scale factor and axis values.
+            solver (CandlestickChartSolver): Solver containing candlestick data.
+        """
         super().__init__(plotMetadata)
         self.plotSolver : CandlestickChartSolver = solver
         self.canvasHeight : int = None  # pyright: ignore[reportAttributeAccessIssue]
@@ -55,28 +71,49 @@ class CandlesticEventHandler(EventHandler):
     def _isEventTypeValueChange(self) -> bool:
         return self.eventRegistersLeft.eventType in [self.LeftEvents.maximum, self.LeftEvents.minimum, self.LeftEvents.opening, self.LeftEvents.closing]
 
+    @inheritdocstring(EventHandler.initializeDataView)
     def initializeDataView(self, textWindow: tk.Text):
+        """Initializes the data viewer for candlestick chart display.
+        
+        Creates a CandlesticDataViewer to display candle values in the text window.
+        """
         self.dataViewer = CandlesticDataViewer(textWindow)
     
+    @inheritdocstring(EventHandler.initializeCanvas)
     def initializeCanvas(self, canvas: tk.Canvas, width: int, height : int):
+        """Initializes the canvas drawer for candlestick chart visualization.
+        
+        Creates a CandlesticCanvasDrawer for rendering candles on the canvas.
+        """
         self.canvas = canvas
         self.canvasHeight = height
         self.drawer = CandlesticCanvasDrawer(canvas, width, height)
     
+    @inheritdocstring(EventHandler.initializeRightClickMenu)
     def initializeRightClickMenu(self, menu: tk.Menu) -> None:
+        """Initializes the right-click context menu for candle operations.
+        
+        Adds commands to change positive/negative colors, change name, and toggle name visibility.
+        """
         self.elementMenu = menu
         self.elementMenu.add_command(label="Change positive color", command=self._changePositiveColor)
         self.elementMenu.add_command(label="Change negative color", command=self._changeNegativeColor)
         self.elementMenu.add_command(label="Change name", command=self._changeName)
         self.elementMenu.add_command(label="Switch name visibility", command=self._switchNameVisibility)
     
+    @inheritdocstring(EventHandler.initializeDefaultRightClickMenu)
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
+        """Initializes the default right-click context menu for empty canvas area.
+        
+        Adds commands to add new candles to the chart.
+        """
         super().initializeDefaultRightClickMenu(menu)
         assert self.defaultMenu
         self.defaultMenu.add_command(label="Add candle TEST", command=self._addCandleTEST)
         self.defaultMenu.add_command(label="Add candle", command=self._addCandle)
     
     def _addCandleTEST(self):
+        """Adds a test candle with predefined values for debugging purposes."""
         print("adding candle!")
         self.plotSolver.AddCandle("newOne", 2* self.plotMetadata.heightScaleFactor,8* self.plotMetadata.heightScaleFactor,1* self.plotMetadata.heightScaleFactor,11* self.plotMetadata.heightScaleFactor)
         print("updating UI")
@@ -84,6 +121,11 @@ class CandlesticEventHandler(EventHandler):
         print("candle added")
     
     def _addCandle(self):
+        """Prompts user to add a new candle with opening, closing, minimum, and maximum values.
+        
+        Opens a dialog for entering the candle's name and four price values.
+        Updates the chart visualization after adding the candle.
+        """
         def createPopUp():
             assert self.canvas
             popup = tk.Toplevel()
@@ -278,9 +320,18 @@ class CandlesticEventHandler(EventHandler):
         self._updateCanvas()
         self._updateDataView()
     
+    @inheritdocstring(EventHandler.check_cursor)
     def check_cursor(self,event: tk.Event):
-        """
-        Changes cursor according to its position.
+        """Updates cursor appearance based on mouse position over candlestick elements.
+        
+        Changes the cursor to indicate what action is possible at the current location:
+        - fleur: Near the chart origin (pan operation)
+        - sb_v_double_arrow: Near Y-axis top (resize axis height)
+        - cross: Near candle min/max points (adjust extremes)
+        - hand2: Near left edge of candle (adjust spacing)
+        - sb_h_double_arrow: Near right edge of candle (adjust width)
+        - sb_v_double_arrow: Near opening/closing edges (adjust values)
+        - arrow: Default cursor for empty areas
         """
         assert self.canvas
         if self._isNearOrigin(event):

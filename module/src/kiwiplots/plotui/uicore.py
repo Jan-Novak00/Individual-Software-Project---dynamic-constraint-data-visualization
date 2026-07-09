@@ -12,8 +12,17 @@ Handles communication between UI features.
 """
 class UICore:
     """
+    Class which handles communication between UI features and also between UI and non-constraint based business logic.
+    Initialized via dependency injection.
 
-    Handles communication between UI features.
+    Attributes:
+        solver (ChartSolver) : solver used to change properties of the chart
+        canvasHandler (EventHandler) : handler for user events on the canvas
+        pictureDrawer (PictureDrawer) : component for picture export
+        dataWriter (DataWriter) : component for data export
+        plotWidth (int) : width of the plot
+        plotHeight (int) : height of the plot
+        plotMetadata (PlotMetadata) : plot metadata (shared facts about the chart)
     
     """
     def __init__(self, plotMetadata: PlotMetadata, solver : ChartSolver, canvasHandler : EventHandler, pictureDrawer : PictureDrawer, dataWriter: DataWriter, plotWidth: int, plotHeight: int):

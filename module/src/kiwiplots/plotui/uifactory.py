@@ -14,6 +14,8 @@ from .datautils import *
 from .uiconstants import *
 
 class UIFactory:
+    """Static class for UI core creation. Creates specific charts via dependency injection.
+    """
     @staticmethod
     def CreateCandlesticChart(title: str, 
                               xAxisLabel : str, 
@@ -239,6 +241,25 @@ class UIFactory:
                         plotWidth: int,
                         plotHeight: int
                         )->UICore:
+        """
+        Create a line chart UI component.
+
+        Prepares `LineChartMetadata`, a `LineChartSolver`, picture drawer, data writer
+        and event handler and returns `UICore` instance.
+
+        Args:
+            title (str): Chart title.
+            xAxisLabel (str): X-axis label.
+            yAxisLabel (str): Y-axis label.
+            xAxisValue (float): X-axis origin value.
+            initialValues (list[float]): Y-values for data points.
+            names (list[str]): Labels for each data point.
+            plotWidth (int): Pixel width of the plot.
+            plotHeight (int): Pixel height of the plot.
+
+        Returns:
+            UICore: Configured line chart UI component.
+        """
         metadata : LineChartMetadata = CreateLineChartMetadata(title,xAxisValue,initialValues,xAxisLabel,yAxisLabel, plotHeight)
         solver : LineChartSolver = UIFactory._createLineChartSolver(metadata, initialValues, names)
         pictureDrawer : PictureDrawer = LineChartPictureDrawer()
@@ -250,6 +271,20 @@ class UIFactory:
     def _createLineChartSolver(metadata : LineChartMetadata, 
                                initialValues : list[float], 
                                names : list[str]):
+        """
+        Create a `LineChartSolver` from data values and names.
+
+        Rescales each Y-value using the metadata's height scale factor and
+        initializes a `LineChartSolver` with layout parameters.
+
+        Args:
+            metadata (LineChartMetadata): Chart metadata including scale factor.
+            initialValues (list[float]): Y-values to be rescaled.
+            names (list[str]): Labels for each data point.
+
+        Returns:
+            LineChartSolver: Solver configured with rescaled data points.
+        """
         rescaledValues : list[float] = RescaleList(initialValues,metadata.heightScaleFactor,metadata.xAxisValue*metadata.heightScaleFactor)
         chart : VariableLineChart = VariableLineChart(names)
         return LineChartSolver(chart,INITIAL_WIDTH,rescaledValues,INITIAL_ORIGIN_X,INITIAL_ORIGIN_Y,INITIAL_PADDING)

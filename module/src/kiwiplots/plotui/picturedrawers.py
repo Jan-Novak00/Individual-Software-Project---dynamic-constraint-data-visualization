@@ -12,7 +12,7 @@ class PictureDrawer(ABC):
     
     def draw(self, plotMetada : PlotMetadata, solver: ChartSolver, width: int, height: int, file : str):
         """
-        Generates and saves a PNG image of the plot.
+        Generates and saves an image of the plot.
         
         This method should create an image representation of the plot,
         including all data elements, axes, and labels, and save it to a file.
@@ -27,7 +27,7 @@ class PictureDrawer(ABC):
     
     def _drawAxes(self, scaleFactor: float, height: int, xAxisValue: float, draw: ImageDraw.ImageDraw, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, minimumValue : int = 0, xAxisLabel:str = "", yAxisLabel: str = ""):  
         """
-        Draws axes on the PNG output
+        Draws axes on the picture output
         """
         topNumber = ceilToNearestTen(maximumValue) 
 
@@ -76,7 +76,19 @@ class PictureDrawer(ABC):
         draw.text((width / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
 
 class CandlesticPictureDrawer(PictureDrawer):
+    """
+    Picture drawer for candlestick charts.
+    
+    Renders candlestick data with wicks, body rectangles, and optional candle names.
+    """
     def _drawCandles(self, solver: CandlestickChartSolver, draw : ImageDraw.ImageDraw, height: int):
+        """Draws candlesticks with wicks and names on the image.
+
+        Args:
+            solver (CandlestickChartSolver): Solver containing candle data.
+            draw (ImageDraw.ImageDraw): PIL ImageDraw object for rendering.
+            height (int): Height of the plot area in pixels.
+        """
         candles = solver.GetCandleData()
         origin = solver.GetOrigin()
         for candle in candles:
@@ -123,6 +135,15 @@ class CandlesticPictureDrawer(PictureDrawer):
                     font=font)
     
     def draw(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, width: int, height: int, file : str): # pyright: ignore[reportIncompatibleMethodOverride]
+        """Generates and saves image of candlestick chart.
+
+        Args:
+            plotMetadata (CandlesticPlotMetadata): Metadata about the plot.
+            solver (CandlestickChartSolver): Solver containing candle data.
+            width (int): Width of output image in pixels.
+            height (int): Height of output image in pixels.
+            file (str): File path to save image.
+        """
         candles = solver.GetCandleData()
         lowestWickHeight = min([candle.wickBottom.Y for candle in candles])
         img = Image.new("RGB", (width, height), color="white")
@@ -133,7 +154,19 @@ class CandlesticPictureDrawer(PictureDrawer):
         img.save(file)
 
 class BarChartPictureDrawer(PictureDrawer):
+    """
+    Picture drawer for bar charts.
+    
+    Renders grouped bar rectangles with names and axes.
+    """
     def _drawRectangles(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
+        """Draws rectangles (bars) with names on the image.
+
+        Args:
+            draw (ImageDraw.ImageDraw): PIL ImageDraw object for rendering.
+            solver (BarChartSolver): Solver containing rectangle data.
+            height (int): Height of the plot area in pixels.
+        """
         rectangles = solver.GetBarDataAsList()
         origin = solver.GetOrigin()
         for rec in rectangles:
@@ -163,6 +196,15 @@ class BarChartPictureDrawer(PictureDrawer):
 
 
     def draw(self, plotMetadata: BarChartMetadata, solver: BarChartSolver, width:int, height: int, file : str):  # pyright: ignore[reportIncompatibleMethodOverride]
+        """Generates and saves image of bar chart.
+
+        Args:
+            plotMetadata (BarChartMetadata): Metadata about the plot.
+            solver (BarChartSolver): Solver containing rectangle data.
+            width (int): Width of output image in pixels.
+            height (int): Height of output image in pixels.
+            file (str): File path to save image.
+        """
         rectangles = solver.GetRectangleDataAsList()
         img = Image.new("RGB", (width, height), color="white")
         draw = ImageDraw.Draw(img)
@@ -181,7 +223,19 @@ class BarChartPictureDrawer(PictureDrawer):
         img.save(file)
 
 class HistorgramPictureDrawer(BarChartPictureDrawer):
+    """
+    Picture drawer for histograms.
+    
+    Extends BarChartPictureDrawer to render histogram buckets with interval labels.
+    """
     def _drawRectangles(self, draw: ImageDraw.ImageDraw, solver: BarChartSolver, height: int):
+        """Draws histogram buckets with interval labels on the image.
+
+        Args:
+            draw (ImageDraw.ImageDraw): PIL ImageDraw object for rendering.
+            solver (BarChartSolver): Solver containing bucket data.
+            height (int): Height of the plot area in pixels.
+        """
         rectangles : list[ValueBucket] = solver.GetRectangleDataAsList() # pyright: ignore[reportAssignmentType]
         for rec in rectangles:
             x1 = rec.leftBottom.X
@@ -217,7 +271,20 @@ class HistorgramPictureDrawer(BarChartPictureDrawer):
                 font=font)
             
 class LineChartPictureDrawer(PictureDrawer):
+    """
+    Picture drawer for line charts.
+    
+    Renders connected line segments with colored data points and point names.
+    """
     def _drawLines(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, draw: ImageDraw.ImageDraw, height: int):
+        """Draws line segments with data points and point names on the image.
+
+        Args:
+            plotMetadata (LineChartMetadata): Metadata containing line color.
+            solver (LineChartSolver): Solver containing line data.
+            draw (ImageDraw.ImageDraw): PIL ImageDraw object for rendering.
+            height (int): Height of the plot area in pixels.
+        """
         RADIUS: int = 4
         lines = solver.GetLineData()
         origin = solver.GetOrigin()
@@ -265,6 +332,15 @@ class LineChartPictureDrawer(PictureDrawer):
                 )
 
     def draw(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, width: int, height: int, file: str):  # pyright: ignore[reportIncompatibleMethodOverride]
+        """Generates and saves image of line chart.
+
+        Args:
+            plotMetadata (LineChartMetadata): Metadata about the plot.
+            solver (LineChartSolver): Solver containing line data.
+            width (int): Width of output image in pixels.
+            height (int): Height of output image in pixels.
+            file (str): File path to save image.
+        """
         lines = solver.GetLineData()
         origin = solver.GetOrigin()
 

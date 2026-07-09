@@ -6,11 +6,16 @@ from tkinter import simpledialog
 from .canvasdrawers import CanvasDrawer
 from .dataviewers import DataViewer
 from kiwiplots.solvers import ChartSolver
-
+from kiwiplots.utils import inheritdocstring
 
 class EventRegisters(ABC):
+    """Abstract class for event registers.
+    """
     def reset(self)->None:
-        raise NotImplementedError("Method EventRegisters.reset must be declared in subclass")
+        """
+        Restet registers.
+        """
+        raise NotImplementedError("Method EventRegisters.reset must be declared in a subclass")
 
 
 class EventHandler(ABC):
@@ -19,11 +24,25 @@ class EventHandler(ABC):
     
     Manages mouse events, cursor changes, and updates to the plot data and visualization.
     Implementations are specific to the type of plot being displayed.
+    
+    Attributes:
+        canvas (tk.Canvas | None): The tkinter Canvas widget for drawing the plot.
+        defaultMenu (tk.Menu | None): The default right-click context menu.
+        elementMenu (tk.Menu | None): The element-specific right-click context menu.
+        drawer (CanvasDrawer | None): The drawer for rendering plot elements on canvas.
+        dataViewer (DataViewer | None): The viewer for displaying plot data values.
+        plotSolver (ChartSolver | None): The solver containing plot data and constraints.
+        plotMetadata (PlotMetadata): Metadata about the plot including scale factor and axis values.
+        eventRegistersLeft (EventRegistersLeftButton): Event state for left mouse button operations.
+        eventRegistersRight (EventRegistersRightButton): Event state for right mouse button operations.
     """
     class EventRegistersLeftButton(EventRegisters):
+        """Event registers for left mouse button.
+        """
         def __init__(self):
             self.reset()
 
+        @inheritdocstring(EventRegisters.reset)
         def reset(self)-> None:
             self.eventType = None                # which edge is being dragged                 
             self.dragStart = ValuePoint2D(0,0)   # where draging started
@@ -33,9 +52,12 @@ class EventHandler(ABC):
             self.originalHeight : float = None          #               #type: ignore
     
     class EventRegistersRightButton(EventRegisters):
+        """Event registers for right mouse button.
+        """
         def __init__(self) -> None:
             self.reset()
-        
+
+        @inheritdocstring(EventRegisters.reset)
         def reset(self)->None:
             self.indexToChange : int = None #type: ignore
 
@@ -109,7 +131,7 @@ class EventHandler(ABC):
         Determines which plot element was clicked and registers the drag operation.
         
         Args:
-            event: The tkinter Event object containing mouse coordinates and button information.
+            event (tk.Event): The tkinter Event object containing mouse coordinates and button information.
         """
         raise NotImplementedError("Method CanvasHandler.on_left_down must be declared in subclass")
     
@@ -120,7 +142,7 @@ class EventHandler(ABC):
         Displays the default context menu at the cursor position.
         
         Args:
-            event: The tkinter Event object containing mouse coordinates.
+            event (tk.Event): The tkinter Event object containing mouse coordinates.
         """
         assert self.defaultMenu is not None
         self.defaultMenu.post(event.x_root,event.y_root)
@@ -133,9 +155,9 @@ class EventHandler(ABC):
         Updates canvas and data display after each movement.
         
         Args:
-            event: The tkinter Event object containing current mouse coordinates.
+            event (tk.Event): The tkinter Event object containing current mouse coordinates.
         """
-        raise NotImplementedError("Method CanvasHandler.on_mouse_move must be declared in subclass")
+        raise NotImplementedError("Method CanvasHandler.on_mouse_move must be declared in a subclass")
     
     def on_left_up(self,event: tk.Event)->None:
         """
@@ -144,18 +166,18 @@ class EventHandler(ABC):
         Ends the drag operation and clears all drag-related state variables.
         
         Args:
-            event: The tkinter Event object containing mouse coordinates.
+            event (tk.Event): The tkinter Event object containing mouse coordinates.
         """
-        raise NotImplementedError("Method CanvasHandler.on_left_up must be declared in subclass")
+        raise NotImplementedError("Method CanvasHandler.on_left_up must be declared in a subclass")
     
-    def on_right_up(self,event: tk.Event)->None:
+    def on_right_up(self, event: tk.Event)->None:
         """
         Handles right mouse button release events.
         
         Args:
             event: The tkinter Event object containing mouse coordinates.
         """
-        raise NotImplementedError("Method CanvasHandler.on_right_up must be declared in subclass")
+        raise NotImplementedError("Method CanvasHandler.on_right_up must be declared in a subclass")
     
     def check_cursor(self, event: tk.Event)->None:
         """
@@ -165,9 +187,9 @@ class EventHandler(ABC):
         (e.g., resize, drag, cross for point selection).
         
         Args:
-            event: The tkinter Event object containing current mouse coordinates.
+            event (tk.Event): The tkinter Event object containing current mouse coordinates.
         """
-        raise NotImplementedError("Method CanvasHandler.check_cursor must be declared in subclass")
+        raise NotImplementedError("Method CanvasHandler.check_cursor must be declared in a subclass")
     
     def initializeDataView(self, textWindow: tk.Text)->None:
         """
@@ -176,9 +198,9 @@ class EventHandler(ABC):
         Creates the appropriate DataViewer implementation for this plot type.
         
         Args:
-            textWindow: A tkinter Text widget where plot data will be displayed.
+            textWindow (tk.Text): A tkinter Text widget where plot data will be displayed.
         """
-        raise NotImplementedError("Method CanvasHandler.inicializeDataView must be declared in subclass")
+        raise NotImplementedError("Method CanvasHandler.inicializeDataView must be declared in a subclass")
     
     def initializeCanvas(self, canvas: tk.Canvas, width:int, height: int)->None:
         """
@@ -187,11 +209,11 @@ class EventHandler(ABC):
         Creates the appropriate CanvasDrawer implementation for this plot type.
         
         Args:
-            canvas: The tkinter Canvas widget for drawing.
-            width: Width of the canvas in pixels.
-            height: Height of the canvas in pixels.
+            canvas (tk.Canvas) : The tkinter Canvas widget for drawing.
+            width (int): Width of the canvas in pixels.
+            height (int): Height of the canvas in pixels.
         """
-        raise NotImplementedError("Method CanvasHandler.inicializeCanvas must be declared in subclass")
+        raise NotImplementedError("Method CanvasHandler.inicializeCanvas must be declared in a subclass")
     
     def initializeDefaultRightClickMenu(self, menu: tk.Menu)->None:
         """
@@ -200,7 +222,7 @@ class EventHandler(ABC):
         Sets up the menu that appears when right-clicking on empty canvas area.
         
         Args:
-            menu: The tkinter Menu widget to use as the default context menu.
+            menu (tk.Menu): The tkinter Menu widget to use as the default context menu.
         """
         self.defaultMenu = menu
         self.defaultMenu.add_command(label = "Change title", command=self._changeTitle)
@@ -213,6 +235,6 @@ class EventHandler(ABC):
         Subclasses should add menu items specific to their plot type.
         
         Args:
-            menu: The tkinter Menu widget to use as the element context menu.
+            menu (tk.Menu): The tkinter Menu widget to use as the element context menu.
         """
         raise NotImplementedError("Method CanvasHandler.inicializeRightClickMenu must be declared in subclass")

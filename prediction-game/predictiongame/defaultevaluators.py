@@ -3,8 +3,6 @@ from kiwiplots import ChartSolver, BarChartSolver, PlotMetadata, BarChartMetadat
 
 class DefaultBarChartEvaluator(GameEvaluator):
     def Eval(self,userData, solutionData) -> int:
-        print("solution data",solutionData)
-        print("user data",solutionData)
         
         uDataNormalized_ = []
         sDataNormalized_ = []
