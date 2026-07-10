@@ -6,6 +6,7 @@ from .plotmetadata import PlotMetadata
 from .eventhandlers import EventHandler
 from .picturedrawers import PictureDrawer
 from .datawriters import DataWriter
+from kiwiplots.chartelements import ValuePoint2D
 import os
 """
 Handles communication between UI features.
@@ -44,7 +45,8 @@ class UICore:
         self.dataWriter : DataWriter = dataWriter
         self.plotWidth = plotWidth
         self.plotHeight = plotHeight
-        self.plotMetadata : PlotMetadata = plotMetadata 
+        self.plotMetadata : PlotMetadata = plotMetadata
+        self.initialOrigin : ValuePoint2D = self.solver.GetOrigin()
 
 
     def initializeUIElements(self):
@@ -61,10 +63,12 @@ class UICore:
         self.buttonFrame = tk.Frame(self.frame)
         self.buttonFrame.pack(pady=5)
 
-        self.savePictureButton = tk.Button(self.buttonFrame, text="Save as png", command=self.on_savePictureButton_click)
+        self.savePictureButton = tk.Button(self.buttonFrame, text="Save as image", command=self.on_savePictureButton_click)
         self.saveDataButton = tk.Button(self.buttonFrame, text="Save data as csv", command=self.on_saveDataButton_click)
+        self.resetOriginButton = tk.Button(self.buttonFrame, text="Reset chart origin", command=self.on_resetOriginButton_click)
         self.savePictureButton.pack(side=tk.LEFT, padx=5)
         self.saveDataButton.pack(side=tk.LEFT, padx=5)
+        self.resetOriginButton.pack(side=tk.LEFT, padx=5)
 
         self.dataWindow = tk.Text(self.frame, height=20, width=40)
         self.dataWindow.pack()
@@ -105,6 +109,13 @@ class UICore:
 
         print("Saving canvas to", pictureAddress)
         self.pictureDrawer.draw(self.plotMetadata, self.solver, self.plotWidth, self.plotHeight, pictureAddress)
+    
+    def on_resetOriginButton_click(self):
+        """Resets chart origin to initial value.
+        """
+        print(f"Reseting origin to ({self.initialOrigin.X},{self.initialOrigin.Y})")
+        self.solver.ChangeOrigin(self.initialOrigin.X,self.initialOrigin.Y)
+        self.canvasHandler.UpdateUI()
     
     def View(self):
         """
