@@ -4,6 +4,7 @@ from .gameevaluator import GameEvaluator
 from .gameeventhandler import EventHandlerProtocol
 from .game_dataviewer import GameDataViewer
 from .utils import GetCannonicalData
+from kiwiplots.chartelements import ValuePoint2D
 
 class GameUI:
     def __init__(self, gameEventHandler : EventHandlerProtocol, instructionString: str, evaluator: GameEvaluator, userSolver : ChartSolver, solutionSolver : ChartSolver, plotMetadata : PlotMetadata, plotWidth: int, plotHeight: int):
@@ -15,6 +16,7 @@ class GameUI:
         self.userSolver : ChartSolver = userSolver
         self.solutionSolver : ChartSolver = solutionSolver
         self.plotMetadata : PlotMetadata = plotMetadata
+        self.initialOrigin : ValuePoint2D = self.userSolver.GetOrigin()
 
     def initializeUIElements(self):
         """
@@ -39,7 +41,9 @@ class GameUI:
         self.buttonFrame.pack(pady=5)
 
         self.evalButton = tk.Button(self.buttonFrame, text="Evaluate your prediction", command=self._evaluatePrediction_ButtonPressed)
-        self.evalButton.pack()
+        self.evalButton.pack(side=tk.LEFT, padx=5)
+        self.resetOriginButton = tk.Button(self.buttonFrame, text="Reset origin", command=self._resetOriginButton_pressed)
+        self.resetOriginButton.pack(side=tk.LEFT, padx=5)
 
         self.infoFrame = tk.Frame(self.root)
         self.infoFrame.pack(pady=5)
@@ -94,13 +98,9 @@ class GameUI:
 
     
     def Play(self):
-        print("checkpoint 1")
         self.initializeUIElements()
-        print("checkpoint 2")
         self.inicializeHandlers()
-        print("checkpoint 3")
         self.eventHandler.UpdateUI()
-        print("ui updtated")
         self._UIRun()
     
 
@@ -111,7 +111,18 @@ class GameUI:
         self.scoreCounter.set(f"{score}/10000")
         self.eventHandler.WriteSolution(self.userSolver, self.solutionSolver, self.plotMetadata)
         self.evalButton.config(state="disabled")
+        #self.resetOriginButton.config(state="disabled")
     
     def _calculateScore(self)->int:
         score = self.evaluator.Eval(GetCannonicalData(self.userSolver,self.plotMetadata),GetCannonicalData(self.solutionSolver,self.plotMetadata))
         return score
+
+    def _resetOriginButton_pressed(self):
+        if not self.eventHandler.IsPaused():
+            self.userSolver.ChangeOrigin(self.initialOrigin.X,self.initialOrigin.Y)
+            self.eventHandler.UpdateUI()
+        else:
+            self.userSolver.ChangeOrigin(self.initialOrigin.X,self.initialOrigin.Y)
+            self.eventHandler.UpdateUI()
+            self.eventHandler.DisplayOther(self.solutionSolver)
+            self.eventHandler.WriteSolution(self.userSolver, self.solutionSolver, self.plotMetadata)
