@@ -8,6 +8,11 @@ class VariableLineChart(VariableChart):
         super().__init__()
         #can not handle only one point TODO
         self.pointNames : list[str] = pointNames
+        singlePoint = len(self.pointNames) == 1
+
+        if singlePoint:
+            self.pointNames.append("__tmp_point__")
+
         self.lines : list[VariableLine] = []
 
         self.padding = Variable("Padding left")
@@ -15,11 +20,14 @@ class VariableLineChart(VariableChart):
         indexA = 0
         indexB = 1                                                                                                            
         for pointA, pointB in list(pairwise(pointNames)):
-            self.lines.append(VariableLine(self.width, self.origin.Y, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) # ToDo add names
+            self.lines.append(VariableLine(self.width, self.origin.Y, f"{self.pointNames[indexA]}", f"{self.pointNames[indexB]}")) 
             indexA = indexB
             indexB += 1
-        self.leftMostPointConstraint : Constraint = ((self.lines[0].leftEnd.X == self.origin.X + self.padding)|"required") # less coupling please
 
+        if singlePoint:
+            self.lines[-1].SwitchIgnoreRight()
+
+        self.leftMostPointConstraint : Constraint = ((self.lines[0].leftEnd.X == self.origin.X + self.padding)|"required") 
         self.continuityConstraints : list[Constraint] = self._getContinuityConstraints()
     
     def AddPoint(self, name: str):
@@ -32,7 +40,7 @@ class VariableLineChart(VariableChart):
         self.continuityConstraints.append(xContinuityConstraint)
         self.continuityConstraints.append(yContinuityConstraint)
         print("--- chart.AddPoint method end ---")
-        return newLine, [xContinuityConstraint, yContinuityConstraint] + newLine.GetAllConstraints() #TODO better return
+        return newLine, [xContinuityConstraint, yContinuityConstraint] + newLine.GetAllConstraints()
     
     def _getContinuityConstraints(self):
         result : list[Constraint] = []

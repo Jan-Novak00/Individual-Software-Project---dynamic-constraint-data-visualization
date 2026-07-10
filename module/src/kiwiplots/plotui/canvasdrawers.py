@@ -271,22 +271,29 @@ class LineChartCanvasDrawer(CanvasDrawer):
             x1, y1 = line.leftEnd.X, self.canvasHeight - (line.leftEnd.Y )
             x2, y2 = line.rightEnd.X, self.canvasHeight - (line.rightEnd.Y)
             
-            self.canvas.create_line(x1,y1,x2,y2, width = 1)
-            self.canvas.create_oval(
-            x1 - RADIUS, y1 - RADIUS,
-            x1 + RADIUS, y1 + RADIUS,
-            fill=plotMetadata.color) # pyright: ignore[reportArgumentType]
+            if not line.ignoreRight:
+                self.canvas.create_line(x1,y1,x2,y2, width = 1)
+                self.canvas.create_oval(
+                x1 - RADIUS, y1 - RADIUS,
+                x1 + RADIUS, y1 + RADIUS,
+                fill=plotMetadata.color) # pyright: ignore[reportArgumentType]
 
-            self.canvas.create_oval(
-            x2 - RADIUS, y2 - RADIUS,
-            x2 + RADIUS, y2 + RADIUS,
-            fill=plotMetadata.color # pyright: ignore[reportArgumentType]
-            )
+                self.canvas.create_oval(
+                x2 - RADIUS, y2 - RADIUS,
+                x2 + RADIUS, y2 + RADIUS,
+                fill=plotMetadata.color # pyright: ignore[reportArgumentType]
+                )
+            else:
+                self.canvas.create_oval(
+                x1 - RADIUS, y1 - RADIUS,
+                x1 + RADIUS, y1 + RADIUS,
+                fill=plotMetadata.color) # pyright: ignore[reportArgumentType]
+
             self.canvas.create_text(x1,self.canvasHeight - (origin.Y)+10,text=line.leftEnd.name)
-            if index == len(lines) - 1:
+            if index == len(lines) - 1 and not line.ignoreRight:
                 self.canvas.create_text(x2,self.canvasHeight - (origin.Y)+10,text=line.rightEnd.name)
 
-            #text ToDo
+
 
     def drawBare(self, plotMetadata: LineChartMetadata, solver : LineChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
         """Renders lines without axes or title.

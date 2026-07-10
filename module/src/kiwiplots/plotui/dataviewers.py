@@ -167,9 +167,10 @@ class LineChartDataViewer(DataViewer):
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
         self.dataWindow.tag_configure("changing_Value", foreground="red")
-        lines = solver.GetLineData()
+        #lines = solver.GetLineData()
         origin = solver.GetOrigin()
-        points = [line.leftEnd for line in lines] + [lines[-1].rightEnd]
+        #points = [line.leftEnd for line in lines] + [lines[-1].rightEnd]
+        points = solver.GetPoints()
         points.reverse()
 
         for i,point in enumerate(points):
