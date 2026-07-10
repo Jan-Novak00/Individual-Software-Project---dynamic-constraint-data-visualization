@@ -52,8 +52,7 @@ class LineChartSolver(ChartSolver):
         self.solver.suggestValue(chart.origin.Y,self.initialyCoordinate)
         self.solver.suggestValue(chart.padding,self.initialPadding)
         values = self.initialValues + ([] if not chart.lines[-1].ignoreRight else [0])
-        
-        valuePairs = list(pairwise(self.initialValues))
+        valuePairs = list(pairwise(values))
         for i in range(len(chart.lines)):
             line = chart.lines[i]
             values = valuePairs[i]

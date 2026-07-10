@@ -105,7 +105,7 @@ class LineChartDataWriter(DataWriter):
         with open(file,"w") as output:
             lines = solver.GetLineData()
             origin = solver.GetOrigin()
-            points = [line.leftEnd for line in lines] + [lines[-1].rightEnd]
+            points = solver.GetPoints()
             for i,point in enumerate(points):
                 value = point.Y - origin.Y
                 label = point.name

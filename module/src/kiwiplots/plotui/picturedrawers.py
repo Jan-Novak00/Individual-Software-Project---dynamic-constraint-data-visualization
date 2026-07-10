@@ -294,21 +294,29 @@ class LineChartPictureDrawer(PictureDrawer):
         for index, line in enumerate(lines):
             x1, y1 = line.leftEnd.X, height - line.leftEnd.Y
             x2, y2 = line.rightEnd.X, height - line.rightEnd.Y
+            
+            if not line.ignoreRight: 
+                draw.line((x1, y1, x2, y2), fill=(0, 0, 0), width=1)
 
-            draw.line((x1, y1, x2, y2), fill=(0, 0, 0), width=1)
-
-            draw.ellipse(
-                (x1 - RADIUS, y1 - RADIUS, x1 + RADIUS, y1 + RADIUS),
-                fill=color,
-                outline=(0, 0, 0),
-                width=1
-            )
-            draw.ellipse(
-                (x2 - RADIUS, y2 - RADIUS, x2 + RADIUS, y2 + RADIUS),
-                fill=color,
-                outline=(0, 0, 0),
-                width=1
-            )
+                draw.ellipse(
+                    (x1 - RADIUS, y1 - RADIUS, x1 + RADIUS, y1 + RADIUS),
+                    fill=color,
+                    outline=(0, 0, 0),
+                    width=1
+                )
+                draw.ellipse(
+                    (x2 - RADIUS, y2 - RADIUS, x2 + RADIUS, y2 + RADIUS),
+                    fill=color,
+                    outline=(0, 0, 0),
+                    width=1
+                )
+            else:
+                draw.ellipse(
+                    (x1 - RADIUS, y1 - RADIUS, x1 + RADIUS, y1 + RADIUS),
+                    fill=color,
+                    outline=(0, 0, 0),
+                    width=1
+                )
 
             font = ImageFont.load_default()
 
@@ -321,7 +329,7 @@ class LineChartPictureDrawer(PictureDrawer):
                 font=font
             )
 
-            if index == len(lines) - 1:
+            if index == len(lines) - 1 and not line.ignoreRight:
                 rightBbox = font.getbbox(line.rightEnd.name)
                 rightTextWidth = rightBbox[2] - rightBbox[0]
                 draw.text(
