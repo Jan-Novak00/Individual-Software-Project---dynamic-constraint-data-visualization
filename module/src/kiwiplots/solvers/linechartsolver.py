@@ -51,6 +51,8 @@ class LineChartSolver(ChartSolver):
         self.solver.suggestValue(chart.origin.X, self.initialxCoordinate)
         self.solver.suggestValue(chart.origin.Y,self.initialyCoordinate)
         self.solver.suggestValue(chart.padding,self.initialPadding)
+        values = self.initialValues + ([] if not chart.lines[-1].ignoreRight else [0])
+        
         valuePairs = list(pairwise(self.initialValues))
         for i in range(len(chart.lines)):
             line = chart.lines[i]
@@ -88,7 +90,13 @@ class LineChartSolver(ChartSolver):
         lines = self.GetLineData()
         if len(lines) == 0:
             return []
-        return [lines[0].leftEnd] + [line.rightEnd for line in lines]
+
+        rightEnds = []
+        for line in lines:
+            if not line.ignoreRight:
+                rightEnds.append(line.rightEnd)
+
+        return [lines[0].leftEnd] + rightEnds
     
     def SwitchPointLock(self, pointIndex: int):
         """Locks or unlocks a data point from being edited.
@@ -196,13 +204,20 @@ class LineChartSolver(ChartSolver):
             value (float): Y value (height) of the new point
             name (str): Name of the new point
         """
-                              #TODO nebude fungova pro prazdny
-        lastPointValue = self.variableChart.lines[-1].rightHeight.value()
-        newLine, newConstraints = self.variableChart.AddPoint(name)
-        self.solver.addEditVariable(newLine.leftHeight, "strong")
-        self.solver.addEditVariable(newLine.rightHeight, "medium")
-        for constr in newConstraints:
-            self.solver.addConstraint(constr)
-        self.solver.suggestValue(newLine.leftHeight,lastPointValue)
-        self.solver.suggestValue(newLine.rightHeight,value)
-        self.Solve()
+                              #TODO nebude fungovat pro prazdny
+        lastLine = self.variableChart.lines[-1]
+        if lastLine.ignoreRight:
+            lastLine.SwitchIgnoreRight()
+            pointIndex = len(self.GetPoints())-1
+            self.ChangeName(pointIndex,name)
+            self.ChangeHeight(pointIndex,value)
+        else:
+            lastPointValue = lastLine.rightHeight.value()
+            newLine, newConstraints = self.variableChart.AddPoint(name)
+            self.solver.addEditVariable(newLine.leftHeight, "strong")
+            self.solver.addEditVariable(newLine.rightHeight, "medium")
+            for constr in newConstraints:
+                self.solver.addConstraint(constr)
+            self.solver.suggestValue(newLine.leftHeight,lastPointValue)
+            self.solver.suggestValue(newLine.rightHeight,value)
+            self.Solve()

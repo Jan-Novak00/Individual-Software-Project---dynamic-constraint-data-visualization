@@ -17,7 +17,7 @@ class ValuePoint2D:
         self.name = name
         self.secondaryName = secondaryName
     def __str__(self):
-        return f"({self.X}, {self.Y})"
+        return f"{self.name} = ({self.X}, {self.Y})"
 
 class VariablePoint2D:
   """
