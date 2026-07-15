@@ -73,7 +73,7 @@ class PictureDrawer(ABC):
         text = title
         bbox = font.getbbox(text)
         textWidth = bbox[2] - bbox[0]
-        draw.text((width / 2 - textWidth, 20),text=text,font=font,fill = (0,0,0))
+        draw.text((width / 2 - textWidth/2, 20),text=text,font=font,fill = (0,0,0))
 
 class CandlesticPictureDrawer(PictureDrawer):
     """
