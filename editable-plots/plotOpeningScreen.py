@@ -39,8 +39,10 @@ class MenuScreen:
 
         self._setPlotDimentionsMenu()
         self._setAxisLabelsMenu()
-        self.chosenPlotType.trace_add("write", self._updateCandlestickEntry)
+        self.chosenPlotType.trace_add("write", self._updateXAxisValueEntry)
         self._setGenerateButton()
+        self._setXAxisValueEntry()
+        self._updateXAxisValueEntry()
 
     def View(self):
         """
@@ -48,30 +50,37 @@ class MenuScreen:
         """
         self.root.mainloop()
     
-    def _updateCandlestickEntry(self, *args): # ToDo test please
+    def _setXAxisValueEntry(self):
+        """Sets up x axis value entry
         """
-        Update the UI to show or hide the X axis value entry based on plot type selection.
+        self.xAxisValueFrame = tk.Frame(self.mainMenu, bg="bisque2")
+        self.xAxisValueFrame.pack(pady=5, before=self.generateButton)
+
+        xLabel = tk.Label(self.xAxisValueFrame, text="X axis value:", font=("Arial", 11), bg="bisque2")
+        xLabel.pack(side="left")
+
+
+        def onlyNumber(input: str):
+            if input == "" or input == "-":
+                return True
+            try:
+                float(input)
+                return True
+            except ValueError:
+                return False
+        validator = self.mainMenu.register(onlyNumber)
+
+        self.xAxisValueEntry = tk.Entry(self.xAxisValueFrame, validate="key", validatecommand=(validator, "%P"))
+        self.xAxisValueEntry.insert(0, "0")
+        self.xAxisValueEntry.pack(side="left")
+    
+    def _updateXAxisValueEntry(self, *args):
+        """Updates x axis value entry when type of plot is changed.
         """
-        if hasattr(self, "xAxisValueFrame") and self.xAxisValueFrame is not None:
-            self.xAxisValueFrame.destroy()
-            self.xAxisValueFrame = None
-
-        if self.chosenPlotType.get() == "Candlestick chart" or "Line chart":
-
-            self.xAxisValueFrame = tk.Frame(self.mainMenu, bg="bisque2")
+        if self.chosenPlotType.get() != "Candlestick chart" and self.chosenPlotType.get() != "Line chart":
+            self.xAxisValueFrame.pack_forget()
+        else:
             self.xAxisValueFrame.pack(pady=5, before=self.generateButton)
-
-            xLabel = tk.Label(self.xAxisValueFrame, text="X axis value:", font=("Arial", 11), bg="bisque2")
-            xLabel.pack(side="left")
-
-
-            def onlyNumber(input: str):
-                return input.isdigit() or input == ""
-            validator = self.mainMenu.register(onlyNumber)
-
-            self.xAxisValueEntry = tk.Entry(self.xAxisValueFrame, validate="key", validatecommand=(validator, "%P"))
-            self.xAxisValueEntry.insert(0, "0")
-            self.xAxisValueEntry.pack(side="left")
 
 
     def _setDataInput(self):
