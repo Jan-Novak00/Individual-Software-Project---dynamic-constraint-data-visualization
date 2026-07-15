@@ -1,0 +1,20 @@
+[game_config]
+title = "BTC price in USD from 23.5.2026 to 5.6.2026"
+x_axis_label = ""
+y_axis_label = "1000 USD"
+instructions = "The candlestick chart shows price of BTC between 23.5.2026 and 5.6.2026. Fill it in. Source=https://www.investing.com/indices/bitcoin-real-time-candlestick"
+plot_width = 1500
+plot_height = 500
+
+[game_config.origin]
+x = 50
+y = 30
+
+[candlestick_chart]
+openings = [75.888,75.888,77.018,77.243,75.834,74.319,73.564,73.335,73.335,73.587,71.317,66.692,64.147,63.813]
+closings = [75.888,77.001,77.276,75.823,74.334,73.548,73.336,73.335,73.578,71.341,66.673,64.016,63.822,60.929]
+maximums = [75.888,77.126,77.817,78.007,76.034,74.468,74.235,73.335,74.098,73.985,71.317,67.432,64.696,63.907]
+minimums = [75.888,75.888,76.824,75.562,74.128,72.457,72.422,73.335,73.335,70.580,66.116,64.001,61.340,58.110]
+names =    ["23.5.","24.5.","25.5.","26.5.","27.5.","28.5.","29.5.","30.5.","31.5.","1.6.","2.6.","3.6.","4.6.","5.6."]
+is_guess = [false,false,false,false,false,false,false,false,false,true,true,true,true,true]
+x_axis_value = 0
