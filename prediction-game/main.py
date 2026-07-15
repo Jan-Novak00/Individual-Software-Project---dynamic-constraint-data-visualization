@@ -28,7 +28,7 @@ def StartGame():
             root.destroy()
             gameUI.Play()
     
-    btn = tk.Button(root, text="Load game configuration file", command=openGame)
+    btn = tk.Button(root, text="Load game configuration file", command=openGame, font=("Arial", 14))
     btn.pack(expand=True)
 
     root.mainloop()

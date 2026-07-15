@@ -213,12 +213,10 @@ class MenuScreen:
         the data format, and launches the appropriate plot based on the selected type.
         Destroys the current window and opens the plot visualization.
         """
-        print("Line chart checkpoint 3")
         width = int(self.widthEntry.get())
         height = int(self.heightEntry.get())
-        input = self.dataInputField.get("1.0", "end")
+        input : str = self.dataInputField.get("1.0", "end").strip()
         plotType = self.chosenPlotType.get()
-        print("plotType = "+"\""+plotType+"\"")
         xLabel = self.xAxisEntry.get()
         yLabel = self.yAxisEntry.get()
         title = self.plotTitle.get()
