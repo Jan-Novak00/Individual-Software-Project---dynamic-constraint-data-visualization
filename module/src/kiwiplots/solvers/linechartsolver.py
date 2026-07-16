@@ -203,7 +203,6 @@ class LineChartSolver(ChartSolver):
             value (float): Y value (height) of the new point
             name (str): Name of the new point
         """
-                              #TODO nebude fungovat pro prazdny
         lastLine = self.variableChart.lines[-1]
         if lastLine.ignoreRight:
             lastLine.SwitchIgnoreRight()

@@ -24,7 +24,6 @@ class VariableLineChart(VariableChart):
                 internally if only one name is provided.
         """
         super().__init__()
-        #can not handle only one point TODO
         self.pointNames : list[str] = pointNames
         singlePoint = len(self.pointNames) == 1
 

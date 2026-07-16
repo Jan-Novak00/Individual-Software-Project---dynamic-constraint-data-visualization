@@ -45,12 +45,12 @@ class VariableBarChart(VariableRectangleGroupChart):
         Args:
             groupIndex (int): Index of the bar group.
             rectangleIndex (int): Index of the rectangle within the group.
-            color (Union[str, int]): New color value.
+            color (Union[str, int]): New color
         """
         self.groups[groupIndex].ChangeColor(rectangleIndex, color)
     
     def ChangeName(self, groupIndex: int, rectangleIndex: int, name: str):
-        """Changes the display name of the specified bar rectangle.
+        """Changes the name of the specified bar rectangle.
 
         Args:
             groupIndex (int): Index of the bar group.
@@ -60,32 +60,27 @@ class VariableBarChart(VariableRectangleGroupChart):
         self.groups[groupIndex].ChangeName(rectangleIndex,name)
      
     def _createGroupSpacingConstraints(self):
-        """Creates constraints that space consecutive bar groups evenly."""
         for index in range(1,len(self.groups)):
             self.groups[index].SetSpacingConstraint((self.groups[index-1].rightMostX + self.spacing == self.groups[index].leftMostX) | "required")
     
     def Value(self):
-        """Returns the resolved rectangle data for all bar groups."""
+        """Returns rectangle data for all bar groups."""
         return [group.Value() for group in self.groups]
     
     def _getGroupConstraints(self) -> list[Constraint]:
-        """Collects and returns all constraints from every bar group."""
         result = []
         for group in self.groups:
             result.extend(group.GetAllConstraints())
         return result 
     
     def _getSpacingConstraints(self)-> list[Constraint]:
-        """Returns constraints that enforce minimum width and non-negative spacing."""
         global MINIMAL_WIDTH
         return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required"]
     
     def _getVerticalGroupAligmentConstraints(self) -> list[Constraint]:
-        """Returns constraints that align all group bottoms to the origin Y."""
         return [(self.origin.Y == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
     
     def _getOriginConstraints(self) -> list[Constraint]:
-        """Returns constraints that pin the first group to the chart origin."""
         return [self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
 
     def GetAllConstraints(self)-> list[Constraint]:
@@ -109,7 +104,7 @@ class VariableBarChart(VariableRectangleGroupChart):
         Returns:
             tuple: The new VariableBarGroup and the list of constraints to add.
         """
-        lastGroup = self.groups[-1] #TODO first one
+        lastGroup = self.groups[-1]
         newGroup = VariableBarGroup(self.width, self.innerSpacing, [firstRectangleName])
         self.groups.append(newGroup)
         newGroup.SetSpacingConstraint((lastGroup.rightMostX + self.spacing == newGroup.leftMostX) | "required")
@@ -127,7 +122,7 @@ class VariableBarChart(VariableRectangleGroupChart):
         """
         currentGroup = self.groups[groupIndex]
         nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
-        constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
+        constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else []
         constraintsToAdd = []
         currentGroup.AddBar(name)
         if nextGroup != None:

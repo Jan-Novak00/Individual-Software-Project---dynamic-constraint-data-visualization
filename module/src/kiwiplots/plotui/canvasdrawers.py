@@ -144,7 +144,7 @@ class CandlesticCanvasDrawer(CanvasDrawer):
             self.canvas.delete("all")
         self._drawCandles(solver, outlineOnly, specialHighlight)
 
-    def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False)->None: # type: ignore #ToDo typing of plot metadata
+    def draw(self, plotMetadata: CandlesticPlotMetadata, solver : CandlestickChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False)->None: # type: ignore
         """Renders candlesticks, axes, and title on the canvas.
 
         Args:

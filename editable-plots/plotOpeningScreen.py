@@ -23,7 +23,8 @@ class MenuScreen:
         axis labels, and the generate button.
         """
         self.root = tk.Tk()
-        self.root.state("zoomed") # TODO: zoomed is for Windows only :(
+        #self.root.state("zoomed") # TODO: zoomed is for Windows only :(
+        self.maximize()
         self.root.title("Data visualisation")
         
         self.mainMenu = tk.Frame(self.root, bg="bisque2")
@@ -43,6 +44,17 @@ class MenuScreen:
         self._setGenerateButton()
         self._setXAxisValueEntry()
         self._updateXAxisValueEntry()
+    
+    def maximize(self):
+        """Maximalize window
+        """
+        try:
+            self.root.state("zoomed")  # Windows
+        except tk.TclError:
+            try:
+                self.root.attributes("-zoomed", True)  # Linux
+            except tk.TclError:
+                self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}+0+0")  # macOS a fallback
 
     def View(self):
         """
@@ -214,7 +226,7 @@ class MenuScreen:
             self.dataInputField.delete("1.0", "end")
             self.dataInputField.insert("1.0", input)
     
-    def on_generateButton_click(self): # ToDo
+    def on_generateButton_click(self):
         """
         Handle the generate button click event.
 
@@ -338,7 +350,6 @@ class MenuScreen:
         for line in CSVlistOfLists:
             if len(line) != 5:
                 return False
-            # TODO following line is weird
             if not (self._isFloat(line[1]) and self._isFloat(line[2]) and self._isFloat(line[3] and self._isFloat(line[4]))): # pyright: ignore[reportArgumentType]
                     return False
             opening, closing, minimum, maximum = float(line[1]), float(line[2]), float(line[3]), float(line[4])

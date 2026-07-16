@@ -131,7 +131,6 @@ class VariableBarGroup(VariableRectangleGroup):
         Returns:
             VariableRectangle: added rectangle
         """
-        #TODO this method can only be called on a group with at least one rectangle
         newRectangle = VariableRectangle(width=self.width,name=name,widthScale=1)
         lastRectangle = self.rectangles[-1]
         self.rectangles.append(newRectangle)
@@ -193,7 +192,6 @@ class VariableBucketGroup(VariableRectangleGroup):
         Returns:
             VariableBucket: new bucket
         """
-        #TODO this method can only be called on a group with at least one rectangle
         newBucket = VariableBucket(width=self.width, interval=interval, widthScale=widthScale)
         lastRectangle = self.rectangles[-1]
         self.rectangles.append(newBucket)
