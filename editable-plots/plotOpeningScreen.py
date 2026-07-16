@@ -491,7 +491,6 @@ class MenuScreen:
         if names is None or len(names) == 0 or any([names[i] == [] or names[i] == None for i in range(len(names))]):
             messagebox.showerror("Empty data","Data must be be nonempty")
             return
-        print("HELP")
         self.root.destroy()
         UIFactory.CreateBarChart(title,xLabel,yLabel,values,names,width,height).View()
     
