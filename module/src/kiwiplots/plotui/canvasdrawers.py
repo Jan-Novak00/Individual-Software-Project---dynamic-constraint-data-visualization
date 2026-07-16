@@ -8,6 +8,16 @@ from .plotmetadata import *
 from .plotmath import ceilToNearestTen, divideInterval
 from kiwiplots.chartelements import ValuePoint2D, ValueBucket
 
+# Constants
+TITLE_Y_POSITION = 20
+TITLE_FONT_SIZE = 16
+AXIS_MARKS_DIVISIONS = 5
+AXIS_MARK_PIXEL_WIDTH = 5
+AXIS_FONT_SIZE = 10
+TEXT_OFFSET = 10
+HIGHLIGHT_MARK_OFFSET = 5
+POINT_RADIUS = 4
+
 class CanvasDrawer(ABC):
     """
     Abstract class. Contains logic to draw given plot element to canvas (tk.canvas).
@@ -54,7 +64,7 @@ class CanvasDrawer(ABC):
         raise NotImplementedError("Method CanvasDrawer.draw must be declared in subclass")
 
     def _writePlotTitle(self, title: str):
-        self.canvas.create_text(self.canvasWidth / 2, 20,text=title,font=("Arial", 16, "bold")) 
+        self.canvas.create_text(self.canvasWidth / 2, TITLE_Y_POSITION,text=title,font=("Arial", TITLE_FONT_SIZE, "bold")) 
 
     def _drawAxes(self, maximumValue: float, leftCornerXAxis: int, origin : ValuePoint2D, scaleFactor : float, minimumValue : int, xAxisLabel : str, yAxisLabel : str, xAxisValue : float):
         """
@@ -62,24 +72,24 @@ class CanvasDrawer(ABC):
         """
         topNumber = ceilToNearestTen(maximumValue) 
 
-        marks = divideInterval(minimumValue, topNumber, 5)
+        marks = divideInterval(minimumValue, topNumber, AXIS_MARKS_DIVISIONS)
       
-        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + 10, self.canvasHeight - origin.Y, fill="black", width=1)
+        self.canvas.create_line(origin.X, self.canvasHeight - origin.Y, leftCornerXAxis + TEXT_OFFSET, self.canvasHeight - origin.Y, fill="black", width=1)
         self.canvas.create_line(origin.X, self.canvasHeight - origin.Y - minimumValue, origin.X, self.canvasHeight - origin.Y - topNumber, fill="black", width=1)
 
         for mark in marks:
             y = self.canvasHeight - origin.Y - mark
-            self.canvas.create_line(origin.X - 5, y, origin.X, y, fill="black")
+            self.canvas.create_line(origin.X - AXIS_MARK_PIXEL_WIDTH, y, origin.X, y, fill="black")
 
             trueValue = mark/scaleFactor + xAxisValue
             valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
 
-            self.canvas.create_text(origin.X - 10, y, text=f"{valueString}", anchor="e")
+            self.canvas.create_text(origin.X - TEXT_OFFSET, y, text=f"{valueString}", anchor="e")
 
         
-        boldFont = font.Font(family="Helvetica", size=10, weight="bold")
-        self.canvas.create_text(leftCornerXAxis + 20, self.canvasHeight - origin.Y + 10, text=xAxisLabel, anchor="n",font=boldFont)
-        self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - 10, text=yAxisLabel, anchor="s",font=boldFont)
+        boldFont = font.Font(family="Helvetica", size=AXIS_FONT_SIZE, weight="bold")
+        self.canvas.create_text(leftCornerXAxis + 20, self.canvasHeight - origin.Y + TEXT_OFFSET, text=xAxisLabel, anchor="n",font=boldFont)
+        self.canvas.create_text(origin.X, self.canvasHeight - origin.Y - topNumber - TEXT_OFFSET, text=yAxisLabel, anchor="s",font=boldFont)
 
 class CandlesticCanvasDrawer(CanvasDrawer):
     """
@@ -125,10 +135,10 @@ class CandlesticCanvasDrawer(CanvasDrawer):
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=candle.color if not outlineOnly else "", outline="black" if not outlineOnly else candle.color, width= 1 if not outlineOnly else 3) # type: ignore
             self.canvas.create_line(minX, minY, maxX, maxY, fill=candle.color, width= 1 if not outlineOnly else 3) # type: ignore
             if specialHighlight:
-                self.canvas.create_line(minX-5, minY, minX+5, minY, fill=candle.color, width=1 if not outlineOnly else 3) # pyright: ignore[reportArgumentType]
-                self.canvas.create_line(maxX-5, maxY, maxX+5, maxY, fill=candle.color, width=1 if not outlineOnly else 3) # pyright: ignore[reportArgumentType]
+                self.canvas.create_line(minX-HIGHLIGHT_MARK_OFFSET, minY, minX+HIGHLIGHT_MARK_OFFSET, minY, fill=candle.color, width=1 if not outlineOnly else 3) # pyright: ignore[reportArgumentType]
+                self.canvas.create_line(maxX-HIGHLIGHT_MARK_OFFSET, maxY, maxX+HIGHLIGHT_MARK_OFFSET, maxY, fill=candle.color, width=1 if not outlineOnly else 3) # pyright: ignore[reportArgumentType]
             if candle.nameVisible: 
-                self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + 10, text=candle.name)
+                self.canvas.create_text(candle.wickBottom.X ,self.canvasHeight - origin.Y + TEXT_OFFSET, text=candle.name)
     
     def drawBare(self, plotMetadata: PlotMetadata, solver: CandlestickChartSolver, clear: bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
         """Renders candlesticks without axes or title.
@@ -186,7 +196,7 @@ class BarChartCanvasDrawer(CanvasDrawer):
             x2 = rec.rightTop.X
             y2 = self.canvasHeight - rec.rightTop.Y
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color if not outlineOnly else "", outline="black" if not outlineOnly else "red", width= 1 if not outlineOnly else 3) # pyright: ignore[reportArgumentType]
-            self.canvas.create_text((x1+x2)/2,y1 + 10, text=rec.name)
+            self.canvas.create_text((x1+x2)/2,y1 + TEXT_OFFSET, text=rec.name)
 
     def drawBare(self, plotMetadata: PlotMetadata, solver : BarChartSolver, clear : bool = True, outlineOnly: bool = False, specialHighlight : bool = False):
         """Renders bars without axes or title.
@@ -247,8 +257,8 @@ class HistogramCanvasDrawer(BarChartCanvasDrawer):
             x2 = rec.rightTop.X
             y2 = self.canvasHeight - rec.rightTop.Y
             self.canvas.create_rectangle(x1,y2,x2,y1, fill=rec.color if not outlineOnly else "", outline="black" if not outlineOnly else "red", width= 1 if not outlineOnly else 3) # pyright: ignore[reportArgumentType]
-            self.canvas.create_text(x1,y1 + 10, text=interval[0])
-            self.canvas.create_text(x2,y1 + 10, text=interval[1])
+            self.canvas.create_text(x1,y1 + TEXT_OFFSET, text=interval[0])
+            self.canvas.create_text(x2,y1 + TEXT_OFFSET, text=interval[1])
 
 class LineChartCanvasDrawer(CanvasDrawer):
     """
@@ -263,7 +273,7 @@ class LineChartCanvasDrawer(CanvasDrawer):
             plotMetadata (LineChartMetadata): Metadata containing line color.
             solver (LineChartSolver): Solver containing line data.
         """
-        RADIUS : int = 4
+        RADIUS : int = POINT_RADIUS
         lines = solver.GetLineData()
         origin = solver.GetOrigin()
         for index, line in enumerate(lines):
@@ -288,9 +298,9 @@ class LineChartCanvasDrawer(CanvasDrawer):
                 x1 + RADIUS, y1 + RADIUS,
                 fill=plotMetadata.color) # pyright: ignore[reportArgumentType]
 
-            self.canvas.create_text(x1,self.canvasHeight - (origin.Y)+10,text=line.leftEnd.name)
+            self.canvas.create_text(x1,self.canvasHeight - (origin.Y)+TEXT_OFFSET,text=line.leftEnd.name)
             if index == len(lines) - 1 and not line.ignoreRight:
-                self.canvas.create_text(x2,self.canvasHeight - (origin.Y)+10,text=line.rightEnd.name)
+                self.canvas.create_text(x2,self.canvasHeight - (origin.Y)+TEXT_OFFSET,text=line.rightEnd.name)
 
 
 

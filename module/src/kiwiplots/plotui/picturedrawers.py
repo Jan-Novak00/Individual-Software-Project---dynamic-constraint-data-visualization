@@ -5,6 +5,17 @@ from kiwiplots.chartelements import ValuePoint2D, ValueBucket
 from PIL import Image, ImageDraw, ImageFont
 from .plotmath import ceilToNearestTen, divideInterval
 
+# Reusable constants
+FONT_FILE = "arialbd.ttf"
+AXIS_FONT_SIZE = 12
+TITLE_FONT_SIZE = 16
+AXIS_MARKS_DIVISIONS = 5
+AXIS_MARK_PIXEL_WIDTH = 5
+TEXT_OFFSET = 10
+MARGIN = 5
+TITLE_Y_POSITION = 20
+POINT_RADIUS = 4
+
 class PictureDrawer(ABC):
     """
     Abstract class for generating image output of plots.
@@ -31,14 +42,14 @@ class PictureDrawer(ABC):
         """
         topNumber = ceilToNearestTen(maximumValue) 
 
-        marks = divideInterval(minimumValue,topNumber, 5)
+        marks = divideInterval(minimumValue,topNumber, AXIS_MARKS_DIVISIONS)
       
-        draw.line((origin.X, height - origin.Y, leftCornerXAxis + 10, height - origin.Y), fill=(0,0,0), width=1)
+        draw.line((origin.X, height - origin.Y, leftCornerXAxis + TEXT_OFFSET, height - origin.Y), fill=(0,0,0), width=1)
         draw.line((origin.X, height - origin.Y - minimumValue, origin.X, height - origin.Y - topNumber), fill=(0,0,0), width=1)
 
         for mark in marks:
             y = height - origin.Y - mark
-            draw.line((origin.X - 5, y, origin.X, y), fill=(0,0,0))
+            draw.line((origin.X - AXIS_MARK_PIXEL_WIDTH, y, origin.X, y), fill=(0,0,0))
 
             trueValue = mark/scaleFactor + xAxisValue
             valueString = f"{(trueValue):.2g}" if (trueValue <= 1e-04 or trueValue >= 1e06) else f"{(trueValue):.2f}"
@@ -49,15 +60,15 @@ class PictureDrawer(ABC):
             textWidth = bbox[2] - bbox[0]
             textHeight = bbox[3] - bbox[1]
 
-            draw.text((origin.X - 10 - textWidth, y - textHeight/2), text=f"{valueString}", fill = (0,0,0))
+            draw.text((origin.X - TEXT_OFFSET - textWidth, y - textHeight/2), text=f"{valueString}", fill = (0,0,0))
         
         #Axis labels
-        font = ImageFont.truetype("arialbd.ttf", 12)
+        font = ImageFont.truetype(FONT_FILE, AXIS_FONT_SIZE)
         bbox = font.getbbox(xAxisLabel)
         textW = bbox[2] - bbox[0]
         textH = bbox[3] - bbox[1]
         draw.text(
-            (leftCornerXAxis + 10 - textW/2, height - origin.Y + 10), 
+            (leftCornerXAxis + TEXT_OFFSET - textW/2, height - origin.Y + TEXT_OFFSET), 
             text=xAxisLabel, fill=(0,0,0), font=font
         )
 
@@ -65,15 +76,15 @@ class PictureDrawer(ABC):
         textW = bbox[2] - bbox[0]
         textH = bbox[3] - bbox[1]
         draw.text(
-            (origin.X - textW/2, height - origin.Y - topNumber - textH - 5), 
+            (origin.X - textW/2, height - origin.Y - topNumber - textH - MARGIN), 
             text=yAxisLabel, fill=(0,0,0), font=font
         )
     def _writePlotTitle(self, draw: ImageDraw.ImageDraw, solver: ChartSolver, width: int, title: str):
-        font = ImageFont.truetype("arialbd.ttf", 16)
+        font = ImageFont.truetype(FONT_FILE, TITLE_FONT_SIZE)
         text = title
         bbox = font.getbbox(text)
         textWidth = bbox[2] - bbox[0]
-        draw.text((width / 2 - textWidth/2, 20),text=text,font=font,fill = (0,0,0))
+        draw.text((width / 2 - textWidth/2, TITLE_Y_POSITION),text=text,font=font,fill = (0,0,0))
 
 class CandlesticPictureDrawer(PictureDrawer):
     """
@@ -126,7 +137,7 @@ class CandlesticPictureDrawer(PictureDrawer):
 
                 # text position
                 x_center = (x1 + x2) / 2
-                y_text = height - origin.Y + 10
+                y_text = height - origin.Y + TEXT_OFFSET
 
                 draw.text(
                     (x_center - text_width / 2, y_text - text_height/2),
@@ -186,7 +197,7 @@ class BarChartPictureDrawer(PictureDrawer):
 
             # text position
             x_center = (x1 + x2) / 2
-            y_text = (y1 + 10)
+            y_text = (y1 + TEXT_OFFSET)
 
             draw.text(
                 (x_center - text_width / 2, y_text - text_height/2),
@@ -257,7 +268,9 @@ class HistorgramPictureDrawer(BarChartPictureDrawer):
             textRight_width = bboxRight[2] - bboxRight[0]
             textRight_height = bboxRight[3] - bboxRight[1]
 
-            y_text = (y1 + 10)
+            # text position
+            x_center = (x1 + x2) / 2
+            y_text = (y1 + TEXT_OFFSET)
 
             draw.text(
                 (x1 - textLeft_width / 2, y_text - textLeft_height/2),
@@ -285,7 +298,7 @@ class LineChartPictureDrawer(PictureDrawer):
             draw (ImageDraw.ImageDraw): PIL ImageDraw object for rendering.
             height (int): Height of the plot area in pixels.
         """
-        RADIUS: int = 4
+        RADIUS: int = POINT_RADIUS
         lines = solver.GetLineData()
         origin = solver.GetOrigin()
 
@@ -323,7 +336,7 @@ class LineChartPictureDrawer(PictureDrawer):
             leftBbox = font.getbbox(line.leftEnd.name)
             leftTextWidth = leftBbox[2] - leftBbox[0]
             draw.text(
-                (x1 - leftTextWidth / 2, height - origin.Y + 10),
+                (x1 - leftTextWidth / 2, height - origin.Y + TEXT_OFFSET),
                 text=line.leftEnd.name,
                 fill=(0, 0, 0),
                 font=font
@@ -333,7 +346,7 @@ class LineChartPictureDrawer(PictureDrawer):
                 rightBbox = font.getbbox(line.rightEnd.name)
                 rightTextWidth = rightBbox[2] - rightBbox[0]
                 draw.text(
-                    (x2 - rightTextWidth / 2, height - origin.Y + 10),
+                    (x2 - rightTextWidth / 2, height - origin.Y + TEXT_OFFSET),
                     text=line.rightEnd.name,
                     fill=(0, 0, 0),
                     font=font

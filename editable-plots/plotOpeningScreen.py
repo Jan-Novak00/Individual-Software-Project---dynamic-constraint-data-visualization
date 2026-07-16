@@ -5,6 +5,17 @@ from kiwiplots import *
 import csv
 import kiwisolver
 
+# Font constants
+LABEL_FONT_SIZE = 11
+SECTION_TITLE_FONT_SIZE = 15
+
+# Layout constants
+PADDING_SMALL = 5
+PADDING_MEDIUM = 20
+DEFAULT_PLOT_WIDTH = 1000
+DEFAULT_PLOT_HEIGHT = 500
+DATA_INPUT_HEIGHT = 20
+DATA_INPUT_WIDTH = 50
 
 class MenuScreen:
     """
@@ -66,9 +77,9 @@ class MenuScreen:
         """Sets up x axis value entry
         """
         self.xAxisValueFrame = tk.Frame(self.mainMenu, bg="bisque2")
-        self.xAxisValueFrame.pack(pady=5, before=self.generateButton)
+        self.xAxisValueFrame.pack(pady=PADDING_SMALL, before=self.generateButton)
 
-        xLabel = tk.Label(self.xAxisValueFrame, text="X axis value:", font=("Arial", 11), bg="bisque2")
+        xLabel = tk.Label(self.xAxisValueFrame, text="X axis value:", font=("Arial", LABEL_FONT_SIZE), bg="bisque2")
         xLabel.pack(side="left")
 
 
@@ -92,7 +103,7 @@ class MenuScreen:
         if self.chosenPlotType.get() != "Candlestick chart" and self.chosenPlotType.get() != "Line chart":
             self.xAxisValueFrame.pack_forget()
         else:
-            self.xAxisValueFrame.pack(pady=5, before=self.generateButton)
+            self.xAxisValueFrame.pack(pady=PADDING_SMALL, before=self.generateButton)
 
 
     def _setDataInput(self):
@@ -105,13 +116,13 @@ class MenuScreen:
         self.dataInputFrame = tk.Frame(self.mainMenu, bg="bisque2")
         self.dataInputFrame.pack()
 
-        labelDataInput = tk.Label(self.dataInputFrame, text="Data input", font=("Arial", 15), bg="bisque2")
+        labelDataInput = tk.Label(self.dataInputFrame, text="Data input", font=("Arial", SECTION_TITLE_FONT_SIZE), bg="bisque2")
         labelDataInput.grid(row=0, column=0, sticky="w")
-        self.dataInputField = tk.Text(self.dataInputFrame, height=20, width=50)
-        self.dataInputField.grid(row=1, column=0, pady=5)
+        self.dataInputField = tk.Text(self.dataInputFrame, height=DATA_INPUT_HEIGHT, width=DATA_INPUT_WIDTH)
+        self.dataInputField.grid(row=1, column=0, pady=PADDING_SMALL)
 
         self.importButton = tk.Button(self.dataInputFrame, text="Import as CSV", command=self.on_importCSV_click)
-        self.importButton.grid(row=2, column=0, pady=5, sticky="w")
+        self.importButton.grid(row=2, column=0, pady=PADDING_SMALL, sticky="w")
 
     def _setPlotTypeMenu(self):
         """
@@ -120,18 +131,18 @@ class MenuScreen:
         self.plotTypeMenu = tk.Frame(self.mainMenu, bg="bisque2")
         self.plotTypeMenu.pack()
 
-        plotTypeLabel = tk.Label(self.plotTypeMenu, text="Plot type", font=("Arial", 15), bg="bisque2")
+        plotTypeLabel = tk.Label(self.plotTypeMenu, text="Plot type", font=("Arial", SECTION_TITLE_FONT_SIZE), bg="bisque2")
         plotTypeLabel.pack()
         self.chosenPlotType = tk.StringVar()
         self.chosenPlotType.set("Histogram")
         self.plotMenu = tk.OptionMenu(self.plotTypeMenu, self.chosenPlotType,"Candlestick chart","Bar chart", "Histogram", "Line chart")
-        self.plotMenu.pack(pady=20)
+        self.plotMenu.pack(pady=PADDING_MEDIUM)
     
     def _setPlotTitleMenu(self):
         self.titleMenuFrame = tk.Frame(self.mainMenu, bg="bisque2")
         self.titleMenuFrame.pack()
 
-        label = tk.Label(self.titleMenuFrame, text="Plot title", font=("Arial", 15), bg="bisque2")
+        label = tk.Label(self.titleMenuFrame, text="Plot title", font=("Arial", SECTION_TITLE_FONT_SIZE), bg="bisque2")
         label.pack()
 
         self.plotTitle = tk.StringVar()
@@ -149,25 +160,25 @@ class MenuScreen:
         Defaults to 1000x500 pixels.
         """
         self.plotDimentionsMenu = tk.Frame(self.dimentionsAndLabelsFrame, bg="bisque2")
-        self.plotDimentionsMenu.pack(side="left", padx=20)
+        self.plotDimentionsMenu.pack(side="left", padx=PADDING_MEDIUM)
 
         def onlyNumber(input: str):
             return input.isdigit() or input == ""
         
         numberValidator = self.plotDimentionsMenu.register(onlyNumber)
 
-        sizeLabel = tk.Label(self.plotDimentionsMenu, text="Plot canvas size", font=("Arial", 15), bg="bisque2")
+        sizeLabel = tk.Label(self.plotDimentionsMenu, text="Plot canvas size", font=("Arial", SECTION_TITLE_FONT_SIZE), bg="bisque2")
         sizeLabel.grid(row=0, column=0, sticky="w")
-        widthLabel = tk.Label(self.plotDimentionsMenu, text="width", font=("Arial", 11), bg="bisque2")
+        widthLabel = tk.Label(self.plotDimentionsMenu, text="width", font=("Arial", LABEL_FONT_SIZE), bg="bisque2")
         widthLabel.grid(row=1, column=0, sticky="w")
         self.widthEntry = tk.Entry(self.plotDimentionsMenu, validate="key", validatecommand=(numberValidator, "%P"))
-        self.widthEntry.insert(0,"1000")
-        self.widthEntry.grid(row=1, column=1, pady=5)
-        heightLabel = tk.Label(self.plotDimentionsMenu, text="height", font=("Arial", 11), bg="bisque2")
+        self.widthEntry.insert(0,str(DEFAULT_PLOT_WIDTH))
+        self.widthEntry.grid(row=1, column=1, pady=PADDING_SMALL)
+        heightLabel = tk.Label(self.plotDimentionsMenu, text="height", font=("Arial", LABEL_FONT_SIZE), bg="bisque2")
         heightLabel.grid(row=2, column=0, sticky="w")
         self.heightEntry = tk.Entry(self.plotDimentionsMenu, validate="key", validatecommand=(numberValidator, "%P"))
-        self.heightEntry.insert(0,"500")
-        self.heightEntry.grid(row=2, column=1, pady=5)
+        self.heightEntry.insert(0,str(DEFAULT_PLOT_HEIGHT))
+        self.heightEntry.grid(row=2, column=1, pady=PADDING_SMALL)
 
     def _setAxisLabelsMenu(self):
         """
@@ -177,20 +188,20 @@ class MenuScreen:
         of the plot.
         """
         self.axisLabelsMenu = tk.Frame(self.dimentionsAndLabelsFrame, bg="bisque2")
-        self.axisLabelsMenu.pack(side="left", padx=20)
+        self.axisLabelsMenu.pack(side="left", padx=PADDING_MEDIUM)
 
-        axisLabel = tk.Label(self.axisLabelsMenu, text="Axis labels", font=("Arial", 15), bg="bisque2")
+        axisLabel = tk.Label(self.axisLabelsMenu, text="Axis labels", font=("Arial", SECTION_TITLE_FONT_SIZE), bg="bisque2")
         axisLabel.grid(row=0, column=0, sticky="w")
 
-        xLabel = tk.Label(self.axisLabelsMenu, text="x label", font=("Arial", 11), bg="bisque2")
+        xLabel = tk.Label(self.axisLabelsMenu, text="x label", font=("Arial", LABEL_FONT_SIZE), bg="bisque2")
         xLabel.grid(row=1, column=0, sticky="w")
         self.xAxisEntry = tk.Entry(self.axisLabelsMenu)
-        self.xAxisEntry.grid(row=1, column=1, pady=5)
+        self.xAxisEntry.grid(row=1, column=1, pady=PADDING_SMALL)
 
-        yLabel = tk.Label(self.axisLabelsMenu, text="y label", font=("Arial", 11), bg="bisque2")
+        yLabel = tk.Label(self.axisLabelsMenu, text="y label", font=("Arial", LABEL_FONT_SIZE), bg="bisque2")
         yLabel.grid(row=2, column=0, sticky="w")
         self.yAxisEntry = tk.Entry(self.axisLabelsMenu)
-        self.yAxisEntry.grid(row=2, column=1, pady=5)
+        self.yAxisEntry.grid(row=2, column=1, pady=PADDING_SMALL)
 
 
 

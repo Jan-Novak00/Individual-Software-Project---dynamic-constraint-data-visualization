@@ -39,7 +39,7 @@ Prediction game examples can be found in directory [game examples](./game%20exam
 
 ## Developer documentation
 To generate documentation for this project, you will need sphinx library.
-The build needs all external dependencies to be installed.
+The build needs all other external dependencies of the project to be installed.
 
 Install it using
 ```bash

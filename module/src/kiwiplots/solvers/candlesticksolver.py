@@ -204,6 +204,7 @@ class CandlestickChartSolver(ChartSolver):
         return self.variableChart.GetName(candleIndex)
     
     def _refreshSuggestions(self):
+        return
         self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
         self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
         self.solver.suggestValue(self.variableChart.origin.X, self.variableChart.origin.X.value())
