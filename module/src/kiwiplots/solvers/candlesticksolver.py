@@ -203,13 +203,6 @@ class CandlestickChartSolver(ChartSolver):
         """
         return self.variableChart.GetName(candleIndex)
     
-    def _refreshSuggestions(self):
-        return
-        self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
-        self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
-        self.solver.suggestValue(self.variableChart.origin.X, self.variableChart.origin.X.value())
-        
-    
     def ChangeWidthX(self, candleIndex : int, newX : float)->None:
         """Change global width of candles by streatching right side of a given candle (in other words: set width of candles from cursor position).
 
@@ -231,7 +224,6 @@ class CandlestickChartSolver(ChartSolver):
 
         self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
         self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
-        self._refreshSuggestions()
     
     def ChangeSpacingX(self,candleIndex: int, newX : float):
         """Change spacing of candles by displacing left side of a given candle (in other words: set spacing of candles from cursor position).
@@ -254,7 +246,6 @@ class CandlestickChartSolver(ChartSolver):
 
         self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
-        self._refreshSuggestions()
     
     def ChangeOrigin(self, newX: int, newY: int):
         """Changes the position of the origin.
@@ -268,7 +259,6 @@ class CandlestickChartSolver(ChartSolver):
         super().ChangeOrigin(newX, newY)
         self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
-        self._refreshSuggestions()
     
     def ChangeAxisHeight(self, newHeight: int):
         """Changes height of the Y axis.
@@ -283,7 +273,6 @@ class CandlestickChartSolver(ChartSolver):
         self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) # pyright: ignore[reportArgumentType]
         self.switchConstraintLock(self.variableChart.width, widthConstrLock) # pyright: ignore[reportArgumentType]
         self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) # pyright: ignore[reportArgumentType]
-        self._refreshSuggestions()
     
     def AddCandle(self, name: str, opening: float, closing: float, minimum: float, maximum: float):
         """Appends a new candle to the chart.

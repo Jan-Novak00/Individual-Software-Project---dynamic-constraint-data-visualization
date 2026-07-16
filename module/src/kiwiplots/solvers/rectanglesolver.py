@@ -71,13 +71,6 @@ class RectangleSolver(ChartSolver,ABC):
         """
         raise NotImplementedError("Method must be declared in a subclass")
     
-    def _refreshSuggestions(self):
-        return
-        self.solver.suggestValue(self.variableChart.width, self.variableChart.width.value())
-        self.solver.suggestValue(self.variableChart.spacing, self.variableChart.spacing.value())
-        self.solver.suggestValue(self.variableChart.innerSpacing, self.variableChart.innerSpacing.value())
-        self.solver.suggestValue(self.variableChart.origin.X, self.variableChart.origin.X.value())
-    
     def SwitchRectangleLock(self, groupIndex: int, recIndex: int) -> bool:
         """Locks or unlocks rectangle of a given index form being edited.
 
@@ -201,7 +194,6 @@ class RectangleSolver(ChartSolver,ABC):
         self.switchConstraintLock(self.variableChart.origin.X, originConstrLock) 
         self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)
         self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)
-        self._refreshSuggestions()
 
     
     def ChangeSpacingX(self,groupIndex: int, rectangleIndex : int, newX : float):
@@ -229,7 +221,6 @@ class RectangleSolver(ChartSolver,ABC):
         self.switchConstraintLock(self.variableChart.origin.X, originConstrLock)
         self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock)
         self.switchConstraintLock(self.variableChart.width, widthConstrLock)
-        self._refreshSuggestions()
     
     def ChangeInnerSpacingX(self,groupIndex: int, rectangleIndex : int, newX : float):
         """Change inner spacing of rectangle groups by displacing left side of a given rectangle (in other words: set inner spacing of rectangle groups from cursor position).
@@ -256,7 +247,6 @@ class RectangleSolver(ChartSolver,ABC):
         self.switchConstraintLock(self.variableChart.origin.X, originConstrLock)
         self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)
         self.switchConstraintLock(self.variableChart.width, widthConstrLock)
-        self._refreshSuggestions()
     
     @inheritdocstring(ChartSolver.ChangeOrigin)
     def ChangeOrigin(self, newX: int, newY: int):
@@ -267,7 +257,6 @@ class RectangleSolver(ChartSolver,ABC):
         self.switchConstraintLock(self.variableChart.innerSpacing, innerSpacingConstrLock) 
         self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock) 
         self.switchConstraintLock(self.variableChart.width, widthConstrLock)
-        self._refreshSuggestions()
     
     @inheritdocstring(ChartSolver.ChangeAxisHeight)
     def ChangeAxisHeight(self, newHeight: int):
@@ -280,7 +269,6 @@ class RectangleSolver(ChartSolver,ABC):
         self.switchConstraintLock(self.variableChart.spacing, spacingConstrLock)
         self.switchConstraintLock(self.variableChart.width, widthConstrLock)
         self.switchConstraintLock(self.variableChart.origin.X, originConstrLock)
-        self._refreshSuggestions()
     
     @abstractmethod
     def GetGroupData(self)->list[list[ValueRectangle]]:
