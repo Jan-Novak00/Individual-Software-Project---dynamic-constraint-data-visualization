@@ -1,0 +1,17 @@
+[game_config]
+title = "Travel time to work"
+x_axis_label = "minutes"
+y_axis_label = "Thousands of people"
+instructions = "Fill in the histogram. The histogram shows travel time to work (USA, year 2000). Source = https://en.wikipedia.org/wiki/Histogram#Examples"
+plot_width = 1000
+plot_height = 500
+
+
+[game_config.origin]
+x = 50
+y = 30
+
+[histogram]
+interval_boundries = [0,5,10,15,20,25,30,35,40,45,60,90,150]
+values = [4180,13687,18618,19634,17981,7190,16369,3212,4122,9200,6461,3435]
+is_guess=[false,false,false,true,false,false,true,false,false,true,true,false]
