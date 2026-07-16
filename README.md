@@ -58,3 +58,6 @@ On windows run:
 ```
 
 The resulting documentation should be created in the build directory in [docs](./docs/) directory.
+
+## User documentaion
+For user documentation, consult the thesis, chapter 3 and 4.
