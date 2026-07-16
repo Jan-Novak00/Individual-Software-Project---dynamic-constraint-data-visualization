@@ -7,7 +7,13 @@ from .utils import GetCannonicalData
 from kiwiplots.chartelements import ValuePoint2D
 
 class GameUI:
+    """Main UI controller for prediction games.
+
+    Manages the tkinter window, canvas, buttons, event handlers, and scoring.
+    """
+
     def __init__(self, gameEventHandler : EventHandlerProtocol, instructionString: str, evaluator: GameEvaluator, userSolver : ChartSolver, solutionSolver : ChartSolver, plotMetadata : PlotMetadata, plotWidth: int, plotHeight: int):
+        """Initializes the game UI with event handler, solvers, and metadata."""
         self.eventHandler = gameEventHandler
         self.plotWidth = plotWidth
         self.plotHeight = plotHeight
@@ -19,9 +25,7 @@ class GameUI:
         self.initialOrigin : ValuePoint2D = self.userSolver.GetOrigin()
 
     def initializeUIElements(self):
-        """
-        Creates and initializes all UI elements including canvas, buttons, and text windows.
-        """
+        """Creates canvas, buttons, text windows, and context menus."""
         self.root = tk.Tk()
         self.frame = tk.Frame(self.root)
         self.frame.pack()
@@ -69,9 +73,7 @@ class GameUI:
         self.elementMenu = tk.Menu(self.frame,tearoff=0)
     
     def inicializeHandlers(self):
-        """
-        Initializes all event handlers with their respective UI components.
-        """
+        """Passes UI components to the event handler for initialization."""
         self.eventHandler.initializeCanvas(self.canvas, self.plotWidth, self.plotHeight)
         self.eventHandler.initializeDataView(self.dataWindow)
         self.eventHandler.initializeDefaultRightClickMenu(self.defaultMenu)
@@ -79,6 +81,7 @@ class GameUI:
     
 
     def _canvasBind(self):
+        """Binds all mouse and keyboard events to the event handler."""
         self.canvas.bind("<Button-1>", self.eventHandler.on_left_down) # type: ignore
         self.canvas.bind("<B1-Motion>", self.eventHandler.on_mouse_move) # type: ignore
         self.canvas.bind("<ButtonRelease-1>", self.eventHandler.on_left_up) # type: ignore
@@ -88,16 +91,13 @@ class GameUI:
 
 
     def _UIRun(self):
-        """
-        Binds all mouse and motion events to their respective handlers.
-        
-        Starts the main tkinter event loop.
-        """
+        """Starts the main tkinter event loop."""
         self._canvasBind()
         self.root.mainloop()
 
     
     def Play(self):
+        """Initializes UI, handlers, and starts the game."""
         self.initializeUIElements()
         self.inicializeHandlers()
         self.eventHandler.UpdateUI()
@@ -105,6 +105,7 @@ class GameUI:
     
 
     def _evaluatePrediction_ButtonPressed(self):
+        """Scores the prediction and displays the solution."""
         self.eventHandler.Pause()
         self.eventHandler.DisplayOther(self.solutionSolver)
         score = self._calculateScore()
@@ -114,10 +115,12 @@ class GameUI:
         #self.resetOriginButton.config(state="disabled")
     
     def _calculateScore(self)->int:
+        """Scores the user's prediction against the solution using the evaluator."""
         score = self.evaluator.Eval(GetCannonicalData(self.userSolver,self.plotMetadata),GetCannonicalData(self.solutionSolver,self.plotMetadata))
         return score
 
     def _resetOriginButton_pressed(self):
+        """Resets the origin to its initial position and updates the display."""
         if not self.eventHandler.IsPaused():
             self.userSolver.ChangeOrigin(self.initialOrigin.X,self.initialOrigin.Y)
             self.eventHandler.UpdateUI()

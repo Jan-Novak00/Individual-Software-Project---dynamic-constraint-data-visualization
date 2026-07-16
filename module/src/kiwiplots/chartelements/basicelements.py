@@ -56,7 +56,7 @@ class VariableElement(ABC):
         Returns:
             list[Constraint]: list of all constraints
         """ 
-        raise NotImplementedError("Method on_left_down must be declared in subclass")
+        raise NotImplementedError("Method must be declared in a subclass.")
     
     @abstractmethod
     def Value(self):
@@ -66,4 +66,4 @@ class VariableElement(ABC):
         Returns:
             Any: type of the return value depends on the element.
         """ 
-        raise NotImplementedError("Method on_left_down must be declared in subclass")
+        raise NotImplementedError("Method must be declared in a subclass.")

@@ -3,12 +3,27 @@ from kiwiplots import *
 from kiwiplots import ChartSolver, PlotMetadata
 
 def FormatFloat(value: float)->str:
+    """Formats a float for display, using scientific notation for very large or very small values.
+
+    Args:
+        value (float): The value to format.
+
+    Returns:
+        str: A human-readable string representation of the value.
+    """
     if ((value >= 1e+06) or (value <= 1e-04)):
         return f"{value:.4g}"
     return str(value)
 
 class GameDataViewer(DataViewer):
+    """Abstract data viewer for prediction game sessions.
+
+    Extends DataViewer with styled text tags and an abstract WriteSolution method
+    for displaying the user's guesses alongside the correct solution.
+    """
+
     def __init__(self, textWindow: Text):
+        """Initializes the game data viewer and configures text display tags."""
         super().__init__(textWindow)
         self.dataWindow.tag_configure("changing_Value", foreground="red")
         self.dataWindow.tag_configure("header",font=("Arial", 12, "bold"))
@@ -16,13 +31,35 @@ class GameDataViewer(DataViewer):
 
     @abstractmethod
     def WriteSolution(self, userSolver: ChartSolver, solutionSolver: ChartSolver, plotMetadata : PlotMetadata):
+        """Displays the user's guesses alongside the correct solution values.
+
+        Args:
+            userSolver (ChartSolver): Solver containing the user's submitted data.
+            solutionSolver (ChartSolver): Solver containing the correct solution.
+            plotMetadata (PlotMetadata): Metadata used for value scaling.
+        """
         raise NotImplementedError("Method GameDataViewer.writeSolution must be declared in subclass.")
 
 class GameBarChartDataViewer(GameDataViewer):
+    """Game data viewer for bar chart prediction games.
+
+    Displays bar names and values, highlighting the currently edited bar in red.
+    After the game ends, shows each bar's value alongside the solution in green.
+    """
+
     def __init__(self, textWindow: Text):
+        """Initializes the bar chart game data viewer."""
         super().__init__(textWindow)
     
     def Write(self, plotMetadata: PlotMetadata, solver: BarChartSolver, changedIndex: int, valueChanged : bool) -> None:
+        """Displays the current bar values, highlighting the bar being edited.
+
+        Args:
+            plotMetadata (PlotMetadata): Metadata for value scaling.
+            solver (BarChartSolver): Solver containing the current bar data.
+            changedIndex (int): Index of the bar currently being edited.
+            valueChanged (bool): Whether a bar value is actively being changed.
+        """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
@@ -41,6 +78,13 @@ class GameBarChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="disabled")
 
     def WriteSolution(self, userSolver: BarChartSolver, solutionSolver: BarChartSolver, plotMetadata: PlotMetadata):
+        """Displays each bar's guessed value next to the solution value.
+
+        Args:
+            userSolver (BarChartSolver): Solver containing the user's bar data.
+            solutionSolver (BarChartSolver): Solver containing the solution bar data.
+            plotMetadata (PlotMetadata): Metadata for value scaling.
+        """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
@@ -66,11 +110,19 @@ class GameBarChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="disabled")
 
 class GameLineChartDataViewer(GameDataViewer):
+    """Game data viewer for line chart prediction games.
+
+    Displays point names and values, highlighting the currently edited point in red.
+    After the game ends, shows each point's value alongside the solution in green.
+    """
+
     def __init__(self, textWindow: Text):
+        """Initializes the line chart game data viewer."""
         super().__init__(textWindow)
     
     @staticmethod
     def _getPoints(lines: list[ValueLine])->list[float]:
+        """Extracts the Y height of every point from a list of lines."""
         result = []
         for line in lines:
             result.append(line.leftHeight)
@@ -80,6 +132,7 @@ class GameLineChartDataViewer(GameDataViewer):
     
     @staticmethod
     def _getPointNames(lines: list[ValueLine])->list[str]:
+        """Extracts the name of every point from a list of lines."""
         result = []
         for line in lines:
             result.append(line.leftEnd.name)
@@ -89,6 +142,14 @@ class GameLineChartDataViewer(GameDataViewer):
 
     
     def Write(self, plotMetadata: LineChartMetadata, solver: LineChartSolver, changedIndex: int, valueChanged : bool) -> None:
+        """Displays the current point values, highlighting the point being edited.
+
+        Args:
+            plotMetadata (LineChartMetadata): Metadata for value scaling.
+            solver (LineChartSolver): Solver containing the current line data.
+            changedIndex (int): Index of the point currently being edited.
+            valueChanged (bool): Whether a point value is actively being changed.
+        """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
@@ -110,6 +171,13 @@ class GameLineChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="disabled")
     
     def WriteSolution(self, userSolver: LineChartSolver, solutionSolver: LineChartSolver, plotMetadata: LineChartMetadata):
+        """Displays each point's guessed value next to the solution value.
+
+        Args:
+            userSolver (LineChartSolver): Solver containing the user's line data.
+            solutionSolver (LineChartSolver): Solver containing the solution line data.
+            plotMetadata (LineChartMetadata): Metadata for value scaling.
+        """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
@@ -139,12 +207,25 @@ class GameLineChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="disabled")
 
 class GameCandlestickChartDataViewer(GameDataViewer):
+    """Game data viewer for candlestick chart prediction games.
+
+    Displays opening, closing, minimum, and maximum values for each candle,
+    highlighting the candle being edited. After the game ends, shows each
+    candle's values alongside the solution in green.
+    """
+
     def __init__(self, textWindow: Text):
+        """Initializes the candlestick chart game data viewer."""
         super().__init__(textWindow)
     
     def Write(self, plotMetadata: CandlesticPlotMetadata, solver: CandlestickChartSolver, changedIndex: int, valueChanged : bool) -> None:
-        """
-        Displays all data for the user and highlights which data is being edited
+        """Displays the current candle values, highlighting the candle being edited.
+
+        Args:
+            plotMetadata (CandlesticPlotMetadata): Metadata for value scaling.
+            solver (CandlestickChartSolver): Solver containing the current candle data.
+            changedIndex (int): Index of the candle currently being edited.
+            valueChanged (bool): Whether a candle value is actively being changed.
         """
         xAxisValue = plotMetadata.xAxisValue
         scaleFactor = plotMetadata.heightScaleFactor
@@ -172,6 +253,13 @@ class GameCandlestickChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="disabled")
 
     def WriteSolution(self, userSolver: CandlestickChartSolver, solutionSolver: CandlestickChartSolver, plotMetadata: CandlesticPlotMetadata):
+        """Displays each candle's guessed values next to the solution values.
+
+        Args:
+            userSolver (CandlestickChartSolver): Solver containing the user's candle data.
+            solutionSolver (CandlestickChartSolver): Solver containing the solution candle data.
+            plotMetadata (CandlesticPlotMetadata): Metadata for value scaling.
+        """
         xAxisValue = plotMetadata.xAxisValue
         scaleFactor = plotMetadata.heightScaleFactor
         self.dataWindow.config(state="normal")
@@ -212,7 +300,21 @@ class GameCandlestickChartDataViewer(GameDataViewer):
         self.dataWindow.config(state="disabled")
 
 class GameHistogramDataViewer(GameDataViewer):
+    """Game data viewer for histogram prediction games.
+
+    Displays bucket intervals and their values, highlighting the bucket being
+    edited. After the game ends, shows each bucket's value alongside the solution.
+    """
+
     def Write(self, plotMetadata: HistogramMetadata, solver: HistogramSolver, changedIndex: int, valueChanged : bool) -> None:
+        """Displays the current bucket values, highlighting the bucket being edited.
+
+        Args:
+            plotMetadata (HistogramMetadata): Metadata for value scaling.
+            solver (HistogramSolver): Solver containing the current histogram data.
+            changedIndex (int): Index of the bucket currently being edited.
+            valueChanged (bool): Whether a bucket value is actively being changed.
+        """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 
@@ -238,6 +340,13 @@ class GameHistogramDataViewer(GameDataViewer):
         self.dataWindow.config(state="disabled")
     
     def WriteSolution(self, userSolver: HistogramSolver, solutionSolver: HistogramSolver, plotMetadata: HistogramMetadata):
+        """Displays each bucket's guessed value next to the solution value.
+
+        Args:
+            userSolver (HistogramSolver): Solver containing the user's histogram data.
+            solutionSolver (HistogramSolver): Solver containing the solution histogram data.
+            plotMetadata (HistogramMetadata): Metadata for value scaling.
+        """
         self.dataWindow.config(state="normal")
         self.dataWindow.delete("1.0", "end")
 

@@ -1,7 +1,15 @@
 from .gameevaluator import GameEvaluator
-from kiwiplots import ChartSolver, BarChartSolver, PlotMetadata, BarChartMetadata, LineChartSolver, CandlestickChartSolver, HistogramSolver
+from kiwiplots import ChartSolver, BarChartSolver, PlotMetadata, BarChartMetadata, LineChartSolver, CandlestickChartSolver, HistogramSolver, inheritdocstring
 
 class DefaultBarChartEvaluator(GameEvaluator):
+    """Default evaluator for bar chart prediction games.
+
+    Computes the score by comparing the user's bar heights against the solution
+    heights for all bars marked as guesses. The score decreases proportionally
+    to the total absolute error relative to the sum of the solution values.
+    """
+
+    @inheritdocstring(GameEvaluator.Eval)
     def Eval(self,userData, solutionData) -> int:
         
         uDataNormalized_ = []
@@ -32,7 +40,13 @@ class DefaultBarChartEvaluator(GameEvaluator):
         return round(score)
 
 class DefaultCandlestickChartEvaluator(GameEvaluator):
+    """Default evaluator for candlestick chart prediction games.
 
+    Scores the prediction based on how accurately the user estimated the
+    price change (closing minus opening) and the wick range (maximum minus minimum)
+    for each guessed candle.
+    """
+    @inheritdocstring(GameEvaluator.Eval)
     def Eval(self,userData, solutionData) -> int:
         uo_, uc_, umin_, umax_ = userData[0], userData[1], userData[2], userData[3]
         so_, sc_, smin_, smax_ = solutionData[0], solutionData[1], solutionData[2], solutionData[3]
@@ -66,7 +80,13 @@ class DefaultCandlestickChartEvaluator(GameEvaluator):
         return round(score)
 
 class DefaultHistogramEvaluator(GameEvaluator):
+    """Default evaluator for histogram prediction games.
 
+    Scores the prediction by comparing user-submitted bucket heights against
+    the solution for all buckets marked as guesses.
+    """
+    
+    @inheritdocstring(GameEvaluator.Eval)
     def Eval(self, userData, solutionData) -> int:
         userData_, solutionData_ = [], []
         for i in range(len(self.isGuess)):
@@ -82,7 +102,13 @@ class DefaultHistogramEvaluator(GameEvaluator):
         return round(score)
 
 class DefaultLineChartEvaluator(GameEvaluator):
+    """Default evaluator for line chart prediction games.
 
+    Scores the prediction by comparing user-submitted point values against
+    the solution values for all points marked as guesses.
+    """
+    
+    @inheritdocstring(GameEvaluator.Eval)
     def Eval(self,userData, solutionData) -> int:
 
         userData_, solutionData_ = [], []

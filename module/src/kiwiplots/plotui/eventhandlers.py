@@ -90,7 +90,7 @@ class EventHandler(ABC):
     
     @abstractmethod
     def _isEventTypeValueChange(self)->bool:
-        return False
+        raise NotImplementedError("Method must be declared in a subclass.")
     
     
     def _updateCanvas(self):
@@ -140,6 +140,8 @@ class EventHandler(ABC):
         Handles right mouse button press events.
         
         Displays the default context menu at the cursor position.
+
+        In subsclasses, this method also shows chart-specific context menu, when the user clicks on data element.
         
         Args:
             event (tk.Event): The tkinter Event object containing mouse coordinates.

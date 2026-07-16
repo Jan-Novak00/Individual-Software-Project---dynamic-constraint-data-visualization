@@ -15,28 +15,55 @@ from typing import TypeAlias
 from tkinter import messagebox
 
 class HistogramEventHandler(BarChartEventHandler):
+    """Event handler for histogram chart interactions.
+
+    Extends the bar chart event handling logic with histogram-specific actions such
+    as appending new intervals and adjusting interval boundaries.
+    """
 
     LeftEvents: TypeAlias = BarChartEventHandler.RectangleEventRegistersLeftButton.RectangleLeftEvents
+
     def __init__(self, plotMetadata: HistogramMetadata, solver: HistogramSolver):
+        """Initializes the histogram event handler with plot metadata and solver.
+
+        Args:
+            plotMetadata (HistogramMetadata): Metadata describing the histogram plot.
+            solver (HistogramSolver): Solver containing histogram data.
+        """
         super().__init__(plotMetadata, solver) #pyright: ignore
         self.plotSolver : HistogramSolver = solver
         self.plotMetadata : HistogramMetadata = plotMetadata
 
     def initializeDataView(self, textWindow: tk.Text) -> None:
+        """Creates the data viewer for displaying histogram values.
+        """
         self.dataViewer = HistogramDataViewer(textWindow)
     
     def initializeCanvas(self, canvas: tk.Canvas, width: int, height: int) -> None:
+        """Creates the canvas drawer for rendering the histogram.
+        
+        Uses a HistogramCanvasDrawer with the provided canvas dimensions.
+        """
         self.canvas = canvas
         self.canvasHeight = height
         self.drawer = HistogramCanvasDrawer(canvas,width,height)
     
     def initializeDefaultRightClickMenu(self, menu: tk.Menu) -> None:
+        """Extends the default context menu with histogram-specific commands.
+        
+        Adds a command for appending a new interval to the histogram.
+        """
         EventHandler.initializeDefaultRightClickMenu(self,menu)
         assert self.defaultMenu is not None
         self.defaultMenu.add_command(label="Append new interval", command=self._addRectangle)
     
 
     def _addRectangle(self):
+        """Prompts user to append a new interval to the histogram.
+        
+        Opens a dialog for entering the interval end value and bar height.
+        Updates the chart visualization and translation table after adding the interval.
+        """
         endOfLastInterval = float(self.plotSolver.GetBucketData()[-1].interval[1])
         def createPopUp():
             assert self.canvas is not None
@@ -91,7 +118,12 @@ class HistogramEventHandler(BarChartEventHandler):
 
     def _clickedOnLeftEdge(self, event, rectangleIndex: int, rectangle: ValueRectangle): 
         """
-        Registers that the user clicked on a left edge of some rectangle
+        Registers that the user clicked on a left edge of some rectangle.
+
+        Args:
+            event: The mouse event that triggered the interaction.
+            rectangleIndex (int): Index of the selected rectangle in the histogram.
+            rectangle (ValueRectangle): The rectangle whose left edge was clicked.
         """
         groupIndex = self._indexToGroupIndex(rectangleIndex)
         if groupIndex[1] != 0:
@@ -104,12 +136,22 @@ class HistogramEventHandler(BarChartEventHandler):
         self.eventRegistersLeft.originalSpacing = self.plotSolver.GetSpacing()
 
     def initializeRightClickMenu(self, menu: tk.Menu) -> None:
+        """Initializes the element-specific context menu for histogram bars.
+        
+        Adds a command to change the color of the selected bar.
+        """
         self.elementMenu = menu
         self.elementMenu.add_command(label="Change color", command=self._changeColor)
 
     def check_cursor(self,event):
-        """
-        Changes cursor according to its position.
+        """Updates the canvas cursor based on the hovered histogram element.
+
+        The cursor changes to indicate what interaction is available at the current position:
+        - "hand2" for the left edge of the first bar in a group 
+        - "sb_h_double_arrow" for the right edge of a bar 
+        - "sb_v_double_arrow" for the top edge of a bar or the axis top 
+        - "fleur" for the chart origin 
+        - "arrow" for the default state
         """
         assert self.canvas
         for index, rec in enumerate(self.plotSolver.GetRectangleDataAsList()):

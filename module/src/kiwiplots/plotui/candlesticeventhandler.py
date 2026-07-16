@@ -29,7 +29,11 @@ class CandlesticEventHandler(EventHandler):
     ###################
 
     class CandleEventRegistersLeftButton(EventHandler.EventRegistersLeftButton):
+        """Event registers for left mouse button.
+        """
         class CandleLeftEvents(Enum):
+            """Enumeration for event types.
+            """
             nothing = 0
             minimum = 1
             maximum = 2
@@ -51,6 +55,8 @@ class CandlesticEventHandler(EventHandler):
             self.eventType = CandlesticEventHandler.CandleEventRegistersLeftButton.CandleLeftEvents.nothing
     
     class CandleEventRegistersRightButton(EventHandler.EventRegistersRightButton):
+        """Event registers for left mouse button.
+        """
         pass
     
     LeftEvents: TypeAlias = CandleEventRegistersLeftButton.CandleLeftEvents
@@ -114,11 +120,8 @@ class CandlesticEventHandler(EventHandler):
     
     def _addCandleTEST(self):
         """Adds a test candle with predefined values for debugging purposes."""
-        print("adding candle!")
         self.plotSolver.AddCandle("newOne", 2* self.plotMetadata.heightScaleFactor,8* self.plotMetadata.heightScaleFactor,1* self.plotMetadata.heightScaleFactor,11* self.plotMetadata.heightScaleFactor)
-        print("updating UI")
         self.UpdateUI()
-        print("candle added")
     
     def _addCandle(self):
         """Prompts user to add a new candle with opening, closing, minimum, and maximum values.
@@ -183,7 +186,12 @@ class CandlesticEventHandler(EventHandler):
         name, opening, closing, minimum, maximum = createPopUp()
         if name == None or opening == None or closing == None or minimum == None or maximum == None:
             return
-        self.plotSolver.AddCandle(name=name,opening=opening* self.plotMetadata.heightScaleFactor,closing=closing* self.plotMetadata.heightScaleFactor,minimum=minimum* self.plotMetadata.heightScaleFactor,maximum=maximum* self.plotMetadata.heightScaleFactor)
+        self.plotSolver.AddCandle(name=name,
+                                  opening=opening* self.plotMetadata.heightScaleFactor,
+                                  closing=closing* self.plotMetadata.heightScaleFactor,
+                                  minimum=minimum* self.plotMetadata.heightScaleFactor,
+                                  maximum=maximum* self.plotMetadata.heightScaleFactor
+                                  )
         self.UpdateUI()
 
     
@@ -192,25 +200,61 @@ class CandlesticEventHandler(EventHandler):
     ########################
     
     def _clickedOnMaximum(self, event: tk.Event, candleIndex : int, candle : ValueCandle):
+        """Registers that the user clicked a candle's maximum.
+
+        Args:
+            event (tk.Event): Mouse event that triggered the interaction.
+            candleIndex (int): Index of the selected candle in the solver data.
+            candle (ValueCandle): Candle whose maximum was clicked.
+        """
         self.eventRegistersLeft.eventType = self.LeftEvents.maximum
         self.eventRegistersLeft.dragIndex = candleIndex
 
     def _clickedOnMinimum(self, event: tk.Event, candleIndex : int, candle : ValueCandle):
+        """Registers that the user clicked a candle's minimum.
+
+        Args:
+            event (tk.Event): Mouse event that triggered the interaction.
+            candleIndex (int): Index of the selected candle in the solver data.
+            candle (ValueCandle): Candle whose minimum was clicked.
+        """
         self.eventRegistersLeft.eventType = self.LeftEvents.minimum
         self.eventRegistersLeft.dragIndex = candleIndex
     
     def _clickedOnOrigin(self, event: tk.Event):
+        """Registers that the user started interacting with the chart origin.
+
+        Args:
+            event (tk.Event): Mouse event that triggered the interaction.
+        """
         self.eventRegistersLeft.eventType = self.LeftEvents.origin
     
     def _clickedOnTopOfAxis(self, event: tk.Event):
+        """Registers that the user clicked on the chart's vertical axis.
+
+        Args:
+            event (tk.Event): Mouse event that triggered the interaction.
+        """
         self.eventRegistersLeft.eventType = self.LeftEvents.axisTop
+
     def _clickedOnOpeningEdge(self, event: tk.Event, candleIndex : int, candle : ValueCandle):
+        """Registers that the user clicked a candle's opening edge.
+
+        Args:
+            event (tk.Event): Mouse event that triggered the interaction.
+            candleIndex (int): Index of the selected candle in the solver data.
+            candle (ValueCandle): Candle whose opening edge was clicked.
+        """
         self.eventRegistersLeft.eventType = self.LeftEvents.opening
         self.eventRegistersLeft.dragIndex = candleIndex 
     
     def _clickedOnClosingEdge(self, event: tk.Event, candleIndex: int, candle: ValueCandle):
-        """
-        Registers that the user clicked on a top edge of some rectangle
+        """Registers that the user clicked a candle's closing edge.
+
+        Args:
+            event (tk.Event): Mouse event that triggered the interaction.
+            candleIndex (int): Index of the selected candle in the solver data.
+            candle (ValueCandle): Candle whose closing edge was clicked.
         """
         self.eventRegistersLeft.eventType = self.LeftEvents.closing
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
@@ -218,8 +262,12 @@ class CandlesticEventHandler(EventHandler):
         self.eventRegistersLeft.originalHeight = candle.closingCorner.Y - candle.openingCorner.Y
     
     def _clickedOnRightEdge(self, event: tk.Event, candleIndex: int, candle: ValueCandle):
-        """
-        Registers that the user clicked on a right edge of some rectangle
+        """Registers that the user clicked a candle's right edge.
+
+        Args:
+            event (tk.Event): Mouse event that triggered the interaction.
+            candleIndex (int): Index of the selected candle in the solver data.
+            candle (ValueCandle): Candle whose right edge was clicked.
         """
         self.eventRegistersLeft.eventType = self.LeftEvents.width
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
@@ -229,8 +277,12 @@ class CandlesticEventHandler(EventHandler):
         self.eventRegistersLeft.originalLeftX = candle.leftBottom.X
     
     def _clickedOnLeftEdge(self, event: tk.Event, candleIndex: int, candle: ValueCandle): 
-        """
-        Registers that the user clicked on a left edge of some rectangle
+        """Registers that the user clicked a candle's left edge.
+
+        Args:
+            event (tk.Event): Mouse event that triggered the interaction.
+            candleIndex (int): Index of the selected candle in the solver data.
+            candle (ValueCandle): Candle whose left edge was clicked.
         """
         self.eventRegistersLeft.eventType = self.LeftEvents.spacing
         self.eventRegistersLeft.dragStart = ValuePoint2D(event.x, event.y)
@@ -239,6 +291,7 @@ class CandlesticEventHandler(EventHandler):
         self.eventRegistersLeft.originalLeftX = candle.leftBottom.X
         self.eventRegistersLeft.originalSpacing = self.plotSolver.GetSpacing()
     
+    @inheritdocstring(EventHandler.on_left_down)
     def on_left_down(self, event: tk.Event) -> None:
 
         if self._isNearOrigin(event):
@@ -250,32 +303,27 @@ class CandlesticEventHandler(EventHandler):
 
         for index, candle in enumerate(self.plotSolver.GetCandleData()): 
             if self._isNearMaximum(event, candle):
-                print(f"maximum {index}")
                 self._clickedOnMaximum(event, index, candle)
                 break
             elif self._isNearMinimum(event, candle):
-                print(f"minimum {index}")
                 self._clickedOnMinimum(event, index, candle)
                 break
             elif self._isNearClosingEdge(event, candle):
-                print(f"closing edge {index}")
                 self._clickedOnClosingEdge(event, index, candle)
                 break      
             elif self._isNearOpeningEdge(event, candle):
-                print(f"opening edge {index}")
                 self._clickedOnOpeningEdge(event, index, candle)
                 break
             elif self._isNearLeftEdge(event, candle):
-                print(f"left edge {index}")
                 self._clickedOnLeftEdge(event,index, candle)
                 break
             elif self._isNearRightEdge(event, candle):
-                print(f"right edge {index}")
                 self._clickedOnRightEdge(event,index, candle)
                 break
             elif self._isNearOrigin(event):
                 self._clickedOnOrigin(event)
 
+    @inheritdocstring(EventHandler.on_left_up)
     def on_left_up(self, event: tk.Event):
         self.eventRegistersLeft.reset()
     
@@ -283,6 +331,7 @@ class CandlesticEventHandler(EventHandler):
     # Mouse move handling #
     #######################
 
+    @inheritdocstring(EventHandler.on_mouse_move)
     def on_mouse_move(self, event: tk.Event):
         if self.eventRegistersLeft.eventType is None:
             return
@@ -320,7 +369,6 @@ class CandlesticEventHandler(EventHandler):
         self._updateCanvas()
         self._updateDataView()
     
-    @inheritdocstring(EventHandler.check_cursor)
     def check_cursor(self,event: tk.Event):
         """Updates cursor appearance based on mouse position over candlestick elements.
         
@@ -360,17 +408,17 @@ class CandlesticEventHandler(EventHandler):
             elif self._isNearOpeningEdge(event, candle):
                 self.canvas.config(cursor="sb_v_double_arrow")
                 return
-            
-
         self.canvas.config(cursor="arrow")
     
     ########################
     # Right mouse handling #
     ########################
 
+    @inheritdocstring(EventHandler.on_right_up)
     def on_right_up(self, event: tk.Event):
         return
     
+    @inheritdocstring(EventHandler.on_right_down)
     def on_right_down(self, event: tk.Event):
         assert self.elementMenu
         for index, candle in enumerate(self.plotSolver.GetCandleData()):
@@ -381,6 +429,8 @@ class CandlesticEventHandler(EventHandler):
         super().on_right_down(event)
     
     def _changePositiveColor(self):
+        """Shows the user the option to change positive colors of candlesticks.
+        """
         color = colorchooser.askcolor(title="Choose different color")
         if color[1] == None:
             return
@@ -388,6 +438,8 @@ class CandlesticEventHandler(EventHandler):
         self._updateCanvas()
     
     def _changeNegativeColor(self):
+        """Shows the user the option to change negative colors of candlesticks.
+        """
         color = colorchooser.askcolor(title="Choose different color")
         if color[1] == None:
             return
@@ -395,6 +447,8 @@ class CandlesticEventHandler(EventHandler):
         self._updateCanvas()
 
     def _changeName(self):
+        """Shows dialog to the user for changing candlestick name. 
+        """
         currentName = self.plotSolver.GetName(self.eventRegistersRight.indexToChange)
         newName = simpledialog.askstring("Change name", "New name:", initialvalue=currentName)
         if newName == None:
@@ -405,6 +459,8 @@ class CandlesticEventHandler(EventHandler):
         pass
 
     def _switchNameVisibility(self):
+        """Allows the user to change visibility of candlesticks's name.
+        """
         self.plotSolver.SwitchNameVisibility(self.eventRegistersRight.indexToChange)
         self._updateCanvas()
     
@@ -413,47 +469,124 @@ class CandlesticEventHandler(EventHandler):
     ##################################
     
     def _isNearClosingEdge(self, event: tk.Event, candle : ValueCandle):
+        """Is cursor near closing edge of the candle?
+
+        Args:
+            event (tk.Event): Cursor position
+            candle (ValueCandle): Candle to test
+
+        Returns:
+            bool: True if cursor is near the clsoing edge of the candle.
+        """
         origin = self.plotSolver.GetOrigin()
         closingY = self.canvasHeight - (candle.closingCorner.Y + origin.Y)
         return isNear(closingY, event.y) and candle.openingCorner.X <= event.x <= candle.closingCorner.X
 
     def _isNearOpeningEdge(self, event: tk.Event, candle : ValueCandle):
+        """Is cursor near opening edge of the candle?
+
+        Args:
+            event (tk.Event): Cursor position
+            candle (ValueCandle): Candle to test
+
+        Returns:
+            bool: True if cursor is near the opening edge of the candle.
+        """
         origin = self.plotSolver.GetOrigin()
         openingY = self.canvasHeight - (candle.openingCorner.Y + origin.Y)
         return isNear(openingY, event.y) and candle.openingCorner.X <= event.x <= candle.closingCorner.X
 
     def _isNearLeftEdge(self, event: tk.Event, candle : ValueCandle):
+        """Checks whether the cursor is close to a candle's left edge.
+
+        Args:
+            event (tk.Event): Mouse event to evaluate.
+            candle (ValueCandle): Candle to test against.
+
+        Returns:
+            bool: True if the cursor is near the candle's left edge.
+        """
         origin = self.plotSolver.GetOrigin()
         candleBottomY, candleTopY = self.canvasHeight - (min(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y), self.canvasHeight - (max(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y)
         return isNear(event.x, candle.openingCorner.X) and candleTopY <= event.y <= candleBottomY
-        pass
 
     def _isNearRightEdge(self, event: tk.Event, candle : ValueCandle):
+        """Checks whether the cursor is close to a candle's right edge.
+
+        Args:
+            event (tk.Event): Mouse event to evaluate.
+            candle (ValueCandle): Candle to test against.
+
+        Returns:
+            bool: True if the cursor is near the candle's right edge.
+        """
         origin = self.plotSolver.GetOrigin()
         candleBottomY, candleTopY = self.canvasHeight - (min(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y), self.canvasHeight - (max(candle.openingCorner.Y, candle.closingCorner.Y)+origin.Y)
         return isNear(event.x, candle.closingCorner.X) and candleTopY <= event.y <= candleBottomY
       
-
     def _isNearMaximum(self, event: tk.Event, candle : ValueCandle):
+        """Checks whether the cursor is close to a candle's maximum.
+
+        Args:
+            event (tk.Event): Mouse event to evaluate.
+            candle (ValueCandle): Candle to test against.
+
+        Returns:
+            bool: True if the cursor is near the maximum point.
+        """
         origin = self.plotSolver.GetOrigin()
         maxY = self.canvasHeight - (candle.wickTop.Y + origin.Y)
         return isNear(maxY, event.y) and isNear(candle.wickTop.X, event.x)
         
 
     def _isNearMinimum(self, event: tk.Event, candle : ValueCandle):
+        """Checks whether the cursor is close to a candle's minimum.
+
+        Args:
+            event (tk.Event): Mouse event to evaluate.
+            candle (ValueCandle): Candle to test against.
+
+        Returns:
+            bool: True if the cursor is near the minimum point.
+        """
         origin = self.plotSolver.GetOrigin()
         minY = self.canvasHeight - (candle.wickBottom.Y + origin.Y)
         return isNear(minY, event.y) and isNear(candle.wickBottom.X, event.x)
     
     def _isNearOrigin(self, event: tk.Event):
+        """Checks whether the cursor is close to the chart origin.
+
+        Args:
+            event (tk.Event): Mouse event to evaluate.
+
+        Returns:
+            bool: True if the cursor is near the origin point.
+        """
         origin = self.plotSolver.GetOrigin()
         return isNear(event.x, origin.X) and isNear(event.y, self.canvasHeight - origin.Y)
     
     def _isNearTopOfYAxis(self,event: tk.Event):
+        """Checks whether the cursor is near the top of the vertical axis.
+
+        Args:
+            event (tk.Event): Mouse event to evaluate.
+
+        Returns:
+            bool: True if the cursor is near the axis top handle.
+        """
         topNormalized = self.canvasHeight - self.plotSolver.GetAxisHeight() - self.plotSolver.GetOrigin().Y
         return isNear(event.y, topNormalized, 10) and isNear(event.x, self.plotSolver.GetOrigin().X, 10)
     
     def _isInsideOfCandle(self,event: tk.Event, candle : ValueCandle):
+        """Checks whether the cursor is inside a candle's bounding area.
+
+        Args:
+            event (tk.Event): Mouse event to evaluate.
+            candle (ValueCandle): Candle to test against.
+
+        Returns:
+            bool: True if the cursor lies within the candle area.
+        """
         originY = self.plotSolver.GetOrigin().Y
         xCoordinateOK = candle.leftBottom.X <= event.x <= candle.rightTop.X
         bottomY = candle.openingCorner.Y if candle.openingCorner.Y <= candle.closingCorner.Y else candle.closingCorner.Y

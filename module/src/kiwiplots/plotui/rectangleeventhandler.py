@@ -88,7 +88,7 @@ class RectangleEventHandler(EventHandler,ABC):
         Args:
             textWindow (Text): A tkinter Text widget where plot data will be displayed.
         """
-        return
+        raise NotImplementedError("Method must be declared in a subclass.")
     
     @abstractmethod
     def initializeCanvas(self, canvas: Canvas, width: int, height: int) -> None:
@@ -311,7 +311,7 @@ class RectangleEventHandler(EventHandler,ABC):
         Args:
             event (tk.Event): The tkinter Event object containing current mouse coordinates.
         """
-        return super().check_cursor(event)
+        raise NotImplementedError("Method must be declared in a subclass.")
     
     ##################################
     # Predicates for locating events #

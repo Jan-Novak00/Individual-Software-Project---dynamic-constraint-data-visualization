@@ -3,6 +3,17 @@ from kiwiplots.solvers import *
 from kiwiplots.plotui.plotmetadata import *
 
 def pairwise(iterable):
+    """Returns an iterator of consecutive overlapping pairs from the iterable.
+
+    Uses the built-in itertools.pairwise when available (Python 3.10+),
+    otherwise falls back to a zip-based implementation.
+
+    Args:
+        iterable: Any iterable to pair up.
+
+    Returns:
+        An iterator of (a, b) tuples for each consecutive pair.
+    """
     try:
        from itertools import pairwise 
        return pairwise(iterable)
@@ -12,6 +23,22 @@ def pairwise(iterable):
         return zip(a, b)
 
 def GetCannonicalData(solver: ChartSolver, metadata: PlotMetadata):
+    """Extracts normalized chart values from a solver in a canonical form.
+
+    Converts raw solver data to real-world values by applying the metadata scale
+    factor and axis offset. The return format depends on the solver type:
+    - BarChartSolver: list of groups, each containing bar heights.
+    - HistogramSolver: flat list of bucket heights.
+    - LineChartSolver: flat list of point values.
+    - CandlestickChartSolver: list of four lists [openings, closings, minima, maxima].
+
+    Args:
+        solver (ChartSolver): The solver containing the chart data.
+        metadata (PlotMetadata): Metadata with the height scale factor and axis offset.
+
+    Returns:
+        Canonical data structure for the given solver type.
+    """
     if isinstance(solver,BarChartSolver):
         assert isinstance(metadata,BarChartMetadata)
         groups = solver.GetGroupData()

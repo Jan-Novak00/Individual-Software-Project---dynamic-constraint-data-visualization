@@ -106,14 +106,11 @@ class UICore:
         self.canvasHandler.UpdateUI()
         
         pictureAddress = filedialog.asksaveasfilename(parent=self.root,title="Save chart",defaultextension=".png",filetypes=[("PNG image","*.png"),("JPG image","*.jpg"),("All files","*.*")])
-
-        print("Saving canvas to", pictureAddress)
         self.pictureDrawer.draw(self.plotMetadata, self.solver, self.plotWidth, self.plotHeight, pictureAddress)
     
     def on_resetOriginButton_click(self):
         """Resets chart origin to initial value.
         """
-        print(f"Reseting origin to ({self.initialOrigin.X},{self.initialOrigin.Y})")
         self.solver.ChangeOrigin(self.initialOrigin.X,self.initialOrigin.Y)
         self.canvasHandler.UpdateUI()
     

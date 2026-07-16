@@ -14,7 +14,7 @@ from .datautils import *
 from .uiconstants import *
 
 class UIFactory:
-    """Static class for UI core creation. Creates specific charts via dependency injection.
+    """Static class for UI core creation. Creates specific charts via dependency injection. Contains necessary factory methods.
     """
     @staticmethod
     def CreateCandlesticChart(title: str, 

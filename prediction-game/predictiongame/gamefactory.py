@@ -1,3 +1,4 @@
+"""Factory for creating game instances from configuration files."""
 from kiwiplots import *
 from .gameloader import *
 from .game_barcharteventhandler import GameBarChartEventHandler
@@ -10,9 +11,18 @@ from .defaultevaluators import *
 from .gamemodes import GameModes
 
 class GameFactory(UIFactory):
+    """Loads game configurations and creates GameUI instances with appropriate handlers."""
 
     @staticmethod
     def LoadGameFromConfig(configFilePath : str):
+        """Loads a game from a config file and returns a GameUI instance.
+
+        Args:
+            configFilePath: Path to the game configuration TOML file.
+
+        Returns:
+            GameUI: Configured game interface ready to play.
+        """
         loader: GameLoader = GameLoader.GetLoader(configFilePath=configFilePath)
 
         solutionSolver = loader.GetSolutionSolver()

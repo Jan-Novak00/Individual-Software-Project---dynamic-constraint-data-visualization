@@ -42,30 +42,37 @@ IS_GUESS_KEY = "is_guess"
 NAMES_KEY    = "names"
 
 class LoadFailedException(Exception):
+    """Base exception for all game loading errors."""
     def __init__(self, message: str):
         super().__init__(message)
 
 class DataConfigSectionMissingException(LoadFailedException):
+    """Raised when no recognised chart data section is found in the config file."""
     def __init__(self):
         super().__init__(f"Data config section missing. Possible names: {BARCHART_DATA_CONFIG_SECTION_HEADER}, {CANDLESTICK_DATA_CONFIG_SECTION_HEADER}, {HISTOGRAM_DATA_CONFIG_SECTION_HEADER}, {LINECHART_DATA_CONFIG_SECTION_HEADER}")
 
 class InvalidGeneralConfigException(LoadFailedException):
+    """Raised when a required key is missing from the general config section."""
     def __init__(self, missingItem: str):
         super().__init__(f"Item {missingItem} is missing in the config file in section {GENERAL_CONFIG_SECTION_HEADER}")
 
 class InvalidEvaluatorException(LoadFailedException):
+    """Raised when the provided evaluator class does not inherit from GameEvaluator."""
     def __init__(self, source: str):
         super().__init__(f"Evaluator class provided in {source} is not valid. Make sure it inherits from GameEvaluator class.")
 
 class EvaluatorLoadFailedException(LoadFailedException):
+    """Raised when loading the evaluator module fails unexpectedly."""
     def __init__(self):
         super().__init__("Fatal error occured when loading game evaluator.")
 
 class InvalidDataConfigSectionException(LoadFailedException):
+    """Raised when a required key is missing from the chart data config section."""
     def __init__(self, missingItem: str, dataSectionHeader: str):
         super().__init__(f"Item {missingItem} is missing from {dataSectionHeader}.")
 
 class InvalidDataFormatException(LoadFailedException):
+    """Raised when a config value has an unexpected type or value."""
     def __init__(self, message: str, invalidKey: str):
         self.invalidKey = invalidKey
         super().__init__(message)
@@ -77,6 +84,7 @@ class GameLoader(ABC):
     After load the instnace can be queried for loaded data.
     """
     def __init__(self, data: dict[str,Any]):
+        """Parses and stores all config and chart data from the loaded TOML dict."""
         self.evaluatorType : Type[GameEvaluator] = self._getDefaultEvaluatorType()  # pyright: ignore[reportAttributeAccessIssue]
         
         self.xAxisLabel   : str = None # pyright: ignore[reportAttributeAccessIssue]
@@ -252,32 +260,41 @@ class GameLoader(ABC):
         pass
 
     def GetUserSolver(self)->ChartSolver:
+        """Returns the solver initialised with user data (guessed values set to zero)."""
         return self.userSolver
 
     def GetSolutionSolver(self)->ChartSolver:
+        """Returns the solver initialised with the full solution data."""
         return self.solutionSolver
 
     def GetPlotMetadata(self)->PlotMetadata:
+        """Returns the plot metadata for this game."""
         return self.plotMetadata
 
     def GetEvaluator(self)->GameEvaluator:
+        """Returns the evaluator used to score the user's prediction."""
         return self.evaluator
     
     def GetInstructions(self):
+        """Returns the instruction text shown to the player."""
         return self.instructions
     
     def GetWidth(self):
+        """Returns the plot canvas width in pixels."""
         return self.plotWidth
     
     def GetHeight(self):
+        """Returns the plot canvas height in pixels."""
         return self.plotHeight
     
     @staticmethod
     @abstractmethod
     def GetGameMode()->GameModes:
+        """Returns the game mode identifier for this loader."""
         pass
 
 def ValidateListUnderKeyword(keyword : str, listToValidate : list, itemType : type|Union[Any,Any]):
+    """Raises InvalidDataFormatException if listToValidate is not a list of the expected item type."""
     #TODO better using get_args abd get_origin
     typeName = itemType.__name__ if itemType != Union[int,float] else float.__name__
     if not isinstance(listToValidate, list):
@@ -287,6 +304,7 @@ def ValidateListUnderKeyword(keyword : str, listToValidate : list, itemType : ty
             raise InvalidDataFormatException(f"List under \"{keyword}\" key must be a list of {typeName}.",keyword)
 
 def ValidateTKColor(color: str):
+    """Raises LoadFailedException if color is not a valid hex color string."""
     if not isinstance(color,str):
         raise LoadFailedException(f"Color {color} must be a string.")
     if not color.startswith("#"):
@@ -305,13 +323,17 @@ def ValidateTKColor(color: str):
 GROUPS_KEY = "groups"
 BAR_COLORS_KEY = "colors"
 class BarChartGameLoader(GameLoader):
+    """GameLoader implementation for bar chart prediction games."""
+
     def __init__(self, data: dict[str, Any]):
+        """Initialises the bar chart game loader from a parsed TOML config dict."""
         super().__init__(data)
         self.userSolver : BarChartSolver = self.userSolver
         self.solutionSolver : BarChartSolver = self.solutionSolver
     
     @staticmethod
     def _validateData(data: list[list[float]], whatToGuess: list[list[bool]], names: list[list[str]]):
+        """Validates that groups, isGuess and names are consistent nested lists."""
         if not isinstance(data,list):
             raise InvalidDataFormatException(f"Data under \"{GROUPS_KEY}\" keyword must be a list of lists of floats.",GROUPS_KEY)
         
@@ -338,6 +360,7 @@ class BarChartGameLoader(GameLoader):
                     raise InvalidDataFormatException(f"Data under \"{NAMES_KEY}\" keyword must be a list of lists of strings.",NAMES_KEY)
     @staticmethod    
     def _createUserData(data: list[list[float]], isGuess: list[list[bool]])->list[list[float]]:
+        """Returns a copy of data where guessed bars are replaced with zero."""
         result = []
         assert len(data) == len(isGuess)
         for i in range(len(data)):
@@ -352,10 +375,12 @@ class BarChartGameLoader(GameLoader):
         return result
     
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
+        """Returns the default evaluator type for bar chart games."""
         return DefaultBarChartEvaluator
     
     @staticmethod
     def _validateColors(colors: list[list[str]], groups: list[list[float]]):
+        """Validates that colors is a nested list matching the shape of groups."""
         if not isinstance(colors, list):
             raise InvalidDataFormatException(f"Data under {BAR_COLORS_KEY} are not valid.",BAR_COLORS_KEY)
         if len(colors) != len(groups):
@@ -371,6 +396,7 @@ class BarChartGameLoader(GameLoader):
                 ValidateTKColor(color)
     
     def _loadData(self, data: dict[str, Any]):
+        """Parses bar chart data and constructs user and solution solvers."""
         gameData = data[BARCHART_DATA_CONFIG_SECTION_HEADER]
         groups  : Optional[list[list[float]]] = None 
         isGuess : Optional[list[list[bool ]]] = None 
@@ -445,15 +471,18 @@ class BarChartGameLoader(GameLoader):
     
     @staticmethod
     def GetGameMode() -> GameModes:
+        """Returns the bar chart game mode identifier."""
         return GameModes.BarChart
     
     def _lock(self, isGuess : list[list[bool]]):
+        """Locks all bars not marked as guess in the user solver."""
         for i in range(len(isGuess)):
             for j in range(len(isGuess[i])):
                 if not isGuess[i][j]:
                     self.userSolver.SwitchRectangleLock(i,j)
     
     def _color(self, colors: list[list[str]]):
+        """Applies bar colors to both user and solution solvers."""
         for groupIndex in range(len(colors)):
             for recIndex in range(len(colors[groupIndex])):
                 self.userSolver.ChangeColor(groupIndex,recIndex,colors[groupIndex][recIndex])
@@ -465,13 +494,17 @@ GUESS_COLOR_KEY = "guess_color"
 SOLUTION_COLOR_KEY = "solution_color"
 
 class LineChartGameLoader(GameLoader):
+    """GameLoader implementation for line chart prediction games."""
+
     def __init__(self, data: dict[str, Any]):
+        """Initialises the line chart game loader from a parsed TOML config dict."""
         super().__init__(data)
         self.userSolver : LineChartSolver = self.userSolver
         self.solutionSolver : LineChartSolver = self.solutionSolver
     
     @staticmethod
     def _validateData(data : list[float], isGuess : list[bool], names : list[str]):
+        """Validates that points, isGuess and names are consistent flat lists."""
         ValidateListUnderKeyword(POINTS_KEY,data,Union[int,float])
         ValidateListUnderKeyword(IS_GUESS_KEY,isGuess,bool)
         ValidateListUnderKeyword(NAMES_KEY,names,str)
@@ -480,10 +513,12 @@ class LineChartGameLoader(GameLoader):
     
     @staticmethod
     def _createUserData(data: list[float], isGuess: list[bool], xAxisValue : float = 0)->list[float]:
+        """Returns a copy of data where guessed points are replaced with xAxisValue."""
         assert len(data) == len(isGuess)
         return [data[i] if not isGuess[i] else xAxisValue for i in range(len(data))]
     
     def _loadData(self, data: dict[str, Any]):
+        """Parses line chart data and constructs user and solution solvers."""
         gameData = data[LINECHART_DATA_CONFIG_SECTION_HEADER]
         points  : Optional[list[float]] = None
         isGuess : Optional[list[bool ]] = None
@@ -557,19 +592,23 @@ class LineChartGameLoader(GameLoader):
         self.evaluator = self.evaluatorType(isGuess)
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
+        """Returns the default evaluator type for line chart games."""
         return DefaultLineChartEvaluator
     
     def _lock(self, isGuess: list[bool]):
+        """Locks all points not marked as guess in the user solver."""
         for i in range(len(isGuess)):
             if not isGuess[i]:
                 self.userSolver.SwitchPointLock(i)
     
     def GetSolutionColor(self)->str:
+        """Returns the color used to render the solution line."""
         return self.solutionColor
 
 
     @staticmethod
     def GetGameMode() -> GameModes:
+        """Returns the line chart game mode identifier."""
         return GameModes.LineChart
 
 OPENINGS_KEY = "openings"
@@ -580,13 +619,18 @@ NEGATIVE_COLOR_KEY = "negative_color"
 POSITIVE_COLOR_KEY = "positive_color"
 
 class CandlestickChartGameLoader(GameLoader):
+    """GameLoader implementation for candlestick chart prediction games."""
+
     def __init__(self, data: dict[str, Any]):
+        """Initialises the candlestick chart game loader from a parsed TOML config dict."""
         super().__init__(data)
         self.userSolver : CandlestickChartSolver = self.userSolver
         self.solutionSolver : CandlestickChartSolver = self.solutionSolver
 
     @dataclass
     class CandleData:
+        """Holds the four OHLC value lists for a set of candles."""
+
         openings: list[float]
         closings: list[float]
         minimums: list[float]
@@ -700,6 +744,7 @@ class CandlestickChartGameLoader(GameLoader):
         self.evaluator = self.evaluatorType(isGuess)
     
     def _color(self, positiveColor: str, negativeColor: str):
+        """Applies positive and negative candle colors to both solvers."""
         self.userSolver.ChangeNegativeColor(negativeColor)
         self.userSolver.ChangePositiveColor(positiveColor)
         self.solutionSolver.ChangeNegativeColor(negativeColor)
@@ -707,6 +752,7 @@ class CandlestickChartGameLoader(GameLoader):
 
     @staticmethod
     def _validateData(openings : list[float], closings : list[float], minimums : list[float], maximums : list[float], names : list[str], isGuess : list[bool]):
+        """Validates that all OHLC, names and isGuess lists are consistent."""
         ValidateListUnderKeyword(OPENINGS_KEY,openings,Union[int,float])
         ValidateListUnderKeyword(CLOSINGS_KEY,closings,Union[int,float])
         ValidateListUnderKeyword(MINIMUMS_KEY,minimums,Union[int,float])
@@ -718,10 +764,12 @@ class CandlestickChartGameLoader(GameLoader):
             raise InvalidDataFormatException(f"Lists under \"{OPENINGS_KEY}\" key, \"{CLOSINGS_KEY}\" key, \"{MINIMUMS_KEY}\" key, \"{MAXIMUMS_KEY}\" key, \"{IS_GUESS_KEY}\" key and \"{NAMES_KEY}\" key must be of the same length.",OPENINGS_KEY)
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
+        """Returns the default evaluator type for candlestick chart games."""
         return DefaultCandlestickChartEvaluator
     
     @staticmethod
     def _createUserData(openings : list[float], closings : list[float], minimums : list[float], maximums : list[float], isGuess : list[bool], xAxisValue : float =0)->CandleData:
+        """Returns a CandleData where guessed candles have all values set to xAxisValue."""
         userOpenings, userClosings, userMinimums, userMaximums = [],[],[],[]
         for i in range(len(openings)):
             if isGuess[i]:
@@ -739,9 +787,11 @@ class CandlestickChartGameLoader(GameLoader):
 
     @staticmethod
     def GetGameMode() -> GameModes:
+        """Returns the candlestick chart game mode identifier."""
         return GameModes.CandlestickChart
     
     def _lock(self,isGuess: list[bool]):
+        """Locks all candles not marked as guess in the user solver."""
         for i in range(len(isGuess)):
             if not isGuess[i]:
                 self.userSolver.SwitchCandleLock(i)
@@ -750,13 +800,17 @@ INTERVALS_KEY = "interval_boundries"
 BUCKET_VALUE_KEY = "values"
 BUCKET_COLORS_KEY = "colors"
 class HistogramGameLoader(GameLoader):
+    """GameLoader implementation for histogram prediction games."""
+
     def __init__(self, data: dict[str, Any]):
+        """Initialises the histogram game loader from a parsed TOML config dict."""
         super().__init__(data)
         self.userSolver : HistogramSolver = self.userSolver
         self.solutionSolver : HistogramSolver = self.solutionSolver
     
     @staticmethod
     def _validateData(intervals : list[float], values : list[float], isGuess: list[bool]):
+        """Validates that intervals, values and isGuess lists are consistent."""
 
         ValidateListUnderKeyword(INTERVALS_KEY, intervals, Union[int,float])
         ValidateListUnderKeyword(BUCKET_VALUE_KEY, values, Union[int,float])
@@ -780,16 +834,19 @@ class HistogramGameLoader(GameLoader):
 
     @staticmethod
     def _getUserData(data: list[float], isGuess : list[bool]):
+        """Returns a copy of data where guessed buckets are replaced with zero."""
         assert len(data) == len(isGuess)
         return [data[i] if not isGuess[i] else 0 for i in range(len(data))]
 
     @staticmethod
     def _getIntervals(boundries: list[float]):
+        """Converts a flat list of boundaries into a list of (start, end) interval tuples."""
         assert len(boundries) > 1
         return list(pairwise(boundries))
 
     @staticmethod
     def _validateColors(colors: list[str], count: int):
+        """Validates that colors is a flat list of valid hex strings with the expected length."""
         if not isinstance(colors,list):
             raise InvalidDataFormatException(f"Data under {BUCKET_COLORS_KEY} are not valid.",BUCKET_COLORS_KEY)
         if not len(colors) == count:
@@ -798,6 +855,7 @@ class HistogramGameLoader(GameLoader):
             ValidateTKColor(color)
 
     def _loadData(self, data: dict[str, Any]):
+        """Parses histogram data and constructs user and solution solvers."""
         gameData = data[HISTOGRAM_DATA_CONFIG_SECTION_HEADER]
         intervals : Optional[list[float]] = None
         values    : Optional[list[float]] = None
@@ -877,18 +935,22 @@ class HistogramGameLoader(GameLoader):
         self.evaluator = self.evaluatorType(isGuess)
 
     def _color(self, colors: list[str]):
+        """Applies bucket colors to both user and solution solvers."""
         for i in range(len(colors)):
             self.userSolver.ChangeColor(0,i,colors[i])
             self.solutionSolver.ChangeColor(0,i,colors[i])
 
     def _getDefaultEvaluatorType(self)->Type[GameEvaluator]:
+        """Returns the default evaluator type for histogram games."""
         return DefaultHistogramEvaluator
     
     def _lock(self, isGuess : list[bool]):
+        """Locks all buckets not marked as guess in the user solver."""
         for i in range(len(isGuess)):
             if not isGuess[i]:
                 self.userSolver.SwitchBucketLock(i)
     
     @staticmethod
     def GetGameMode() -> GameModes:
+        """Returns the histogram game mode identifier."""
         return GameModes.Histogram

@@ -200,7 +200,6 @@ class BarChartCanvasDrawer(CanvasDrawer):
         """
         if clear:
             self.canvas.delete("all")
-        print("drawing bare")
         self._drawRectangles(solver, outlineOnly)
 
     def draw(self, plotMetadata: BarChartMetadata, solver : BarChartSolver, clear: bool = True, outlineOnly : bool = False, specialHighlight : bool = False) -> None: # pyright: ignore[reportIncompatibleMethodOverride]

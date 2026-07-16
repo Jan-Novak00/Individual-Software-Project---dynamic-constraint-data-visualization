@@ -6,10 +6,23 @@ from typing import Union
 from .variable_rectanglegroupchart import VariableRectangleGroupChart
 
 class VariableBarChart(VariableRectangleGroupChart):
-    """
-    VariableChart version for bar chart and histogram
+    """VariableChart implementation for bar charts.
+
+    Manages groups of bar rectangles with shared width, spacing, and inner spacing
+    variables, and provides methods for adding bars and groups at runtime.
+
+    Attributes:
+        innerSpacing (Variable): Spacing between rectangles within a single group.
+        groups (list[VariableBarGroup]): The bar groups that make up the chart.
+        leftRectangleXCoordinateConstraint (Constraint): Pins the first group's left edge to the origin.
+        leftRectangleYCoordinateConstraint (Constraint): Pins all group bottoms to the origin Y.
     """
     def __init__(self, rectangleNames : list[list[str]]):
+        """Initializes the bar chart with the given rectangle name groups.
+
+        Args:
+            rectangleNames (list[list[str]]): Names for rectangles in each group.
+        """
         
         super().__init__()
 
@@ -27,44 +40,75 @@ class VariableBarChart(VariableRectangleGroupChart):
     
 
     def ChangeColor(self, groupIndex: int, rectangleIndex: int, color: Union[str,int]):
+        """Changes the color of the specified bar rectangle.
+
+        Args:
+            groupIndex (int): Index of the bar group.
+            rectangleIndex (int): Index of the rectangle within the group.
+            color (Union[str, int]): New color value.
+        """
         self.groups[groupIndex].ChangeColor(rectangleIndex, color)
     
     def ChangeName(self, groupIndex: int, rectangleIndex: int, name: str):
+        """Changes the display name of the specified bar rectangle.
+
+        Args:
+            groupIndex (int): Index of the bar group.
+            rectangleIndex (int): Index of the rectangle within the group.
+            name (str): New name string.
+        """
         self.groups[groupIndex].ChangeName(rectangleIndex,name)
      
     def _createGroupSpacingConstraints(self):
+        """Creates constraints that space consecutive bar groups evenly."""
         for index in range(1,len(self.groups)):
             self.groups[index].SetSpacingConstraint((self.groups[index-1].rightMostX + self.spacing == self.groups[index].leftMostX) | "required")
     
     def Value(self):
+        """Returns the resolved rectangle data for all bar groups."""
         return [group.Value() for group in self.groups]
     
     def _getGroupConstraints(self) -> list[Constraint]:
+        """Collects and returns all constraints from every bar group."""
         result = []
         for group in self.groups:
             result.extend(group.GetAllConstraints())
         return result 
     
     def _getSpacingConstraints(self)-> list[Constraint]:
+        """Returns constraints that enforce minimum width and non-negative spacing."""
         global MINIMAL_WIDTH
         return [(self.width >= MINIMAL_WIDTH) | "required", (self.spacing >= 0) | "required", (self.innerSpacing >= 0) | "required"]
     
     def _getVerticalGroupAligmentConstraints(self) -> list[Constraint]:
+        """Returns constraints that align all group bottoms to the origin Y."""
         return [(self.origin.Y == self.groups[i].bottomY) | "required" for i in range(1,len(self.groups))]
     
     def _getOriginConstraints(self) -> list[Constraint]:
+        """Returns constraints that pin the first group to the chart origin."""
         return [self.leftRectangleXCoordinateConstraint,self.leftRectangleYCoordinateConstraint]
 
     def GetAllConstraints(self)-> list[Constraint]:
+        """Returns all constraints for the bar chart layout."""
         return self._getGroupConstraints() + self._getSpacingConstraints()+ self._getVerticalGroupAligmentConstraints() + self._getOriginConstraints()
     
     def GetName(self, groupIndex : int, rectangleIndex : int):
+        """Returns the display name of the specified bar rectangle."""
         return self.groups[groupIndex].GetName(rectangleIndex)
     
     def GetHeightVariable(self,groupIndex : int, rectangleIndex : int) -> Variable:
+        """Returns the kiwisolver height variable for the specified bar rectangle."""
         return self.groups[groupIndex].GetHeightVariable(rectangleIndex)
     
     def AddBarGroup(self,firstRectangleName : str):
+        """Appends a new bar group with a single rectangle to the chart.
+
+        Args:
+            firstRectangleName (str): Name for the first rectangle in the new group.
+
+        Returns:
+            tuple: The new VariableBarGroup and the list of constraints to add.
+        """
         lastGroup = self.groups[-1] #TODO first one
         newGroup = VariableBarGroup(self.width, self.innerSpacing, [firstRectangleName])
         self.groups.append(newGroup)
@@ -72,6 +116,15 @@ class VariableBarChart(VariableRectangleGroupChart):
         return newGroup, newGroup.GetAllConstraints() + [(self.origin.Y == newGroup.bottomY) | "required"]
 
     def AddBar(self,name: str, groupIndex: int):
+        """Appends a new bar rectangle to an existing group.
+
+        Args:
+            name (str): Name for the new rectangle.
+            groupIndex (int): Index of the group to add the rectangle to.
+
+        Returns:
+            tuple: The height variable, list of constraints to add, and list of constraints to remove.
+        """
         currentGroup = self.groups[groupIndex]
         nextGroup = self.groups[groupIndex + 1] if groupIndex + 1 < len(self.groups) else None 
         constraintsToRemove = [nextGroup.spacingConstraint] if nextGroup != None else [] #TODO better system
