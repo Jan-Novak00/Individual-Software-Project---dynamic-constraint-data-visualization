@@ -10,6 +10,14 @@ Extension for the prediction game can be found in [prediction-game](./prediction
 Clone the repository to your machine.
 The program was debugged for Windows 10 and 11. On linux there might be problems with used fonts.
 Make sure your machine has Python 3 interpreter installed, at least version 3.13.12.
+
+Before running the programs, add the `module/src` directory to the PYTHONPATH environment variable.
+
+In PowerShell, from the root directory of the project, run:
+```bash
+$env:PYTHONPATH = "$PWD\module\src"
+```
+
 You can run the **chart solver** by running **run-chart-editor.py** script in the root directory of the project.
 **Prediction game** can also be run by running **run-prediction-game.py** script in the root directory of the project.
 
